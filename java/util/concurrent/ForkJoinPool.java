@@ -89,6 +89,7 @@ import java.security.Permissions;
  * I/O or other unmanaged synchronization. The nested {@link
  * ManagedBlocker} interface enables extension of the kinds of
  * synchronization accommodated.
+ * 默认并发数是处理器数
  *
  * <p>In addition to execution and lifecycle control methods, this
  * class provides status check methods (for example
@@ -136,6 +137,7 @@ import java.security.Permissions;
  * <p>The common pool is by default constructed with default
  * parameters, but these may be controlled by setting three
  * {@linkplain System#getProperty system properties}:
+ * commonPool可以通过设置系统属性来改变一些设置
  * <ul>
  * <li>{@code java.util.concurrent.ForkJoinPool.common.parallelism}
  * - the parallelism level, a non-negative integer
@@ -158,6 +160,7 @@ import java.security.Permissions;
  * maximum number of running threads to 32767. Attempts to create
  * pools with greater than the maximum number result in
  * {@code IllegalArgumentException}.
+ * 最大运行中的线程数：32767
  *
  * <p>This implementation rejects submitted tasks (that is, by throwing
  * {@link RejectedExecutionException}) only when the pool is shut down
