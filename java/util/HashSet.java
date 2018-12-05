@@ -34,6 +34,8 @@ import sun.misc.SharedSecrets;
  * iteration order of the set; in particular, it does not guarantee that the
  * order will remain constant over time.  This class permits the <tt>null</tt>
  * element.
+ * 实现了Set接口，内部使用哈希表HashMap实现。
+ * 可以添加null元素。
  *
  * <p>This class offers constant time performance for the basic operations
  * (<tt>add</tt>, <tt>remove</tt>, <tt>contains</tt> and <tt>size</tt>),
@@ -43,6 +45,7 @@ import sun.misc.SharedSecrets;
  * "capacity" of the backing <tt>HashMap</tt> instance (the number of
  * buckets).  Thus, it's very important not to set the initial capacity too
  * high (or the load factor too low) if iteration performance is important.
+ * 初始容量不要设置太大，负载因子不要设置太小
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a hash set concurrently, and at least one of
@@ -96,11 +99,16 @@ public class HashSet<E>
     private transient HashMap<E,Object> map;
 
     // Dummy value to associate with an Object in the backing Map
+    /**
+     * HashSet底层使用HashMap实现，set的元素是map的key，map的value就是用此PRESENT来填充
+     */
     private static final Object PRESENT = new Object();
 
     /**
      * Constructs a new, empty set; the backing <tt>HashMap</tt> instance has
      * default initial capacity (16) and load factor (0.75).
+     * 底层是使用HashMap来存储数据
+     * 初始容量16，负载因子0.75
      */
     public HashSet() {
         map = new HashMap<>();
