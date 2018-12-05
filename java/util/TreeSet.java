@@ -30,6 +30,7 @@ package java.util;
  * The elements are ordered using their {@linkplain Comparable natural
  * ordering}, or by a {@link Comparator} provided at set creation
  * time, depending on which constructor is used.
+ * 基于TreeMap实现
  *
  * <p>This implementation provides guaranteed log(n) time cost for the basic
  * operations ({@code add}, {@code remove} and {@code contains}).
@@ -119,6 +120,7 @@ public class TreeSet<E> extends AbstractSet<E>
      * attempts to add a string element to a set whose elements are
      * integers), the {@code add} call will throw a
      * {@code ClassCastException}.
+     * 底层使用TreeMap实现
      */
     public TreeSet() {
         this(new TreeMap<E,Object>());
