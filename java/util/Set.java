@@ -30,6 +30,7 @@ package java.util;
  * contain no pair of elements <code>e1</code> and <code>e2</code> such that
  * <code>e1.equals(e2)</code>, and at most one null element.  As implied by
  * its name, this interface models the mathematical <i>set</i> abstraction.
+ * 没有重复元素
  *
  * <p>The <tt>Set</tt> interface places additional stipulations, beyond those
  * inherited from the <tt>Collection</tt> interface, on the contracts of all
