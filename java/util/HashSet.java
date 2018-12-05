@@ -158,6 +158,7 @@ public class HashSet<E>
      * constructor is only used by LinkedHashSet.) The backing
      * HashMap instance is a LinkedHashMap with the specified initial
      * capacity and the specified load factor.
+     * 这个构造是LinkedHashSet使用的，内部使用LinkHashMap
      *
      * @param      initialCapacity   the initial capacity of the hash map
      * @param      loadFactor        the load factor of the hash map

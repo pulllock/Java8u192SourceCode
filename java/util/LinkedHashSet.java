@@ -36,6 +36,8 @@ package java.util;
  * is reinserted into a set <tt>s</tt> if <tt>s.add(e)</tt> is invoked when
  * <tt>s.contains(e)</tt> would return <tt>true</tt> immediately prior to
  * the invocation.)
+ * 链表的顺序是插入顺序。
+ * 重新插入一个元素不会影响顺序。
  *
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashSet}, without incurring the
