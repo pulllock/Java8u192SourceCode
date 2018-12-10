@@ -90,6 +90,7 @@ public abstract class AbstractQueue<E>
      *         this queue does not permit null elements
      * @throws IllegalArgumentException if some property of this element
      *         prevents it from being added to this queue
+     * 基于offer实现添加
      */
     public boolean add(E e) {
         if (offer(e))
@@ -108,6 +109,7 @@ public abstract class AbstractQueue<E>
      *
      * @return the head of this queue
      * @throws NoSuchElementException if this queue is empty
+     * 基于poll实现移除
      */
     public E remove() {
         E x = poll();
@@ -127,6 +129,7 @@ public abstract class AbstractQueue<E>
      *
      * @return the head of this queue
      * @throws NoSuchElementException if this queue is empty
+     * 基于peek实现获取元素，但不删除
      */
     public E element() {
         E x = peek();
