@@ -37,6 +37,7 @@ import sun.misc.SharedSecrets;
  * A priority queue relying on natural ordering also does not permit
  * insertion of non-comparable objects (doing so may result in
  * {@code ClassCastException}).
+ * 无界优先级队列
  *
  * <p>The <em>head</em> of this queue is the <em>least</em> element
  * with respect to the specified ordering.  If multiple elements are
