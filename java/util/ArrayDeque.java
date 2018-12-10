@@ -46,6 +46,10 @@ import sun.misc.SharedSecrets;
  * Null elements are prohibited.  This class is likely to be faster than
  * {@link Stack} when used as a stack, and faster than {@link LinkedList}
  * when used as a queue.
+ * 基于数组的，可以动态调整大小的双端队列
+ * 不是线程安全的
+ * 当做栈用的时候，比Stack快
+ * 当做队列用的时候，比LinkedList快
  *
  * <p>Most {@code ArrayDeque} operations run in amortized constant time.
  * Exceptions include {@link #remove(Object) remove}, {@link
