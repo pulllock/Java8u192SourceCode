@@ -43,6 +43,7 @@ import java.util.function.Function;
 /**
  * A {@link java.util.Map} providing thread safety and atomicity
  * guarantees.
+ * 提供线程安全保证和原子性保证
  *
  * <p>Memory consistency effects: As with other concurrent
  * collections, actions in a thread prior to placing an object into a
@@ -73,6 +74,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
+     * 根据key获取value，如果不存在就返回默认值
      */
     @Override
     default V getOrDefault(Object key, V defaultValue) {
@@ -146,6 +148,9 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      *         and this map does not permit null keys or values
      * @throws IllegalArgumentException if some property of the specified key
      *         or value prevents it from being stored in this map
+     * 如果不存在就添加
+     * 返回之前的value
+     * 如果之前不存在，则返回null
      */
      V putIfAbsent(K key, V value);
 
@@ -176,6 +181,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @throws NullPointerException if the specified key or value is null,
      *         and this map does not permit null keys or values
      *         (<a href="../Collection.html#optional-restrictions">optional</a>)
+     * 如果指定的key对应的value是指定的value，移除指定key
      */
     boolean remove(Object key, Object value);
 
@@ -207,6 +213,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      *         and this map does not permit null keys or values
      * @throws IllegalArgumentException if some property of a specified key
      *         or value prevents it from being stored in this map
+     * 如果指定的key对应的oldValue和newValue相等，就替换
      */
     boolean replace(K key, V oldValue, V newValue);
 
@@ -240,6 +247,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      *         and this map does not permit null keys or values
      * @throws IllegalArgumentException if some property of the specified key
      *         or value prevents it from being stored in this map
+     * 如果key有对应的value，就替换
      */
     V replace(K key, V value);
 
@@ -270,6 +278,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @throws ClassCastException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
+     * 替换所有
      */
     @Override
     default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
@@ -314,6 +323,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
+     * 如果不存在就计算并放进去
      */
     @Override
     default V computeIfAbsent(K key,
@@ -357,6 +367,7 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
+     * 如果存在就计算并放进去
      */
     @Override
     default V computeIfPresent(K key,
@@ -411,6 +422,10 @@ public interface ConcurrentMap<K, V> extends Map<K, V> {
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
+     * 如果旧值存在，新值存在，用新值替换旧值
+     * 如果旧值存在，新值不存在，移除旧值
+     * 如果旧值不存在，新值存在，添加新值
+     * 如果旧值不存在，新值不存在，返回null
      */
     @Override
     default V compute(K key,
