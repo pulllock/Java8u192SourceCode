@@ -77,6 +77,12 @@ import java.util.NoSuchElementException;
  * <font style="font-size:smaller;">NUMBER SIGN</font>); on
  * each line all characters following the first comment character are ignored.
  * The file must be encoded in UTF-8.
+ * 配置文件放在 META-INF/services下
+ * 文件名字：服务的全限定名
+ * 文件内容：服务实现的全限定名，一个一行
+ * 空格和tab，以及空行都忽略
+ * # 做注释
+ * 文件必须是UTF-8编码
  *
  * <p> If a particular concrete provider class is named in more than one
  * configuration file, or is named in the same configuration file more than
@@ -94,6 +100,10 @@ import java.util.NoSuchElementException;
  * instantiation order, and then lazily locates and instantiates any remaining
  * providers, adding each one to the cache in turn.  The cache can be cleared
  * via the {@link #reload reload} method.
+ * 服务提供者定位和实例都是懒加载的。ServiceLoader维护一份服务的缓存。
+ * 每次调用iterator方法，先返回之前缓存的元素，顺序是实例化的顺序。
+ * 然后懒加载定位和实例化剩余的提供者，并一次把他们加到缓存中。
+ * reload方法可以清缓存。
  *
  * <p> Service loaders always execute in the security context of the caller.
  * Trusted system code should typically invoke the methods in this class, and
@@ -102,6 +112,7 @@ import java.util.NoSuchElementException;
  *
  * <p> Instances of this class are not safe for use by multiple concurrent
  * threads.
+ * 不是线程安全的
  *
  * <p> Unless otherwise specified, passing a <tt>null</tt> argument to any
  * method in this class will cause a {@link NullPointerException} to be thrown.
@@ -186,18 +197,30 @@ public final class ServiceLoader<S>
     implements Iterable<S>
 {
 
+    /**
+     * 服务配置文件前缀
+     */
     private static final String PREFIX = "META-INF/services/";
 
     // The class or interface representing the service being loaded
+    /**
+     * 要加载的服务的类型
+     */
     private final Class<S> service;
 
     // The class loader used to locate, load, and instantiate providers
+    /**
+     * 定位，加载，实例化服务提供者的类加载器
+     */
     private final ClassLoader loader;
 
     // The access control context taken when the ServiceLoader is created
     private final AccessControlContext acc;
 
     // Cached providers, in instantiation order
+    /**
+     * 服务提供者缓存，按照实例化的顺序排序
+     */
     private LinkedHashMap<String,S> providers = new LinkedHashMap<>();
 
     // The current lazy-lookup iterator
@@ -213,9 +236,12 @@ public final class ServiceLoader<S>
      *
      * <p> This method is intended for use in situations in which new providers
      * can be installed into a running Java virtual machine.
+     * 清除缓存，重新加载
      */
     public void reload() {
+        // 清缓存
         providers.clear();
+        // 重新实例化一个迭代器
         lookupIterator = new LazyIterator(service, loader);
     }
 
@@ -248,19 +274,24 @@ public final class ServiceLoader<S>
     // Parse a single line from the given configuration file, adding the name
     // on the line to the names list.
     //
+    /**解析配置文件的一行，并把名字加入到names列表中**/
     private int parseLine(Class<?> service, URL u, BufferedReader r, int lc,
                           List<String> names)
         throws IOException, ServiceConfigurationError
     {
+        // 读取一行
         String ln = r.readLine();
         if (ln == null) {
             return -1;
         }
+        // 只要从开头到#号之前的，#号后面的是注释
         int ci = ln.indexOf('#');
         if (ci >= 0) ln = ln.substring(0, ci);
+        // 两头的空格忽略掉
         ln = ln.trim();
         int n = ln.length();
         if (n != 0) {
+            // 配置文件中的实现类的名字中有空格或者tab，是非法的
             if ((ln.indexOf(' ') >= 0) || (ln.indexOf('\t') >= 0))
                 fail(service, u, lc, "Illegal configuration-file syntax");
             int cp = ln.codePointAt(0);
@@ -304,6 +335,7 @@ public final class ServiceLoader<S>
             in = u.openStream();
             r = new BufferedReader(new InputStreamReader(in, "utf-8"));
             int lc = 1;
+            // 解析每一行，并将解析到的名字添加到names列表中
             while ((lc = parseLine(service, u, r, lc, names)) >= 0);
         } catch (IOException x) {
             fail(service, "Error reading configuration file", x);
@@ -315,6 +347,7 @@ public final class ServiceLoader<S>
                 fail(service, "Error closing configuration file", y);
             }
         }
+        // 返回名字列表迭代器
         return names.iterator();
     }
 
@@ -342,8 +375,10 @@ public final class ServiceLoader<S>
             if (configs == null) {
                 try {
                     String fullName = PREFIX + service.getName();
+                    // 使用系统类加载器加载资源
                     if (loader == null)
                         configs = ClassLoader.getSystemResources(fullName);
+                    // 使用指定的类加载器加载资源
                     else
                         configs = loader.getResources(fullName);
                 } catch (IOException x) {
@@ -390,6 +425,7 @@ public final class ServiceLoader<S>
 
         public boolean hasNext() {
             if (acc == null) {
+                // 会解析加载服务
                 return hasNextService();
             } else {
                 PrivilegedAction<Boolean> action = new PrivilegedAction<Boolean>() {
@@ -401,6 +437,7 @@ public final class ServiceLoader<S>
 
         public S next() {
             if (acc == null) {
+                // 会实例化服务
                 return nextService();
             } else {
                 PrivilegedAction<S> action = new PrivilegedAction<S>() {
@@ -418,6 +455,7 @@ public final class ServiceLoader<S>
 
     /**
      * Lazily loads the available providers of this loader's service.
+     * 懒加载
      *
      * <p> The iterator returned by this method first yields all of the
      * elements of the provider cache, in instantiation order.  It then lazily
@@ -435,6 +473,7 @@ public final class ServiceLoader<S>
      * exception or error is thrown as the next provider is located and
      * instantiated.  To write robust code it is only necessary to catch {@link
      * ServiceConfigurationError} when using a service iterator.
+     * 为了实现懒加载，需要迭代器去解析配置文件和实例化服务提供者
      *
      * <p> If such an error is thrown then subsequent invocations of the
      * iterator will make a best effort to locate and instantiate the next
@@ -503,6 +542,7 @@ public final class ServiceLoader<S>
      *         used
      *
      * @return A new service loader
+     * 指定类型和类加载器，创建一个新的ServiceLoader
      */
     public static <S> ServiceLoader<S> load(Class<S> service,
                                             ClassLoader loader)
@@ -532,6 +572,7 @@ public final class ServiceLoader<S>
      *         The interface or abstract class representing the service
      *
      * @return A new service loader
+     * 指定类型，使用当前线程的类加载器，实例化一个ServiceLoader
      */
     public static <S> ServiceLoader<S> load(Class<S> service) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -551,11 +592,13 @@ public final class ServiceLoader<S>
      * <p> If the extension class loader cannot be found then the system class
      * loader is used; if there is no system class loader then the bootstrap
      * class loader is used.
+     * 扩展类加载器如果不存在，使用系统类加载器，如果系统类加载器也不存在，使用bootstrap类加载器
      *
      * <p> This method is intended for use when only installed providers are
      * desired.  The resulting service will only find and load providers that
      * have been installed into the current Java virtual machine; providers on
      * the application's class path will be ignored.
+     * 这个方法用来加载已经安装到当前虚拟机的服务提供者，应用程序类路径下的提供者会被忽略
      *
      * @param  <S> the class of the service type
      *
@@ -563,6 +606,7 @@ public final class ServiceLoader<S>
      *         The interface or abstract class representing the service
      *
      * @return A new service loader
+     * 给定类型，使用扩展类加载器是实例化一个ServiceLoader
      */
     public static <S> ServiceLoader<S> loadInstalled(Class<S> service) {
         ClassLoader cl = ClassLoader.getSystemClassLoader();
