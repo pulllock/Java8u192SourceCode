@@ -582,6 +582,8 @@ public interface Map<K,V> {
      * does not permit null keys
      * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     * 返回指定key对应的value，如果不存在返回默认值
+     * 默认实现不保证同步和原子性，如果需要保证原子性，需要重写该方法。
      */
     default V getOrDefault(Object key, V defaultValue) {
         V v;
@@ -614,6 +616,7 @@ public interface Map<K,V> {
      * @throws ConcurrentModificationException if an entry is found to be
      * removed during iteration
      * @since 1.8
+     * 对每个entry都执行指定的操作action
      */
     default void forEach(BiConsumer<? super K, ? super V> action) {
         Objects.requireNonNull(action);
@@ -737,6 +740,7 @@ public interface Map<K,V> {
      *         or value prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     * 如果不存在，就将指定的value放进去
      */
     default V putIfAbsent(K key, V value) {
         V v = get(key);
@@ -780,6 +784,7 @@ public interface Map<K,V> {
      *         and this map does not permit null keys or values
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     * 如果指定的key对应的value和指定的value相同，就移除
      */
     default boolean remove(Object key, Object value) {
         Object curValue = get(key);
@@ -832,6 +837,7 @@ public interface Map<K,V> {
      * @throws IllegalArgumentException if some property of a specified key
      *         or value prevents it from being stored in this map
      * @since 1.8
+     * 如果指定的key对应的value和指定的value相同，就将其替换成新value
      */
     default boolean replace(K key, V oldValue, V newValue) {
         Object curValue = get(key);
@@ -880,6 +886,7 @@ public interface Map<K,V> {
      * @throws IllegalArgumentException if some property of the specified key
      *         or value prevents it from being stored in this map
      * @since 1.8
+     * 替换
      */
     default V replace(K key, V value) {
         V curValue;
@@ -947,6 +954,7 @@ public interface Map<K,V> {
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     * 指定的key对应的value不存在，就计算并放进去
      */
     default V computeIfAbsent(K key,
             Function<? super K, ? extends V> mappingFunction) {
@@ -1008,6 +1016,7 @@ public interface Map<K,V> {
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     * 指定的key对应的value如果存在，就重新计算value并放进去
      */
     default V computeIfPresent(K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
@@ -1084,6 +1093,10 @@ public interface Map<K,V> {
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     * 如果旧值存在，新值存在，用新值替换旧值
+     * 如果旧值存在，新值不存在，移除旧值
+     * 如果旧值不存在，新值存在，添加新值
+     * 如果旧值不存在，新值不存在，返回null
      */
     default V compute(K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
