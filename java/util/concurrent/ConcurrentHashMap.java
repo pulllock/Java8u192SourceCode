@@ -83,6 +83,7 @@ import java.util.stream.Stream;
  * in a way that prevents all access.  This class is fully
  * interoperable with {@code Hashtable} in programs that rely on its
  * thread safety but not on its synchronization details.
+ * 哈希表，支持全并发的获取和高并发的更新。
  *
  * <p>Retrieval operations (including {@code get}) generally do not
  * block, so may overlap with update operations (including {@code put}
