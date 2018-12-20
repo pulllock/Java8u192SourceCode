@@ -1055,6 +1055,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             // 往下表示计算后的索引处不为null，出现了碰撞，碰撞会锁住这个node对象
             else {
                 V oldVal = null;
+                // 加锁，防止增加链表时导致成环
                 synchronized (f) {
                     if (tabAt(tab, i) == f) {
                         // 链表，添加到链表中
