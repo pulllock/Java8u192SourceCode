@@ -82,6 +82,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * the given value as its result and provide for cancellation of
      * the underlying task
      * @since 1.6
+     * 将任务包装成FutureTask执行
      */
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
         return new FutureTask<T>(runnable, value);
@@ -108,7 +109,9 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     public Future<?> submit(Runnable task) {
         if (task == null) throw new NullPointerException();
+        // 将任务包装成FutureTask
         RunnableFuture<Void> ftask = newTaskFor(task, null);
+        // 提交执行任务，具体子类实现
         execute(ftask);
         return ftask;
     }
@@ -143,10 +146,15 @@ public abstract class AbstractExecutorService implements ExecutorService {
         throws InterruptedException, ExecutionException, TimeoutException {
         if (tasks == null)
             throw new NullPointerException();
+        // 任务的数量
         int ntasks = tasks.size();
         if (ntasks == 0)
             throw new IllegalArgumentException();
         ArrayList<Future<T>> futures = new ArrayList<Future<T>>(ntasks);
+        /**
+         * ExecutorCompletionService不是一个真正的执行器，this才是真正的执行器
+         * 他对执行器进行了包装，每个任务结束后，将结果保存到内部的一个completionQueue队列中
+         */
         ExecutorCompletionService<T> ecs =
             new ExecutorCompletionService<T>(this);
 
@@ -164,32 +172,63 @@ public abstract class AbstractExecutorService implements ExecutorService {
             Iterator<? extends Callable<T>> it = tasks.iterator();
 
             // Start one task for sure; the rest incrementally
+            // 先提交一个任务，剩下的任务后面for循环一个一个提交
             futures.add(ecs.submit(it.next()));
+            // 任务数量减1
             --ntasks;
+            // 正在执行的任务数
             int active = 1;
 
             for (;;) {
+                /**
+                 * ecs内部有一个队列，保存执行完成的结果
+                 * poll方法不阻塞，返回null，表示队列为空
+                 */
                 Future<T> f = ecs.poll();
+                /**
+                 * 为null，说明刚提交的第一个任务还没有执行完成
+                 */
                 if (f == null) {
                     if (ntasks > 0) {
                         --ntasks;
+                        // 提交一个任务
                         futures.add(ecs.submit(it.next()));
                         ++active;
                     }
+                    // active == 0 说明所有任务执行失败，跳出for循环
                     else if (active == 0)
                         break;
+                    // 没有任务了，但是设置了超时时间，检测是否超时
                     else if (timed) {
                         f = ecs.poll(nanos, TimeUnit.NANOSECONDS);
                         if (f == null)
                             throw new TimeoutException();
                         nanos = deadline - System.nanoTime();
                     }
+                    /**
+                     * 走到这里说明没有任务需要提交
+                     * 但是池中任务还没有完成，也没有超时
+                     * take会阻塞，直到有元素返回，说明有任务结束了
+                     */
                     else
                         f = ecs.take();
                 }
+                /**
+                 * 假设在这个循环中，每一个任务都没那么快结束，每一次循环都会进入上面的
+                 * 第一个分支，进行任务提交，直到所有的任务都提交。
+                 *
+                 * 任务都提交完成后，如果设置了超时，for循环其实进入了一直检测是否超时这个分支
+                 *
+                 * 如果没有设置超时机制，就会阻塞在ecs.take()方法上，等待获取第一个执行结果
+                 *
+                 * 如果所有任务都执行失败，会从active == 0分支出去
+                 */
+
+                // 有任务结束了
                 if (f != null) {
                     --active;
                     try {
+                        // 返回执行结果
                         return f.get();
                     } catch (ExecutionException eex) {
                         ee = eex;
@@ -204,6 +243,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
             throw ee;
 
         } finally {
+            // 方法完成之前，需要取消其他的任务
             for (int i = 0, size = futures.size(); i < size; i++)
                 futures.get(i).cancel(true);
         }
@@ -225,6 +265,13 @@ public abstract class AbstractExecutorService implements ExecutorService {
         return doInvokeAny(tasks, true, unit.toNanos(timeout));
     }
 
+    /**
+     * 执行所有任务，返回任务结果
+     * @param tasks the collection of tasks
+     * @param <T>
+     * @return
+     * @throws InterruptedException
+     */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
         if (tasks == null)
@@ -233,8 +280,10 @@ public abstract class AbstractExecutorService implements ExecutorService {
         boolean done = false;
         try {
             for (Callable<T> t : tasks) {
+                // 包装成FutureTask
                 RunnableFuture<T> f = newTaskFor(t);
                 futures.add(f);
+                // 提交任务
                 execute(f);
             }
             for (int i = 0, size = futures.size(); i < size; i++) {
