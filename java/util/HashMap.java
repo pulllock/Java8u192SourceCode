@@ -572,6 +572,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     public V get(Object key) {
         Node<K,V> e;
+        // 计算哈希值，然后查找元素
         return (e = getNode(hash(key), key)) == null ? null : e.value;
     }
 
@@ -584,14 +585,18 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     final Node<K,V> getNode(int hash, Object key) {
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+        // 根据哈希值，计算数组下标
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (first = tab[(n - 1) & hash]) != null) {
+            // 判断数组位置第一个元素是不是刚好是我们需要的，是的话直接返回
             if (first.hash == hash && // always check first node
                 ((k = first.key) == key || (key != null && key.equals(k))))
                 return first;
             if ((e = first.next) != null) {
+                // TreeNode类型，使用红黑树方法取数据
                 if (first instanceof TreeNode)
                     return ((TreeNode<K,V>)first).getTreeNode(hash, key);
+                // 下面是遍历链表查找数据
                 do {
                     if (e.hash == hash &&
                         ((k = e.key) == key || (key != null && key.equals(k))))
@@ -657,13 +662,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         if ((tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
 
-        // 插入新的键值对
+        // 找到具体的数组下标，如果此位置没有值，直接插入新的键值对
         if ((p = tab[i = (n - 1) & hash]) == null)
             tab[i] = newNode(hash, key, value, null);
         // key存在，需要覆盖旧的值
         else {
             Node<K,V> e; K k;
-            // 直接覆盖
+            // 首先判断该位置的第一个数据和我们要插入的数据，key是不是相等，相等的话，取出这个节点
             if (p.hash == hash &&
                 ((k = p.key) == key || (key != null && key.equals(k))))
                 e = p;
@@ -671,7 +676,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             else if (p instanceof TreeNode)
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
             else {
-                // 新键值对放到链表最后
+                // 到这里说明是一个链表，新键值对放到链表最后
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
                         p.next = newNode(hash, key, value, null);
@@ -687,7 +692,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     p = e;
                 }
             }
-            // 返回旧值
+            /**
+             * e!=null，说明存在旧值的key与要插入的key相等
+             * 进行覆盖，并返回旧值
+             */
             if (e != null) { // existing mapping for key
                 V oldValue = e.value;
                 if (!onlyIfAbsent || oldValue == null)
@@ -763,8 +771,10 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     // 如果是红黑树，需要将树进行拆分，然后重新映射
                     else if (e instanceof TreeNode)
                         ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
-                    // 多结点的链表
-                    // TODO 不太明白
+                    /**
+                     * 这里处理链表的情况
+                     * 需要将此链表拆成两个链表，放到新数组中，并保留原来的先后顺序
+                     */
                     else { // preserve order
                         Node<K,V> loHead = null, loTail = null;
                         Node<K,V> hiHead = null, hiTail = null;
@@ -788,10 +798,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                         } while ((e = next) != null);
                         if (loTail != null) {
                             loTail.next = null;
+                            // 第一条链表
                             newTab[j] = loHead;
                         }
                         if (hiTail != null) {
                             hiTail.next = null;
+                            // 第二条链表的新位置是j + oldCap
                             newTab[j + oldCap] = hiHead;
                         }
                     }
