@@ -1035,14 +1035,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
         if (key == null || value == null) throw new NullPointerException();
+        // 得到哈希值
         int hash = spread(key.hashCode());
+        // 记录相应链表的长度
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; int n, i, fh;
             // table为空的时候，初始化，而不是在构造方法中初始化table
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
-            // key不存在，直接插入新的键值对
+            /**
+             * key不存在，直接插入新的键值对
+             * 找该哈希值对应的数组下标，并得到第一个结点f
+             * 如果该位置为空，就使用cas操作插入，成功的话，就基本结束了，可以跳到最后面
+             * 如果cas失败了，说明有并发操作，继续下一个循环
+             */
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
                 // cas插入
                 if (casTabAt(tab, i, null,
@@ -1058,11 +1065,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 // 加锁，防止增加链表时导致成环
                 synchronized (f) {
                     if (tabAt(tab, i) == f) {
-                        // 链表，添加到链表中
+                        // 头结点的哈希值大于0，说明是链表，添加到链表中
                         if (fh >= 0) {
+                            // 记录链表的长度
                             binCount = 1;
                             for (Node<K,V> e = f;; ++binCount) {
                                 K ek;
+                                // 如果找到相等的key，判断是否需要进行覆盖，然后就可以跳出本循环了
                                 if (e.hash == hash &&
                                     ((ek = e.key) == key ||
                                      (ek != null && key.equals(ek)))) {
@@ -1071,6 +1080,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                         e.val = value;
                                     break;
                                 }
+                                // 到了链表的最后端，将新值放到链表最后
                                 Node<K,V> pred = e;
                                 if ((e = e.next) == null) {
                                     pred.next = new Node<K,V>(hash, key,
@@ -1095,6 +1105,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 if (binCount != 0) {
                     // 链表长度大于等于8，转成树
                     if (binCount >= TREEIFY_THRESHOLD)
+                    /**
+                     * 不一定会进行红黑树转换
+                     * 如果当前数组的长度小于64，会选择进行数组扩容，而不是转换为红黑树
+                     */
                         treeifyBin(tab, i);
                     if (oldVal != null)
                         return oldVal;
@@ -2360,6 +2374,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param size number of elements (doesn't need to be perfectly accurate)
      */
     private final void tryPresize(int size) {
+        // size传进来的时候，就已经翻倍了
         int c = (size >= (MAXIMUM_CAPACITY >>> 1)) ? MAXIMUM_CAPACITY :
             tableSizeFor(size + (size >>> 1) + 1);
         int sc;
@@ -2390,6 +2405,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
                         transferIndex <= 0)
                         break;
+                    // cas将sizeCtl加1，然后执行transfer方法
                     if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
                         transfer(tab, nt);
                 }
