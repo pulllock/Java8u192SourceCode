@@ -378,14 +378,27 @@ public abstract class AbstractQueuedSynchronizer
      * on the design of this class.
      */
     static final class Node {
-        /** Marker to indicate a node is waiting in shared mode */
+        /**
+         * Marker to indicate a node is waiting in shared mode
+         * 标记结点当前在共享模式下
+         */
         static final Node SHARED = new Node();
-        /** Marker to indicate a node is waiting in exclusive mode */
+        /**
+         * Marker to indicate a node is waiting in exclusive mode
+         * 标记结点当前在独占模式下
+         */
         static final Node EXCLUSIVE = null;
 
-        /** waitStatus value to indicate thread has cancelled */
+        /**
+         * 下面几个int常量是给waitStatus用的
+         * waitStatus value to indicate thread has cancelled
+         * 表示此线程取消了争抢这个锁
+         */
         static final int CANCELLED =  1;
-        /** waitStatus value to indicate successor's thread needs unparking */
+        /**
+         * waitStatus value to indicate successor's thread needs unparking
+         * 表示当前结点的后继结点对应的线程需要被唤醒
+         */
         static final int SIGNAL    = -1;
         /** waitStatus value to indicate thread is waiting on condition */
         static final int CONDITION = -2;
@@ -428,6 +441,8 @@ public abstract class AbstractQueuedSynchronizer
          * The field is initialized to 0 for normal sync nodes, and
          * CONDITION for condition nodes.  It is modified using CAS
          * (or when possible, unconditional volatile writes).
+         * 取值为上面的1， -1， -2， -3 或者0
+         * 大于0表示此线程取消了等待
          */
         volatile int waitStatus;
 
@@ -441,6 +456,7 @@ public abstract class AbstractQueuedSynchronizer
          * head only as a result of successful acquire. A
          * cancelled thread never succeeds in acquiring, and a thread only
          * cancels itself, not any other node.
+         * 前驱结点
          */
         volatile Node prev;
 
@@ -456,12 +472,14 @@ public abstract class AbstractQueuedSynchronizer
          * double-check.  The next field of cancelled nodes is set to
          * point to the node itself instead of null, to make life
          * easier for isOnSyncQueue.
+         * 后继结点
          */
         volatile Node next;
 
         /**
          * The thread that enqueued this node.  Initialized on
          * construction and nulled out after use.
+         * 线程
          */
         volatile Thread thread;
 
@@ -518,17 +536,22 @@ public abstract class AbstractQueuedSynchronizer
      * initialization, it is modified only via method setHead.  Note:
      * If head exists, its waitStatus is guaranteed not to be
      * CANCELLED.
+     * 头结点，可以当做当前持有锁的线程
      */
     private transient volatile Node head;
 
     /**
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
+     * 尾结点，每个新来的结点都插入到最后，形成一个链
      */
     private transient volatile Node tail;
 
     /**
      * The synchronization state.
+     * 当前锁的状态
+     * 0 代表没有被占用
+     * 大于0代表线程持有当前锁，锁可以重入，所以state可以大于1
      */
     private volatile int state;
 
@@ -1193,8 +1216,14 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument.  This value is conveyed to
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
+     * 如果tryAcquire成功了，直接就结束了
+     * 否则acquireQueued方法会将线程压到队列中
      */
     public final void acquire(int arg) {
+        /**
+         * 先试一下，如果能直接获取到锁，就直接结束
+         * 没有成功，需要把当前线程挂起，放到阻塞队列中
+         */
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
             selfInterrupt();

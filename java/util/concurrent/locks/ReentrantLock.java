@@ -220,6 +220,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     static final class FairSync extends Sync {
         private static final long serialVersionUID = -3000897897090466540L;
 
+        /**
+         * 公平模式的加锁
+         */
         final void lock() {
             acquire(1);
         }
@@ -227,17 +230,37 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         /**
          * Fair version of tryAcquire.  Don't grant access unless
          * recursive call or no waiters or is first.
+         * 公平模式的tryAcquire，尝试获取锁
+         * 获取成功，返回true，否则返回false
+         *
+         * 返回true的情况：
+         * 1. 没有线程在等待锁
+         * 2. 重入锁，线程本来就持有锁，也就可以直接获取
          */
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
+            // 0表示锁没有被占用
             if (c == 0) {
+                /**
+                 * 由于是公平锁，所以需要先看下是不是有线程
+                 * 在队列中等待
+                 *
+                 * 如果没有线程等待，使用CAS尝试获取下，如果
+                 * 成功了就可以获取到锁；如果不成功，那就是
+                 * 有线程先抢到了锁。
+                 */
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
+                    // 获取到了锁后，设置当前线程占有了锁
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
+            /**
+             * 如果锁被占用，但是是当前线程
+             * 需要将state加1
+             */
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0)
@@ -245,6 +268,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                 setState(nextc);
                 return true;
             }
+            // 走到这里，说明没有获取到锁
             return false;
         }
     }

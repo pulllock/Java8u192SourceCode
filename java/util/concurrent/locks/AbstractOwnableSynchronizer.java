@@ -60,6 +60,9 @@ public abstract class AbstractOwnableSynchronizer
 
     /**
      * The current owner of exclusive mode synchronization.
+     * 代表当前持有独占锁的线程
+     * 因为锁可以重入，也就是lock方法可以调用多次，所以每次
+     * 用这个来判断当前线程是否已经拥有了锁
      */
     private transient Thread exclusiveOwnerThread;
 
