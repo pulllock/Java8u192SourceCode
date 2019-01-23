@@ -604,12 +604,32 @@ public abstract class AbstractQueuedSynchronizer
      * @return node's predecessor
      */
     private Node enq(final Node node) {
+        /**
+         * 走到这里有两种情况：
+         * 1. tail == null 说明队列是空的
+         * 2. CAS失败，说明有线程竞争入队列
+         */
         for (;;) {
             Node t = tail;
+            // 队列为空
             if (t == null) { // Must initialize
+                /**
+                 * 初始化node结点，原来的head和tail初始化的时候是null
+                 * 使用CAS初始化
+                 *
+                 * 如果CAS成功了，说head结点初始化成功了，此时head结点的
+                 * waitStatus == 0
+                 *
+                 * 这里只是将tail指向head，并没有返回，会继续下一个循环
+                 * 再次循环的时候，就可以进入到下面的else分支了
+                 */
                 if (compareAndSetHead(new Node()))
                     tail = head;
             } else {
+                /**
+                 * 这里还是使用CAS入队列尾
+                 * 循环一直尝试
+                 */
                 node.prev = t;
                 if (compareAndSetTail(t, node)) {
                     t.next = node;
@@ -624,18 +644,39 @@ public abstract class AbstractQueuedSynchronizer
      *
      * @param mode Node.EXCLUSIVE for exclusive, Node.SHARED for shared
      * @return the new node
+     *
+     * 把线程包装成Node，同时添加到队列中
      */
     private Node addWaiter(Node mode) {
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
+        /**
+         * 下面是想把当前node加到链表的最后面去，
+         * 也就是进入到阻塞队列的最后
+         */
         Node pred = tail;
+        /**
+         * tail != null表示队列不为空
+         * tail == head的时候表示队列是空的
+         */
         if (pred != null) {
+            // 设置node的前驱为当前的队尾结点
             node.prev = pred;
+            // CAS把node设置为队尾，如果成功了tail就等于node了
             if (compareAndSetTail(pred, node)) {
+                /**
+                 * 走到这里说明设置成功了，node已经加到队尾了
+                 * 可以返回了
+                 */
                 pred.next = node;
                 return node;
             }
         }
+        /**
+         * 走到这里有两种情况：
+         * 1. tail == null 说明队列是空的
+         * 2. CAS失败，说明有线程竞争入队列
+         */
         enq(node);
         return node;
     }
@@ -1223,6 +1264,15 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * 先试一下，如果能直接获取到锁，就直接结束
          * 没有成功，需要把当前线程挂起，放到阻塞队列中
+         *
+         * addWaiter将结点包装成node，入队列，经过addWaiter
+         * 后，就已经进入阻塞队列了。
+         *
+         * 如果acquireQueued返回true的话，就会进入selfInterrupt，
+         * 所以正常情况下应该返回false。
+         *
+         * acquireQueued方法真正的挂起线程，被唤醒后去获取锁，
+         * 都在这个方法里
          */
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
