@@ -697,23 +697,28 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Wakes up node's successor, if one exists.
      *
-     * @param node the node
+     * @param node the node node是head结点
+     * 唤醒后继结点
      */
     private void unparkSuccessor(Node node) {
-        /*
+        /**
          * If status is negative (i.e., possibly needing signal) try
          * to clear in anticipation of signalling.  It is OK if this
          * fails or if status is changed by waiting thread.
+         * head结点的waitStatus小于0，就将其修改为0
          */
         int ws = node.waitStatus;
         if (ws < 0)
             compareAndSetWaitStatus(node, ws, 0);
 
-        /*
+        /**
          * Thread to unpark is held in successor, which is normally
          * just the next node.  But if cancelled or apparently null,
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
+         * 下面代码唤醒后继结点，但是有可能后继结点已经取消了等待
+         * 所有要从队尾往前找，找到waitStatus小于等于0的所有节点中排在
+         * 最前面的
          */
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
@@ -722,6 +727,7 @@ public abstract class AbstractQueuedSynchronizer
                 if (t.waitStatus <= 0)
                     s = t;
         }
+        // 唤醒线程，唤醒后，从被挂起的位置继续执行
         if (s != null)
             LockSupport.unpark(s.thread);
     }
@@ -855,15 +861,37 @@ public abstract class AbstractQueuedSynchronizer
      * @param pred node's predecessor holding status
      * @param node the node
      * @return {@code true} if thread should block
+     * 没有抢到锁，就会到这里
+     * 当前线程没有抢到锁，是否需要挂起当前线程
+     *
+     * 如果返回true，说明前驱结点的waitStatus == -1，是正常情况，
+     * 当前线程需要挂起，等待以后被唤醒；
+     * 如果返回false，说明不需要被挂起。
+     *
+     * 一般第一次进来的时候，不会返回true，而是返回false
+     * 返回false的时候为什么不直接挂起？是因为有可能在经过这个方法后，
+     * node已经是head的直接后继结点了，就不要再挂起了。
      */
     private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
         int ws = pred.waitStatus;
+        /**
+         * 前驱结点waitStatus == -1 说明前驱结点状态正常
+         * 当前线程需要挂起，直接返回true
+         */
         if (ws == Node.SIGNAL)
             /*
              * This node has already set status asking a release
              * to signal it, so it can safely park.
              */
             return true;
+        /**
+         * 前驱结点 waitStatus 大于0，说明前驱结点取消了排队
+         *
+         * 进入阻塞队列排队的线程会被挂起，唤醒的操作是前驱结点完成的。
+         *
+         * 下面的循环就是从当前的结点的前驱往前找，找到一个没有被取消
+         * 的结点作为前驱
+         */
         if (ws > 0) {
             /*
              * Predecessor was cancelled. Skip over predecessors and
@@ -878,6 +906,12 @@ public abstract class AbstractQueuedSynchronizer
              * waitStatus must be 0 or PROPAGATE.  Indicate that we
              * need a signal, but don't park yet.  Caller will need to
              * retry to make sure it cannot acquire before parking.
+             */
+
+            /**
+             * 走到这里，说明前驱结点的waitStatus不等于-1和1，只能是0，-2，-3
+             * 而每个新的node入队时，waitStatus都是0
+             * 这里CAS将前驱结点的waitStatus设置为-1
              */
             compareAndSetWaitStatus(pred, ws, Node.SIGNAL);
         }
@@ -895,8 +929,15 @@ public abstract class AbstractQueuedSynchronizer
      * Convenience method to park and then check if interrupted
      *
      * @return {@code true} if interrupted
+     * 挂起线程，等待被唤醒
      */
     private final boolean parkAndCheckInterrupt() {
+        /**
+         * 挂起线程，等待被唤醒
+         *
+         * 唤醒的时候，从这里开始执行，然后会回到acquireQueued方法
+         * 继续进行循环，这时候node就是head节点了，就可以继续尝试获取锁。。。
+         */
         LockSupport.park(this);
         return Thread.interrupted();
     }
@@ -917,6 +958,7 @@ public abstract class AbstractQueuedSynchronizer
      * @param node the node
      * @param arg the acquire argument
      * @return {@code true} if interrupted while waiting
+     * 真正的挂起线程，然后被唤醒后去获取锁
      */
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
@@ -924,12 +966,33 @@ public abstract class AbstractQueuedSynchronizer
             boolean interrupted = false;
             for (;;) {
                 final Node p = node.predecessor();
+                /**
+                 * p == head 说明当前节点node虽然进入到了阻塞队列，
+                 * 但是是队列中的第一个。
+                 * 阻塞队列不包含head，head一般指的是占有锁的线程，
+                 * head后面的才是阻塞队列。
+                 *
+                 * 作为头结点，可以尝试获取下锁。
+                 */
                 if (p == head && tryAcquire(arg)) {
                     setHead(node);
                     p.next = null; // help GC
                     failed = false;
                     return interrupted;
                 }
+
+                /**
+                 * 走到这里，说明上面没有成功：
+                 * 1. 可能是当前结点不是队头
+                 * 2. 可能是tryAcquire失败了
+                 *
+                 * shouldParkAfterFailedAcquire 当前线程没有抢到锁，是否需要挂起当前线程
+                 * 如果返回true，说明前驱结点的waitStatus == -1，是正常情况，
+                 * 当前线程需要挂起，等待以后被唤醒；
+                 * 如果返回false，说明不需要被挂起
+                 *
+                 * parkAndCheckInterrupt 挂起线程，停在这里等待被唤醒
+                 */
                 if (shouldParkAfterFailedAcquire(p, node) &&
                     parkAndCheckInterrupt())
                     interrupted = true;
@@ -1337,6 +1400,9 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryRelease}
      */
     public final boolean release(int arg) {
+        /**
+         * 尝试释放锁，释放成功后唤醒后继结点
+         */
         if (tryRelease(arg)) {
             Node h = head;
             if (h != null && h.waitStatus != 0)
