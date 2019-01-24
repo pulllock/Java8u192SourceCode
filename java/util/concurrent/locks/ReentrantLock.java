@@ -202,6 +202,12 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         /**
          * Performs lock.  Try immediate barge, backing up to normal
          * acquire on failure.
+         * 和公平锁相比，这里没有判断是否有线程在等待，
+         * 而是直接CAS获取，成功了就直接返回
+         *
+         * 如果获取失败，非公平锁也会进入到tryAcquire中，如果发现锁被释放了
+         * 非公平锁会直接CAS抢锁，但是公平锁会判断是否有线程处于等待状态，
+         * 如果有则不抢锁，乖乖排在最后。
          */
         final void lock() {
             if (compareAndSetState(0, 1))
@@ -250,6 +256,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                  * 如果没有线程等待，使用CAS尝试获取下，如果
                  * 成功了就可以获取到锁；如果不成功，那就是
                  * 有线程先抢到了锁。
+                 *
+                 * 和非公平锁相比，这边多了一个判断：判断是
+                 * 否有线程在等待
                  */
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
