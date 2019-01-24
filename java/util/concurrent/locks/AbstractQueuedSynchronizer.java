@@ -456,6 +456,7 @@ public abstract class AbstractQueuedSynchronizer
          * head only as a result of successful acquire. A
          * cancelled thread never succeeds in acquiring, and a thread only
          * cancels itself, not any other node.
+         * 阻塞队列双向链表
          * 前驱结点
          */
         volatile Node prev;
@@ -472,6 +473,7 @@ public abstract class AbstractQueuedSynchronizer
          * double-check.  The next field of cancelled nodes is set to
          * point to the node itself instead of null, to make life
          * easier for isOnSyncQueue.
+         * 阻塞队列双向链表
          * 后继结点
          */
         volatile Node next;
@@ -492,6 +494,8 @@ public abstract class AbstractQueuedSynchronizer
          * re-acquire. And because conditions can only be exclusive,
          * we save a field by using special value to indicate shared
          * mode.
+         * 条件队列单向链表
+         * 下一个结点
          */
         Node nextWaiter;
 
@@ -1974,9 +1978,15 @@ public abstract class AbstractQueuedSynchronizer
      */
     public class ConditionObject implements Condition, java.io.Serializable {
         private static final long serialVersionUID = 1173984872572414699L;
-        /** First node of condition queue. */
+        /**
+         * First node of condition queue.
+         * 条件队列的第一个结点
+         */
         private transient Node firstWaiter;
-        /** Last node of condition queue. */
+        /**
+         * Last node of condition queue.
+         * 条件队列的最后一个结点
+         */
         private transient Node lastWaiter;
 
         /**
