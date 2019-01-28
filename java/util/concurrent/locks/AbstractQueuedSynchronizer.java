@@ -755,11 +755,18 @@ public abstract class AbstractQueuedSynchronizer
          */
         for (;;) {
             Node h = head;
+            /**
+             * 1. h == null 说明阻塞队列为空
+             * 2. h == tail 说明头结点可能是刚刚初始化的头结点或者是普通线程结点，
+             *    但此节点既然是头结点，就代表已经被唤醒了，阻塞队列没有其他结点了
+             * 所以上面两种情况不需要进行唤醒后继结点
+             */
             if (h != null && h != tail) {
                 int ws = h.waitStatus;
                 if (ws == Node.SIGNAL) {
                     if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
                         continue;            // loop to recheck cases
+                    // 唤醒阻塞队列中的第一个结点
                     unparkSuccessor(h);
                 }
                 else if (ws == 0 &&
@@ -1107,9 +1114,11 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Acquires in shared interruptible mode.
      * @param arg the acquire argument
+     * 获取共享锁，该方法可中断
      */
     private void doAcquireSharedInterruptibly(int arg)
         throws InterruptedException {
+        // 入队
         final Node node = addWaiter(Node.SHARED);
         boolean failed = true;
         try {
@@ -1449,6 +1458,10 @@ public abstract class AbstractQueuedSynchronizer
             throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
+        /**
+         * CountDownLatch的tryAcquireShared 只有当state == 0的时候才会返回1，其他的返回-1
+         * 当调用CountDownLatch的await方法的时候，state大于0，此时if条件为true
+         */
         if (tryAcquireShared(arg) < 0)
             doAcquireSharedInterruptibly(arg);
     }
@@ -1487,7 +1500,14 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryReleaseShared}
      */
     public final boolean releaseShared(int arg) {
+        /**
+         * 只有state为0的时候，tryReleaseShared才返回true
+         * 否则就state = state - 1
+         *
+         * 等到state为0的时候，执行doReleaseShared方法
+         */
         if (tryReleaseShared(arg)) {
+            // 唤醒await的线程
             doReleaseShared();
             return true;
         }

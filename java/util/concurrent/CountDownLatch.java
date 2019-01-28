@@ -226,6 +226,8 @@ public class CountDownLatch {
      *
      * @throws InterruptedException if the current thread is interrupted
      *         while waiting
+     * 所有调用了 await 方法的线程阻塞在 AQS 的阻塞队列中，
+     * 等待条件满足（state == 0），将线程从队列中一个个唤醒过来。
      */
     public void await() throws InterruptedException {
         sync.acquireSharedInterruptibly(1);
