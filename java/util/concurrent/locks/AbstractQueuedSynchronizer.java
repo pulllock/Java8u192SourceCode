@@ -650,6 +650,19 @@ public abstract class AbstractQueuedSynchronizer
      * @return the new node
      *
      * 把线程包装成Node，同时添加到队列中
+     *
+     * 主要逻辑有两部分：
+     * 1. 阻塞队列的尾结点为null，调用enq()插入；
+     * 2  阻塞队列的尾结点不为null，采用尾插入队（compareAndSetTail()）。
+     *
+     * 如果compareAndSetTail失败了怎么办？就会继续进入到enq()方法进行操作。
+     * 一般在CAS操作后，会继续进行自旋进行重试。因此可以判断：
+     * enq()方法有两个作用：
+     * 1. 处理当前阻塞队列尾结点为null时的入队操作；
+     * 2. 如果CAS尾插失败后，负责自旋进行尝试。
+     *
+     * 入队列之后，在阻塞队列中的节点会做什么事情来保证自己能够有机会获得
+     * 独占锁？这件事情就是acquireQueued()方法的事情了，进行排队获取锁。
      */
     private Node addWaiter(Node mode) {
         Node node = new Node(Thread.currentThread(), mode);
@@ -970,6 +983,12 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      * @return {@code true} if interrupted while waiting
      * 真正的挂起线程，然后被唤醒后去获取锁
+     *
+     * acquireQueued自旋过程中主要有两件事情：
+     * 1. 如果当前结点的前驱结点是头结点，并且能够获取到同步状态，
+     *    当前线程就能获得锁，该方法执行结束并返回；
+     * 2. 如果获取锁失败的话，先将头结点设置为SIGNAL状态，然后调用
+     *    LockSupprot.park()方法是当前线程挂起等待。
      */
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
@@ -1082,6 +1101,9 @@ public abstract class AbstractQueuedSynchronizer
     /**
      * Acquires in shared uninterruptible mode.
      * @param arg the acquire argument
+     * 退出条件是：当前结点的前驱结点是头结点，
+     * 并且tryAcquireShared(arg)返回值大于等于0
+     * 获取锁成功，才能返回
      */
     private void doAcquireShared(int arg) {
         final Node node = addWaiter(Node.SHARED);
