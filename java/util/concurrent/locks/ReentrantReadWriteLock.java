@@ -390,18 +390,28 @@ public class ReentrantReadWriteLock
              *    and set owner.
              */
             Thread current = Thread.currentThread();
+            // 获取写锁当前的同步状态
             int c = getState();
+            // 获取写锁获取的次数
             int w = exclusiveCount(c);
             if (c != 0) {
                 // (Note: if c != 0 and w == 0 then shared count != 0)
+                /**
+                 * 当读锁已被读线程获取或者当前线程不是已经获取写锁的线程
+                 * 当前线程获取写锁失败
+                 */
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
+                // 当前线程获取写锁，支持可重复加锁
                 setState(c + acquires);
                 return true;
             }
+            /**
+             * 写锁未被任何线程获取，当前线程可获取写锁
+             */
             if (writerShouldBlock() ||
                 !compareAndSetState(c, c + acquires))
                 return false;
