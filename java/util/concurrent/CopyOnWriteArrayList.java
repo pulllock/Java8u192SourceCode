@@ -88,6 +88,13 @@ import sun.misc.SharedSecrets;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
+ *
+ * 缺点：
+ *      1. 内存占用问题，CopyOnWrite的写时复制机制，在进行写的时候，内存里会
+ *         同时存在两个对象的内存，旧对象和新写入的对象。可能会造成频繁的minor GC
+ *         和major GC
+ *      2. 数据一致性问题，CopyOnWrite容器只能保证数据的最终一致性，不能保证
+ *         数据的实时一致性，如果希望写入的数据马上就能读到，需要慎用该容器。
  */
 public class CopyOnWriteArrayList<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
@@ -432,13 +439,22 @@ public class CopyOnWriteArrayList<E>
      * @return {@code true} (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
+        // 加锁，保证同一时刻只能有一个写线程
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 获取旧的数组
             Object[] elements = getArray();
             int len = elements.length;
+
+            /**
+             * 创建新数组，将旧的元素复制到新的数组
+             * 新数组长度是旧数组的长度加1
+             */
             Object[] newElements = Arrays.copyOf(elements, len + 1);
+            // 添加元素到新数组
             newElements[len] = e;
+            // 将旧数组引用指向新数组
             setArray(newElements);
             return true;
         } finally {
