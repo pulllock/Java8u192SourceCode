@@ -376,6 +376,8 @@ public abstract class AbstractQueuedSynchronizer
      * Scherer and Michael Scott, along with members of JSR-166
      * expert group, for helpful ideas, discussions, and critiques
      * on the design of this class.
+     * 同步队列中的节点用来保存获取同步状态失败的线程引用、等待状态、以及
+     * 前驱和后继节点。
      */
     static final class Node {
         /**
@@ -1233,6 +1235,8 @@ public abstract class AbstractQueuedSynchronizer
      *         thrown in a consistent fashion for synchronization to work
      *         correctly.
      * @throws UnsupportedOperationException if exclusive mode is not supported
+     * 独占式获取同步状态，实现该方法需要查询当前状态并判断同步状态是否符合预期，
+     * 然后进行CAS设置同步状态。
      */
     protected boolean tryAcquire(int arg) {
         throw new UnsupportedOperationException();
@@ -1259,6 +1263,7 @@ public abstract class AbstractQueuedSynchronizer
      *         thrown in a consistent fashion for synchronization to work
      *         correctly.
      * @throws UnsupportedOperationException if exclusive mode is not supported
+     * 独占式释放同步状态，等待获取同步状态的线程将有机会获取同步状态。
      */
     protected boolean tryRelease(int arg) {
         throw new UnsupportedOperationException();
@@ -1295,6 +1300,7 @@ public abstract class AbstractQueuedSynchronizer
      *         thrown in a consistent fashion for synchronization to work
      *         correctly.
      * @throws UnsupportedOperationException if shared mode is not supported
+     * 共享式的获取同步状态，返回大于等于0的值，表示获取成功，反之获取失败。
      */
     protected int tryAcquireShared(int arg) {
         throw new UnsupportedOperationException();
@@ -1320,6 +1326,7 @@ public abstract class AbstractQueuedSynchronizer
      *         thrown in a consistent fashion for synchronization to work
      *         correctly.
      * @throws UnsupportedOperationException if shared mode is not supported
+     * 共享式释放同步状态
      */
     protected boolean tryReleaseShared(int arg) {
         throw new UnsupportedOperationException();
@@ -1339,6 +1346,7 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if synchronization is held exclusively;
      *         {@code false} otherwise
      * @throws UnsupportedOperationException if conditions are not supported
+     * 当前同步器是否在独占模式下被线程占用，一般该方法表示是否被当前线程所独占。
      */
     protected boolean isHeldExclusively() {
         throw new UnsupportedOperationException();
@@ -1355,6 +1363,9 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument.  This value is conveyed to
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
+     * 独占式获取同步状态，如果当前线程获取同步状态成功，则由该方法返回，
+     * 否则会进入同步队列等待，该方法将会调用重写的tryAcquire方法。
+     *
      * 如果tryAcquire成功了，直接就结束了
      * 否则acquireQueued方法会将线程压到队列中
      */
@@ -1390,6 +1401,8 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
      * @throws InterruptedException if the current thread is interrupted
+     * 与acquire相同，但是该方法响应中断，当前线程未获取到同步状态而进入同步队列中，
+     * 如果当前线程被中断，则该方法会抛出InterruptedException并返回。
      */
     public final void acquireInterruptibly(int arg)
             throws InterruptedException {
@@ -1415,6 +1428,8 @@ public abstract class AbstractQueuedSynchronizer
      * @param nanosTimeout the maximum number of nanoseconds to wait
      * @return {@code true} if acquired; {@code false} if timed out
      * @throws InterruptedException if the current thread is interrupted
+     * 在acquireInterruptibly基础上增加了超时限制，如果当前线程在超时时间
+     * 内没有获取到同步状态，则返回false，如果获取到则返回true。
      */
     public final boolean tryAcquireNanos(int arg, long nanosTimeout)
             throws InterruptedException {
@@ -1433,6 +1448,8 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryRelease} but is otherwise uninterpreted and
      *        can represent anything you like.
      * @return the value returned from {@link #tryRelease}
+     * 独占式释放同步状态，该方法会在释放同步状态后，将同步队列中第一个
+     * 节点包含的线程唤醒。
      */
     public final boolean release(int arg) {
         /**
@@ -1457,6 +1474,8 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument.  This value is conveyed to
      *        {@link #tryAcquireShared} but is otherwise uninterpreted
      *        and can represent anything you like.
+     * 共享式的获取同步状态，如果当前线程未获取到同步状态，将会进入同步队列等待，
+     * 与独占获取的主要区别是同一时刻可以有多个线程获取到同步状态。
      */
     public final void acquireShared(int arg) {
         if (tryAcquireShared(arg) < 0)
@@ -1475,6 +1494,7 @@ public abstract class AbstractQueuedSynchronizer
      * otherwise uninterpreted and can represent anything
      * you like.
      * @throws InterruptedException if the current thread is interrupted
+     * 与acquireShared相同，但是该方法响应中断。
      */
     public final void acquireSharedInterruptibly(int arg)
             throws InterruptedException {
@@ -1503,6 +1523,7 @@ public abstract class AbstractQueuedSynchronizer
      * @param nanosTimeout the maximum number of nanoseconds to wait
      * @return {@code true} if acquired; {@code false} if timed out
      * @throws InterruptedException if the current thread is interrupted
+     * 在acquireSharedInterruptibly基础上增加了超时时间的限制。
      */
     public final boolean tryAcquireSharedNanos(int arg, long nanosTimeout)
             throws InterruptedException {
@@ -1520,6 +1541,7 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryReleaseShared} but is otherwise uninterpreted
      *        and can represent anything you like.
      * @return the value returned from {@link #tryReleaseShared}
+     * 共享式的释放同步状态
      */
     public final boolean releaseShared(int arg) {
         /**
@@ -1743,6 +1765,7 @@ public abstract class AbstractQueuedSynchronizer
      * more extensive monitoring facilities.
      *
      * @return the collection of threads
+     * 获取等待在同步队列上的线程集合。
      */
     public final Collection<Thread> getQueuedThreads() {
         ArrayList<Thread> list = new ArrayList<Thread>();
