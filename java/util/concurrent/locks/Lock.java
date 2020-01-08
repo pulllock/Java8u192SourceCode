@@ -163,6 +163,10 @@ import java.util.concurrent.TimeUnit;
  *
  * @since 1.5
  * @author Doug Lea
+ * Lock接口提供的synchronized关键字所不具备的主要特性：
+ * 1. 尝试非阻塞的获取锁。
+ * 2. 能够中断的获取锁。
+ * 3. 超时获取锁。
  */
 public interface Lock {
 
@@ -180,6 +184,7 @@ public interface Lock {
      * may throw an (unchecked) exception in such circumstances.  The
      * circumstances and the exception type must be documented by that
      * {@code Lock} implementation.
+     * 获取锁，调用该方法当前线程将会获取锁，当锁获得后，从该方法返回。
      */
     void lock();
 
@@ -228,6 +233,7 @@ public interface Lock {
      * @throws InterruptedException if the current thread is
      *         interrupted while acquiring the lock (and interruption
      *         of lock acquisition is supported)
+     * 可中断的获取锁，会响应中断，在锁的获取中可以中断当前线程。
      */
     void lockInterruptibly() throws InterruptedException;
 
@@ -257,6 +263,7 @@ public interface Lock {
      *
      * @return {@code true} if the lock was acquired and
      *         {@code false} otherwise
+     * 尝试非阻塞的获取锁，调用该方法后立刻返回，如果能获取成功返回true，否则返回false。
      */
     boolean tryLock();
 
@@ -317,6 +324,10 @@ public interface Lock {
      * @throws InterruptedException if the current thread is interrupted
      *         while acquiring the lock (and interruption of lock
      *         acquisition is supported)
+     * 超时的获取锁，当前线程在以下3种情况会返回：
+     * 1. 当前线程在超时时间内获得了锁。
+     * 2. 当前线程在超时时间内被中断。
+     * 3. 超时时间结束，返回false。
      */
     boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 
@@ -331,6 +342,7 @@ public interface Lock {
      * an (unchecked) exception if the restriction is violated.
      * Any restrictions and the exception
      * type must be documented by that {@code Lock} implementation.
+     * 释放锁
      */
     void unlock();
 
@@ -352,6 +364,8 @@ public interface Lock {
      * @return A new {@link Condition} instance for this {@code Lock} instance
      * @throws UnsupportedOperationException if this {@code Lock}
      *         implementation does not support conditions
+     * 获取等待通知组件，该组件和当前锁绑定，当前线程只有获得了锁，才能调用该组件的wait()方法，
+     * 调用后当前线程将释放锁。
      */
     Condition newCondition();
 }
