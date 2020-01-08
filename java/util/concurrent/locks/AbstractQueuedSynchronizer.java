@@ -395,18 +395,27 @@ public abstract class AbstractQueuedSynchronizer
          * 下面几个int常量是给waitStatus用的
          * waitStatus value to indicate thread has cancelled
          * 表示此线程取消了争抢这个锁
+         * 同步队列中等待的线程等待超时或者被中断，需要从同步队列中取消等待，
+         * 节点进入该状态后将不会在发生变化。
          */
         static final int CANCELLED =  1;
         /**
          * waitStatus value to indicate successor's thread needs unparking
          * 表示当前结点的后继结点对应的线程需要被唤醒
+         * 后继节点的状态处于等待，当前结点的线程如果释放了同步状态或者被取消，
+         * 将会通知后继节点，使后继节点的线程得以运行。
          */
         static final int SIGNAL    = -1;
-        /** waitStatus value to indicate thread is waiting on condition */
+        /**
+         * waitStatus value to indicate thread is waiting on condition
+         * 节点在等待队列中，节点线程等待在Condition上，当其他线程对Condition调用了
+         * signal()方法后，该节点会从等待队列中转移到同步队列中，加入到对同步状态的获取中。
+         */
         static final int CONDITION = -2;
         /**
          * waitStatus value to indicate the next acquireShared should
          * unconditionally propagate
+         * 表示下一次共享式同步状态获取将会无条件的被传播下去。
          */
         static final int PROPAGATE = -3;
 
@@ -445,6 +454,8 @@ public abstract class AbstractQueuedSynchronizer
          * (or when possible, unconditional volatile writes).
          * 取值为上面的1， -1， -2， -3 或者0
          * 大于0表示此线程取消了等待
+         *
+         * 初始状态为0
          */
         volatile int waitStatus;
 
@@ -459,7 +470,7 @@ public abstract class AbstractQueuedSynchronizer
          * cancelled thread never succeeds in acquiring, and a thread only
          * cancels itself, not any other node.
          * 阻塞队列双向链表
-         * 前驱结点
+         * 前驱结点，当节点加入同步队列时被设置
          */
         volatile Node prev;
 
@@ -498,6 +509,8 @@ public abstract class AbstractQueuedSynchronizer
          * mode.
          * 条件队列单向链表
          * 下一个结点
+         * 等待队列中的后继节点，如果当前结点是共享的，这个字段是一个SHARED常量，
+         * 也就是节点类型（独占和共享）和等待队列中的后继节点共用同一个字段。
          */
         Node nextWaiter;
 
