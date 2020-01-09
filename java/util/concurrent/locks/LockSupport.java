@@ -135,6 +135,7 @@ public class LockSupport {
      *
      * @param thread the thread to unpark, or {@code null}, in which case
      *        this operation has no effect
+     * 唤醒处于阻塞状态的线程
      */
     public static void unpark(Thread thread) {
         if (thread != null)
@@ -299,6 +300,8 @@ public class LockSupport {
      * method to return. Callers should re-check the conditions which caused
      * the thread to park in the first place. Callers may also determine,
      * for example, the interrupt status of the thread upon return.
+     * 阻塞当前线程
+     * 调用unpark()方法或者当前线程被中断，才能从park()方法返回
      */
     public static void park() {
         UNSAFE.park(false, 0L);
@@ -332,6 +335,7 @@ public class LockSupport {
      * upon return.
      *
      * @param nanos the maximum number of nanoseconds to wait
+     * 阻塞当前线程，最长不超过指定的nanos纳秒
      */
     public static void parkNanos(long nanos) {
         if (nanos > 0)
@@ -367,6 +371,7 @@ public class LockSupport {
      *
      * @param deadline the absolute time, in milliseconds from the Epoch,
      *        to wait until
+     * 阻塞当前线程，直到deadline时间
      */
     public static void parkUntil(long deadline) {
         UNSAFE.park(true, deadline);
