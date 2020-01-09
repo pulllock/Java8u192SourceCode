@@ -227,6 +227,10 @@ public interface Condition {
      *
      * @throws InterruptedException if the current thread is interrupted
      *         (and interruption of thread suspension is supported)
+     * 当前线程进入等待状态直到被通知signal或中断，当前线程将进入运行状态且从await方法返回的情况包括：
+     * 其他线程调用该Condition的signal或signalAll方法，而当前线程被选中唤醒。
+     * 其他线程中断当前线程。
+     * 如果当前线程从await方法返回，表明该线程已经获取了Condition对象所对应的锁。
      */
     void await() throws InterruptedException;
 
@@ -263,6 +267,8 @@ public interface Condition {
      * the case and if not, how to respond. Typically, an exception will be
      * thrown (such as {@link IllegalMonitorStateException}) and the
      * implementation must document that fact.
+     * 当前线程进入等待状态直到被通知
+     * 对中断不敏感
      */
     void awaitUninterruptibly();
 
@@ -354,6 +360,9 @@ public interface Condition {
      *         indicates that no time remains.
      * @throws InterruptedException if the current thread is interrupted
      *         (and interruption of thread suspension is supported)
+     * 当前线程进入等待状态直到被通知、中断或超时。
+     * 返回值表示剩余的时间，如果再nanosTimeout之前被唤醒，返回值就是nanosTimeout-实际耗时。
+     * 返回值是0或者负数，表示已经超时了。
      */
     long awaitNanos(long nanosTimeout) throws InterruptedException;
 
@@ -446,6 +455,9 @@ public interface Condition {
      *         {@code true}
      * @throws InterruptedException if the current thread is interrupted
      *         (and interruption of thread suspension is supported)
+     * 当前线程进入等待状态直到被通知、中断或者到某个时间。
+     * 如果没有到指定时间就被通知，则返回true；
+     * 否则到了指定时间，返回false。
      */
     boolean awaitUntil(Date deadline) throws InterruptedException;
 
@@ -464,6 +476,7 @@ public interface Condition {
      * document this precondition and any actions taken if the lock is
      * not held. Typically, an exception such as {@link
      * IllegalMonitorStateException} will be thrown.
+     * 唤醒一个等待在Condition上的线程，该线程从等待方法返回前必须获得与Condition相关的锁。
      */
     void signal();
 
@@ -482,6 +495,7 @@ public interface Condition {
      * document this precondition and any actions taken if the lock is
      * not held. Typically, an exception such as {@link
      * IllegalMonitorStateException} will be thrown.
+     * 唤醒所有等待在Condition上的线程。
      */
     void signalAll();
 }
