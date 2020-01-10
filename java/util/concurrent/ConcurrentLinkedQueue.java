@@ -246,6 +246,16 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * - it is permitted for tail to lag behind head, that is, for tail
      *   to not be reachable from head!
      * - tail.next may or may not be self-pointing to tail.
+     * 尾节点，尾节点不一定是链表的最后一个节点
+     *
+     * tail并不总是指向队列的尾节点
+     *
+     * 在cas添加一个新的节点后可以立即将尾节点也cas更新一下，让tail始终都是指向尾节点，但是为什么没有这么做呢？
+     *
+     * 如果有大量的入队操作，每次都需要cas方式来更新tail指向的节点，当数据量很大的时候对性能影响很大。
+     * 所以offer中的实现，减少cas操作来提高大数量的入队操作的性能：每间隔一次进行cas操作更新tail指向尾节点。
+     * （但是距离越来越长带来的负面效果就是每次入队时定位尾节点的时间就越长，因为循环体需要多循环一次来定位
+     * 出尾节点）
      */
     private transient volatile Node<E> tail;
 
@@ -325,16 +335,33 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      */
     public boolean offer(E e) {
         checkNotNull(e);
+        // 构造入队节点
         final Node<E> newNode = new Node<E>(e);
 
+        /**
+         * 循环，如果入队不成功，反复入队
+         * t指向tail节点的引用
+         * p用来表示队列的尾结点，默认情况下等于tail节点
+         */
         for (Node<E> t = tail, p = t;;) {
+            // 获取p的下一个节点
             Node<E> q = p.next;
+            // q为null，说明p是尾节点
             if (q == null) {
                 // p is last node
+                // 设置p节点的next节点为入队节点
                 if (p.casNext(null, newNode)) {
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
                     // and for newNode to become "live".
+                    /**
+                     * cas执行成功之后，p节点（原链表的tail节点）的next是newNode节点，
+                     * 这里就需要设置tail节点为newNode节点
+                     *
+                     * 如果p不等于t，说明有其他线程已经更新了tail节点，
+                     * p取到的可能是t后面的值，把tail原子更新为newNode
+                     *
+                     */
                     if (p != t) // hop two nodes at a time
                         casTail(t, newNode);  // Failure is OK.
                     return true;
@@ -346,9 +373,15 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                 // will also be off-list, in which case we need to
                 // jump to head, from which all live nodes are always
                 // reachable.  Else the new tail is a better bet.
+            /**
+             * p == q
+             * 多线程操作，可能会有别的线程使用poll方法移除元素，
+             * head的next就会变成head，需要找到新的head
+             */
                 p = (t != (t = tail)) ? t : head;
             else
                 // Check for tail updates after two hops.
+                // 查询尾节点
                 p = (p != t && t != (t = tail)) ? t : q;
         }
     }
