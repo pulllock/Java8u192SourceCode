@@ -66,11 +66,23 @@ import java.util.*;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
+ *
+ * 延时队列，是一个阻塞队列，内部使用PriorityQueue来存储元素
+ * 元素必须实现Delayed接口，实现方法getDelay和compareTo
+ * getDelay方法用来返回元素到过期时间还剩余多少时间
+ * compareTo方法用来确定元素在PriorityQueue中的顺序
  */
 public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     implements BlockingQueue<E> {
 
+    /**
+     * 重入锁，保证队列操作的安全
+     */
     private final transient ReentrantLock lock = new ReentrantLock();
+
+    /**
+     * 优先级队列，用来存储元素，可以根据我们在compareTo方法中指定的算法来排序我们的元素
+     */
     private final PriorityQueue<E> q = new PriorityQueue<E>();
 
     /**
@@ -88,6 +100,10 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * waiting thread, but not necessarily the current leader, is
      * signalled.  So waiting threads must be prepared to acquire
      * and lose leadership while waiting.
+     * leader指向第一个从队列获取元素时阻塞等待的线程，用来优化内部阻塞通知，
+     * 减少其他线程不必要的等待时间
+     *
+     * 采用的是Leader-Follower模式
      */
     private Thread leader = null;
 
@@ -95,6 +111,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * Condition signalled when a newer element becomes available
      * at the head of the queue or a new thread may need to
      * become leader.
+     * 队列头部有可用新元素或者新线程需要成为新的leader时需要被通知
      */
     private final Condition available = lock.newCondition();
 
@@ -134,12 +151,18 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
+        // 添加元素进队列，先加锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 使用优先级队列，添加元素进队列，优先级队列会对元素按照指定规则排序
             q.offer(e);
+            // 添加完元素后，获取优先级队列的队头元素
+            // 如果刚添加的元素在队列头部，说明刚添加的元素就是要到期的元素
             if (q.peek() == e) {
+                // leader置为null
                 leader = null;
+                // 唤醒阻塞在等待队列的线程
                 available.signal();
             }
             return true;
@@ -202,24 +225,36 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
+        // 出队列前先加锁
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
             for (;;) {
+                // 获取队列头的元素
                 E first = q.peek();
+                //队列中没有元素，
                 if (first == null)
+                    // 当前线程等待
                     available.await();
                 else {
+                    // 获取到了队列头元素
+                    // 查看下我们定义元素时设置的延时时间规则，看是否到期
                     long delay = first.getDelay(NANOSECONDS);
+                    // 队列头元素已经过期，直接返回队列头元素
                     if (delay <= 0)
                         return q.poll();
                     first = null; // don't retain ref while waiting
+                    // 走到这里说明队列中有元素，但都还没到过期时间
+                    // 如果leader存在，说明有其他的线程已经调用了take获取
                     if (leader != null)
+                        // 当前线程挂起等待
                         available.await();
                     else {
+                        // leader为空，将当前线程变成leader
                         Thread thisThread = Thread.currentThread();
                         leader = thisThread;
                         try {
+                            // 上面已经有了剩余的时间，当前线程就可以直接挂起等待这剩余的一段时间
                             available.awaitNanos(delay);
                         } finally {
                             if (leader == thisThread)
@@ -229,6 +264,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
                 }
             }
         } finally {
+            // leader处理完，返回了需要的元素，这里要唤醒其他的follower
             if (leader == null && q.peek() != null)
                 available.signal();
             lock.unlock();
