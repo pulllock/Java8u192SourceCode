@@ -31,6 +31,7 @@ package java.lang.reflect;
  * array types, type variables and primitive types.
  *
  * @since 1.5
+ * Type是Java语言中所有类型的父接口
  */
 public interface Type {
     /**
@@ -41,6 +42,7 @@ public interface Type {
      *
      * @return a string describing this type
      * @since 1.8
+     * 返回这个类型的描述，包括类型的参数描述
      */
     default String getTypeName() {
         return toString();

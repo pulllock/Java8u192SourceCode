@@ -47,12 +47,15 @@ package java.lang.reflect;
  * underlying type variable.
  *
  * @since 1.5
+ * 类型变量，比如List<T>的T
  */
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
      * Returns an array of {@code Type} objects representing the
      * upper bound(s) of this type variable.  Note that if no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
+     * 返回此类型参数的上界列表
+     * 如果没有上界，则返回Object
      *
      * <p>For each upper bound B: <ul> <li>if B is a parameterized
      * type or a type variable, it is created, (see {@link
@@ -77,6 +80,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * @return the generic declaration declared for this type variable.
      *
      * @since 1.5
+     * 类型参数声明时候的载体，比如class Test<T, V>，V的载体就是Test类
      */
     D getGenericDeclaration();
 
@@ -97,6 +101,7 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      *
      * @return an array of objects representing the upper bounds of the type variable
      * @since 1.8
+     * 如果这个泛型参数类型的上界使用注解标注，这里可以拿到相应的注解
      */
      AnnotatedType[] getAnnotatedBounds();
 }

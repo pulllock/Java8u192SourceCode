@@ -43,6 +43,7 @@ package java.lang.reflect;
  * same generic type declaration and have equal type parameters.
  *
  * @since 1.5
+ * 参数化类型，带参数的类型，带<>的类型，比如List<String>
  */
 public interface ParameterizedType extends Type {
     /**
@@ -61,6 +62,7 @@ public interface ParameterizedType extends Type {
      *     actual type parameters refer to a parameterized type that cannot
      *     be instantiated for any reason
      * @since 1.5
+     * 获取参数类型<>里面的值
      */
     Type[] getActualTypeArguments();
 
@@ -71,6 +73,7 @@ public interface ParameterizedType extends Type {
      * @return the {@code Type} object representing the class or interface
      *     that declared this type
      * @since 1.5
+     * 获取参数类型<>的载体，也就是<>前面的值，比如Map<K, V>，获取到的就是Map
      */
     Type getRawType();
 
@@ -90,6 +93,7 @@ public interface ParameterizedType extends Type {
      *     refers to a parameterized type that cannot be instantiated
      *     for any reason
      * @since 1.5
+     * 获取所属类的类型，比如Map中有一个内部类Entry，在Map.Entry<K, V>上调用这个方法可以获得类型为：Map
      */
     Type getOwnerType();
 }

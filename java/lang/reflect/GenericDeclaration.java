@@ -27,6 +27,9 @@ package java.lang.reflect;
 
 /**
  * A common interface for all entities that declare type variables.
+ * 所有可以申明泛型参数的entities，都必须要实现这个接口
+ * Method、Constructor、Class都实现了该接口
+ * 也就是只能在方法、构造方法、类型（类和接口）这三个位置声明泛型参数
  *
  * @since 1.5
  */

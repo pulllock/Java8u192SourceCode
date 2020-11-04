@@ -30,12 +30,15 @@ package java.lang.reflect;
  * {@code ?}, {@code ? extends Number}, or {@code ? super Integer}.
  *
  * @since 1.5
+ * 通配符类型，带有?的泛型参数，比如List<?>中的?
  */
 public interface WildcardType extends Type {
     /**
      * Returns an array of {@code Type} objects representing the  upper
      * bound(s) of this type variable.  Note that if no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
+     *
+     * 获取泛型参数的上界，如果没有上界，就返回Object
      *
      * <p>For each upper bound B :
      * <ul>
@@ -60,6 +63,8 @@ public interface WildcardType extends Type {
      * lower bound(s) of this type variable.  Note that if no lower bound is
      * explicitly declared, the lower bound is the type of {@code null}.
      * In this case, a zero length array is returned.
+     *
+     * 返回泛型参数的下界，如果没有下界，返回null
      *
      * <p>For each lower bound B :
      * <ul>

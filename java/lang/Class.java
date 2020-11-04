@@ -115,6 +115,7 @@ import sun.reflect.misc.ReflectUtil;
  * @author  unascribed
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   JDK1.0
+ * 每个类在JVM中都对应一个Class对象，可以在运行时从这个Class对象中获取到类型所有信息
  */
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
