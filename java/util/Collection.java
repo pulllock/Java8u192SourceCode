@@ -139,6 +139,7 @@ import java.util.stream.StreamSupport;
  * @see     Arrays
  * @see     AbstractCollection
  * @since 1.2
+ * 集合，可以参考数学中的集合的概念，这里作为Java中所有的集、列表、字典等的抽象的父接口
  */
 
 public interface Collection<E> extends Iterable<E> {
