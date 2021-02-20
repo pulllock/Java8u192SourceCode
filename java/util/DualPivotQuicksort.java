@@ -68,12 +68,14 @@ final class DualPivotQuicksort {
     /**
      * If the length of an array to be sorted is less than this
      * constant, Quicksort is used in preference to merge sort.
+     * 数组长度小于286的时候，使用快排
      */
     private static final int QUICKSORT_THRESHOLD = 286;
 
     /**
      * If the length of an array to be sorted is less than this
      * constant, insertion sort is used in preference to Quicksort.
+     * 如果数组长度小于47，使用插入排序
      */
     private static final int INSERTION_SORT_THRESHOLD = 47;
 
@@ -107,6 +109,7 @@ final class DualPivotQuicksort {
     static void sort(int[] a, int left, int right,
                      int[] work, int workBase, int workLen) {
         // Use Quicksort on small arrays
+        // 数组长度小于286，使用快排
         if (right - left < QUICKSORT_THRESHOLD) {
             sort(a, left, right, true);
             return;
@@ -215,26 +218,37 @@ final class DualPivotQuicksort {
         int length = right - left + 1;
 
         // Use insertion sort on tiny arrays
+        // 如果数组长度小于47，使用插入排序
         if (length < INSERTION_SORT_THRESHOLD) {
             if (leftmost) {
                 /*
                  * Traditional (without sentinel) insertion sort,
                  * optimized for server VM, is used in case of
                  * the leftmost part.
+                 * 直接插入排序
+                 * 从左到右，挨个元素插入左边已排好序的序列中
                  */
                 for (int i = left, j = i; i < right; j = ++i) {
+                    // 右边无序序列中的待排序的元素
                     int ai = a[i + 1];
+                    // 右边元素比左边元素小
                     while (ai < a[j]) {
+                        // 需要把左边元素往右移动一位
                         a[j + 1] = a[j];
+                        // 左边元素往右移动一位后，j往左边移动，判断下是否已到最左边，如果到了最左边就结束
                         if (j-- == left) {
                             break;
                         }
                     }
+                    // 到这里找到了插入位置，进行插入
                     a[j + 1] = ai;
                 }
-            } else {
+            }
+            // 成对插入排序，每次迭代过程中同时完成两个元素的插入
+            else {
                 /*
                  * Skip the longest ascending sequence.
+                 * 序列如果是从小到大排列好的，无需进行排序，跳过
                  */
                 do {
                     if (left >= right) {
@@ -249,23 +263,37 @@ final class DualPivotQuicksort {
                  * the more optimized algorithm, so called pair insertion
                  * sort, which is faster (in the context of Quicksort)
                  * than traditional implementation of insertion sort.
+                 * 每次迭代取待排序序列中相邻的两个元素
                  */
                 for (int k = left; ++left <= right; k = ++left) {
+                    // a1第一个待排序元素，a2第二个待排序元素
                     int a1 = a[k], a2 = a[left];
 
+                    // 确保a1是大于等于a2的，如果不是的话，交换a1和a2的值
                     if (a1 < a2) {
                         a2 = a1; a1 = a[left];
                     }
+
+                    // 到这里，a1一定是大于等于a2的
+                    // 先把a1进行插入排序
                     while (a1 < a[--k]) {
+                        // a1左边还有个a2，所以这里是k+2，可以和直接插入排序进行对比下
                         a[k + 2] = a[k];
                     }
+                    // a1找到了位置，插入a1
                     a[++k + 1] = a1;
 
+                    // a1插入位置找到之后，由于a2比a1小，所以a2肯定在a1左边，直接从a1左边开始继续找a2插入的位置，
+                    // 这样a1右边移动过的那些元素，a2无需重新来移动一遍
                     while (a2 < a[--k]) {
                         a[k + 1] = a[k];
                     }
+                    // a2找到位置，插入a2
                     a[k + 1] = a2;
                 }
+
+                // 下面逻辑是为了处理数组序列为奇数时的特殊情况，最后一个元素没有被排序，
+                // 只需要走一遍直接插入排序就可以完成
                 int last = a[right];
 
                 while (last < a[--right]) {
