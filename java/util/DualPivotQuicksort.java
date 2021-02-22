@@ -43,6 +43,7 @@ package java.util;
  *
  * @version 2011.02.11 m765.827.12i:5\7pm
  * @since 1.7
+ * 双轴快排
  */
 final class DualPivotQuicksort {
 
@@ -118,21 +119,29 @@ final class DualPivotQuicksort {
         /*
          * Index run[i] is the start of i-th run
          * (ascending or descending sequence).
+         * run[i]是第i个有序序列的开始位置（升序或降序）
          */
         int[] run = new int[MAX_RUN_COUNT + 1];
         int count = 0; run[0] = left;
 
         // Check if the array is nearly sorted
         for (int k = left; k < right; run[count] = k) {
+            // 升序
             if (a[k] < a[k + 1]) { // ascending
                 while (++k <= right && a[k - 1] <= a[k]);
-            } else if (a[k] > a[k + 1]) { // descending
+            }
+            // 降序
+            else if (a[k] > a[k + 1]) { // descending
                 while (++k <= right && a[k - 1] >= a[k]);
+                // 将降序的序列变成升序序列
                 for (int lo = run[count] - 1, hi = k; ++lo < --hi; ) {
                     int t = a[lo]; a[lo] = a[hi]; a[hi] = t;
                 }
-            } else { // equal
+            }
+            // 相等
+            else { // equal
                 for (int m = MAX_RUN_LENGTH; ++k <= right && a[k - 1] == a[k]; ) {
+                    // 有连续33个相等元素，直接使用快排
                     if (--m == 0) {
                         sort(a, left, right, true);
                         return;
@@ -143,6 +152,7 @@ final class DualPivotQuicksort {
             /*
              * The array is not highly structured,
              * use Quicksort instead of merge sort.
+             * 有序序列个数超过了67个，使用快排
              */
             if (++count == MAX_RUN_COUNT) {
                 sort(a, left, right, true);
@@ -152,9 +162,12 @@ final class DualPivotQuicksort {
 
         // Check special cases
         // Implementation note: variable "right" is increased by 1.
+        // 最后一个有序序列只有一个元素，并且是最后一个元素
         if (run[count] == right++) { // The last run contains one element
             run[++count] = right;
-        } else if (count == 1) { // The array is already sorted
+        }
+        // 整个数组中只有一个有序序列，直接就是有序的，无需排序
+        else if (count == 1) { // The array is already sorted
             return;
         }
 
