@@ -34,6 +34,11 @@ package java.util;
  * runs O(n log n) time (worst case).  In the worst case, this sort requires
  * temporary storage space for n/2 object references; in the best case,
  * it requires only a small constant amount of space.
+ * TimSort是一种稳定的，自适应的，迭代的合并排序，
+ * 如果数据部分有序，运行时所需的比较少于nlg(n)，
+ * 而在随机数据的数组上运行时，其性能可与传统的合并排序相比。
+ * TimSort是稳定的，在最坏的情况下时间复杂度是O(n log n)。
+ * 最坏情况下需要的空间是n / 2，最好情况下只需要一个很小的临时空间
  *
  * This implementation was adapted from Tim Peters's list sort for
  * Python, which is described in detail here:
@@ -58,12 +63,17 @@ package java.util;
  * TimSort. Small arrays are sorted in place, using a binary insertion sort.
  *
  * @author Josh Bloch
+ * TimSort结合了归并排序和插入排序，利用了现实中大多数数据通常有部分是已经排序好的这一情况，
+ * 对归并排序进行了优化。
+ *
+ * 参考：https://sikasjc.github.io/2018/07/25/timsort/
  */
 class TimSort<T> {
     /**
      * This is the minimum sized sequence that will be merged.  Shorter
      * sequences will be lengthened by calling binarySort.  If the entire
      * array is less than this length, no merges will be performed.
+     * 长度小于32的直接使用插入排序（二分插入排序），长度大于32的则使用归并排序。
      *
      * This constant should be a power of two.  It was 64 in Tim Peter's C
      * implementation, but 32 was empirically determined to work better in
@@ -81,6 +91,7 @@ class TimSort<T> {
 
     /**
      * The array being sorted.
+     * 存储待排序数据的数组
      */
     private final T[] a;
 
