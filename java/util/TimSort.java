@@ -66,7 +66,10 @@ package java.util;
  * TimSort结合了归并排序和插入排序，利用了现实中大多数数据通常有部分是已经排序好的这一情况，
  * 对归并排序进行了优化。
  *
- * 参考：https://sikasjc.github.io/2018/07/25/timsort/
+ * 已经排序好的序列称为run，也可认为是一个"分区"。排序的时候，将元素放到不同的run中，同时
+ * 还会将不同的run进行合并，直到排序结束。
+ *
+ * TimSort大概思想是：使用插入排序将小的run扩充为大的run，再使用归并排序将run进行合并。
  */
 class TimSort<T> {
     /**
@@ -209,26 +212,34 @@ class TimSort<T> {
      * any necessary array bounds checks and expanding parameters into
      * the required forms.
      *
-     * @param a the array to be sorted
-     * @param lo the index of the first element, inclusive, to be sorted
-     * @param hi the index of the last element, exclusive, to be sorted
-     * @param c the comparator to use
-     * @param work a workspace array (slice)
+     * @param a the array to be sorted 待排序的数组
+     * @param lo the index of the first element, inclusive, to be sorted 待排序的序列的开始元素位置
+     * @param hi the index of the last element, exclusive, to be sorted 待排序的序列的结束元素位置
+     * @param c the comparator to use 比较器
+     * @param work a workspace array (slice) 临时数组
      * @param workBase origin of usable space in work array
      * @param workLen usable size of work array
      * @since 1.8
+     * 将指定的序列进行排序
      */
     static <T> void sort(T[] a, int lo, int hi, Comparator<? super T> c,
                          T[] work, int workBase, int workLen) {
         assert c != null && a != null && lo >= 0 && lo <= hi && hi <= a.length;
 
+        // 序列中元素个数
         int nRemaining  = hi - lo;
+        // 序列中包含0个或者1个元素，直接返回，因为这都是已经排好序的
         if (nRemaining < 2)
             return;  // Arrays of size 0 and 1 are always sorted
 
         // If array is small, do a "mini-TimSort" with no merges
+        // 元素个数比较小的时候使用二分插入排序，默认是小于32，python中默认是64
         if (nRemaining < MIN_MERGE) {
+            // 统计lo和hi之间的最长的升序序列，initRunLen就是最长升序序列的长度
+            // 统计完后，下面二分插入排序就可以直接跳过前面升序的部分，从后面未排序
+            // 的位置开始进行排序，减少排序数据量
             int initRunLen = countRunAndMakeAscending(a, lo, hi, c);
+            // 二分插入排序
             binarySort(a, lo, hi, lo + initRunLen, c);
             return;
         }
@@ -239,30 +250,44 @@ class TimSort<T> {
          * to maintain stack invariant.
          */
         TimSort<T> ts = new TimSort<>(a, c, work, workBase, workLen);
+        // 选取run的最小长度
         int minRun = minRunLength(nRemaining);
         do {
             // Identify next run
+            // 统计lo和hi之间的最长的升序序列，initRunLen就是最长升序序列的长度
+            // 这里操作完之后，lo和hi之间前一部分的序列是个升序序列
             int runLen = countRunAndMakeAscending(a, lo, hi, c);
 
             // If run is short, extend to min(minRun, nRemaining)
+            // 如果lo和hi之间的最长的升序序列比minRun还小，
+            // 需要将lo和hi之间的升序序列进行扩充，扩充后的run的长度是minRun或者是序列长度
             if (runLen < minRun) {
                 int force = nRemaining <= minRun ? nRemaining : minRun;
+                // 由于lo和hi之间升序序列比minRun小，所以需要把后半部分未排序的序列中的元素扩充到run中
+                // 二分插入排序
                 binarySort(a, lo, lo + force, lo + runLen, c);
                 runLen = force;
             }
 
             // Push run onto pending-run stack, and maybe merge
+            // 将一个run压入栈中
             ts.pushRun(lo, runLen);
+            // 检查是不是需要合并run
             ts.mergeCollapse();
 
             // Advance to find next run
+            // 继续往左边找下一个run
+            // lo的位置变为上一个run长度后面的索引
             lo += runLen;
+            // 剩余元素是总的减去上一个run长度
             nRemaining -= runLen;
         } while (nRemaining != 0);
 
         // Merge all remaining runs to complete sort
         assert lo == hi;
+        // 检查是不是需要合并run
         ts.mergeForceCollapse();
+        // 最终合并完所有run后，只剩下一个run
         assert ts.stackSize == 1;
     }
 
@@ -283,6 +308,8 @@ class TimSort<T> {
      * @param start the index of the first element in the range that is
      *        not already known to be sorted ({@code lo <= start <= hi})
      * @param c comparator to used for the sort
+     * 二分插入排序
+     * lo到start之间的元素是排好序的，这里排序直接从start位置开始
      */
     @SuppressWarnings("fallthrough")
     private static <T> void binarySort(T[] a, int lo, int hi, int start,
@@ -290,11 +317,15 @@ class TimSort<T> {
         assert lo <= start && start <= hi;
         if (start == lo)
             start++;
+        // 需要排序的位置是start到hi
         for ( ; start < hi; start++) {
+            // 选取第一个未排序的元素
             T pivot = a[start];
 
             // Set left (and right) to the index where a[start] (pivot) belongs
+            // 已排序序列的最左边元素索引
             int left = lo;
+            // 未排序序列的最左边元素索引
             int right = start;
             assert left <= right;
             /*
@@ -304,11 +335,14 @@ class TimSort<T> {
              */
             while (left < right) {
                 int mid = (left + right) >>> 1;
+                // 未排序元素pivot比a[mid]小，说明在左边的序列中
                 if (c.compare(pivot, a[mid]) < 0)
                     right = mid;
                 else
+                    // 说明未排序元素pivot在右边的序列中
                     left = mid + 1;
             }
+            // 循环完后，left == right，找到了pivot的位置位left
             assert left == right;
 
             /*
@@ -317,15 +351,22 @@ class TimSort<T> {
              * that if there are elements equal to pivot, left points to the
              * first slot after them -- that's why this sort is stable.
              * Slide elements over to make room for pivot.
+             * pivot >= [lo, left) && pivot < [left, start)
+             * 所以pivot的位置就是left
+             * 需要将[left, start)的元素整体向右移动一位
+             * n就是要移动的元素个数
              */
             int n = start - left;  // The number of elements to move
             // Switch is just an optimization for arraycopy in default case
+            // 1个元素或者是2个元素需要移动，直接移动元素，无需调用System.arraycopy
+            // 这里的switch用的很6666666
             switch (n) {
                 case 2:  a[left + 2] = a[left + 1];
                 case 1:  a[left + 1] = a[left];
                          break;
                 default: System.arraycopy(a, left, a, left + 1, n);
             }
+            // 元素移动完后，将pivot放到left位置
             a[left] = pivot;
         }
     }
@@ -348,30 +389,41 @@ class TimSort<T> {
      * reverse a descending sequence without violating stability.
      *
      * @param a the array in which a run is to be counted and possibly reversed
-     * @param lo index of the first element in the run
+     * @param lo index of the first element in the run run中的第一个元素位置
      * @param hi index after the last element that may be contained in the run.
-              It is required that {@code lo < hi}.
+              It is required that {@code lo < hi}. run中最后一个元素的后面一个元素的位置
      * @param c the comparator to used for the sort
      * @return  the length of the run beginning at the specified position in
      *          the specified array
+     * 返回一个升序的run的长度，如果序列是降序，会将序列进行翻转成升序
      */
     private static <T> int countRunAndMakeAscending(T[] a, int lo, int hi,
                                                     Comparator<? super T> c) {
         assert lo < hi;
+        // 一个run后面的一个元素的索引
         int runHi = lo + 1;
+        // 说明序列中只有两个元素，升序序列个数为1
         if (runHi == hi)
             return 1;
 
         // Find end of run, and reverse range if descending
+        // 开头两个元素对比，a[low] > a[runHi] 认为是降序
         if (c.compare(a[runHi++], a[lo]) < 0) { // Descending
+            // 降序的序列，一直找到不是降序为止
             while (runHi < hi && c.compare(a[runHi], a[runHi - 1]) < 0)
                 runHi++;
+            // 从low一直到runHi的元素都是降序，需要反转成升序
             reverseRange(a, lo, runHi);
-        } else {                              // Ascending
+        }
+        // 开头两个元素对比后，认为是升序
+        else {                              // Ascending
+            // 升序的序列，一直找到不是升序为止
             while (runHi < hi && c.compare(a[runHi], a[runHi - 1]) >= 0)
                 runHi++;
+            // 循环完后从low到runHi的元素序列是升序
         }
 
+        // 这里是升序序列中的个数
         return runHi - lo;
     }
 
@@ -381,6 +433,7 @@ class TimSort<T> {
      * @param a the array in which a range is to be reversed
      * @param lo the index of the first element in the range to be reversed
      * @param hi the index after the last element in the range to be reversed
+     * 将数组进行逆序排列，分别从头尾开始交换元素位置
      */
     private static void reverseRange(Object[] a, int lo, int hi) {
         hi--;
@@ -407,6 +460,10 @@ class TimSort<T> {
      *
      * @param n the length of the array to be sorted
      * @return the length of the minimum run to be merged
+     * 这里是根据输入的n获取最小的run长度
+     * 如果n小于32，则run长度为n
+     * 如果n大于等于32，并且n是2的幂，则返回n/2
+     * 如果n大于等于32，n不是2的幂，则选择一个k，k满足：MIN_MERGE/2 <= k <= MIN_MERGE
      */
     private static int minRunLength(int n) {
         assert n >= 0;
@@ -440,15 +497,27 @@ class TimSort<T> {
      * This method is called each time a new run is pushed onto the stack,
      * so the invariants are guaranteed to hold for i < stackSize upon
      * entry to the method.
+     * 假设栈顶三个run的元素个数依次是C、B、A
+     * 需要满足如下条件：
+     * A > B + C
+     * B > C
+     * 如果不满足这样的条件，需要将相邻两个run合并，一直到满足条件
      */
     private void mergeCollapse() {
         while (stackSize > 1) {
+            // n是C、B、A中B的索引的位置
             int n = stackSize - 2;
+            // A <= B + C
             if (n > 0 && runLen[n-1] <= runLen[n] + runLen[n+1]) {
+                // A < C
                 if (runLen[n - 1] < runLen[n + 1])
                     n--;
+                // 如果 A < C 则合并A、B，如果A > C则合并B、C
                 mergeAt(n);
-            } else if (runLen[n] <= runLen[n + 1]) {
+            }
+            // B <= C
+            else if (runLen[n] <= runLen[n + 1]) {
+                // 合并B、C
                 mergeAt(n);
             } else {
                 break; // Invariant is established
