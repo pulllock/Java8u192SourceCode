@@ -285,7 +285,7 @@ class TimSort<T> {
 
         // Merge all remaining runs to complete sort
         assert lo == hi;
-        // 检查是不是需要合并run
+        // 最后合并run
         ts.mergeForceCollapse();
         // 最终合并完所有run后，只剩下一个run
         assert ts.stackSize == 1;
@@ -544,17 +544,24 @@ class TimSort<T> {
      * i must be equal to stackSize-2 or stackSize-3.
      *
      * @param i stack index of the first of the two runs to merge
+     * 合并两个run，要合并的两个run的索引是i和i+1
      */
     private void mergeAt(int i) {
         assert stackSize >= 2;
         assert i >= 0;
+        // 合并的索引位置要么是栈顶第2个元素，要么是栈顶第3个元素
         assert i == stackSize - 2 || i == stackSize - 3;
 
+        // 栈里i位置处的run对应在待排序序列中的索引位置为base1
         int base1 = runBase[i];
+        // 栈里i位置处的run的长度
         int len1 = runLen[i];
+        // 栈里i+1位置处的run对应在待排序序列中的索引位置为base2
         int base2 = runBase[i + 1];
+        // 栈里i+1位置处的run的长度
         int len2 = runLen[i + 1];
         assert len1 > 0 && len2 > 0;
+        // 两个run在待排序序列中位置是相邻的
         assert base1 + len1 == base2;
 
         /*
@@ -562,27 +569,37 @@ class TimSort<T> {
          * run now, also slide over the last run (which isn't involved
          * in this merge).  The current run (i+1) goes away in any case.
          */
+        // i和i+1处的两个run合并后，还放到i位置，长度是两个run的和
         runLen[i] = len1 + len2;
+        // i是栈顶第三个run，i和i+1合并后变成i，则i+2应该变成i+1
         if (i == stackSize - 3) {
             runBase[i + 1] = runBase[i + 2];
             runLen[i + 1] = runLen[i + 2];
         }
+        // 两个run合并后，栈的大小减少1
         stackSize--;
 
         /*
          * Find where the first element of run2 goes in run1. Prior elements
          * in run1 can be ignored (because they're already in place).
+         * i位置处是run1，在左边（下边），i+1位置处是run2，在右边（上边）
+         * 这里是看下run2的首元素可以放到run1的哪个位置，这样有可能让run1左边的部分数据不需要移动
+         * k是run1的某个索引位置
          */
         int k = gallopRight(a[base2], a, base1, len1, 0, c);
         assert k >= 0;
+        // run1的前面部分元素无需进行比较，从base1+k之后开始进行比较
         base1 += k;
+        // run1中待比较的长度也要变化
         len1 -= k;
+        // run2第一个元素都比run1大，两个run直接合并一起就是排好序的
         if (len1 == 0)
             return;
 
         /*
          * Find where the last element of run1 goes in run2. Subsequent elements
          * in run2 can be ignored (because they're already in place).
+         * 看下run1的最后一个元素可以插入到run2的什么位置，这样的话run2后面的元素就不需要参与归并了
          */
         len2 = gallopLeft(a[base1 + len1 - 1], a, base2, len2, len2 - 1, c);
         assert len2 >= 0;
@@ -590,6 +607,7 @@ class TimSort<T> {
             return;
 
         // Merge remaining runs, using tmp array with min(len1, len2) elements
+        // 归并排序run1和run2剩余部分的元素
         if (len1 <= len2)
             mergeLo(base1, len1, base2, len2);
         else
@@ -601,26 +619,31 @@ class TimSort<T> {
      * specified sorted range; if the range contains an element equal to key,
      * returns the index of the leftmost equal element.
      *
-     * @param key the key whose insertion point to search for
-     * @param a the array in which to search
-     * @param base the index of the first element in the range
-     * @param len the length of the range; must be > 0
+     * @param key the key whose insertion point to search for run1的最后一个元素
+     * @param a the array in which to search 原始数组
+     * @param base the index of the first element in the range run2第一个元素的索引
+     * @param len the length of the range; must be > 0 run2的长度
      * @param hint the index at which to begin the search, 0 <= hint < n.
-     *     The closer hint is to the result, the faster this method will run.
+     *     The closer hint is to the result, the faster this method will run. run2的长度减1
      * @param c the comparator used to order the range, and to search
      * @return the int k,  0 <= k <= n such that a[b + k - 1] < key <= a[b + k],
      *    pretending that a[b - 1] is minus infinity and a[b + n] is infinity.
      *    In other words, key belongs at index b + k; or in other words,
      *    the first k elements of a should precede key, and the last n - k
      *    should follow it.
+     *
+     * 看run1的最后一个元素应该插入到run2的哪个位置
      */
     private static <T> int gallopLeft(T key, T[] a, int base, int len, int hint,
                                       Comparator<? super T> c) {
         assert len > 0 && hint >= 0 && hint < len;
         int lastOfs = 0;
         int ofs = 1;
+        // run1的最后一个元素和run2的最后一个元素比较
+        // 如果run1的最后一个元素大于run2的最后一个元素，则从run2的最后往右边找
         if (c.compare(key, a[base + hint]) > 0) {
             // Gallop right until a[base+hint+lastOfs] < key <= a[base+hint+ofs]
+            // maxOfs = 1
             int maxOfs = len - hint;
             while (ofs < maxOfs && c.compare(key, a[base + hint + ofs]) > 0) {
                 lastOfs = ofs;
@@ -675,14 +698,16 @@ class TimSort<T> {
      * Like gallopLeft, except that if the range contains an element equal to
      * key, gallopRight returns the index after the rightmost equal element.
      *
-     * @param key the key whose insertion point to search for
-     * @param a the array in which to search
-     * @param base the index of the first element in the range
-     * @param len the length of the range; must be > 0
+     * @param key the key whose insertion point to search for run2开始的元素
+     * @param a the array in which to search 待排序数组
+     * @param base the index of the first element in the range run1开始索引
+     * @param len the length of the range; must be > 0 run1长度
      * @param hint the index at which to begin the search, 0 <= hint < n.
      *     The closer hint is to the result, the faster this method will run.
+     *             搜索开始位置，从run1的hint位置开始查找，这里是0
      * @param c the comparator used to order the range, and to search
      * @return the int k,  0 <= k <= n such that a[b + k - 1] <= key < a[b + k]
+     * 找run2的第一个元素应该放到run1中的哪个位置
      */
     private static <T> int gallopRight(T key, T[] a, int base, int len,
                                        int hint, Comparator<? super T> c) {
@@ -690,35 +715,51 @@ class TimSort<T> {
 
         int ofs = 1;
         int lastOfs = 0;
+        // run2第一个元素比run1的第一个元素小，可以直接返回0，不明白为啥还要有下面一大坨？
         if (c.compare(key, a[base + hint]) < 0) {
             // Gallop left until a[b+hint - ofs] <= key < a[b+hint - lastOfs]
+            // maxOfs = 1
             int maxOfs = hint + 1;
+            // ofs = 1，所以这里循环进不去
             while (ofs < maxOfs && c.compare(key, a[base + hint - ofs]) < 0) {
                 lastOfs = ofs;
                 ofs = (ofs << 1) + 1;
                 if (ofs <= 0)   // int overflow
                     ofs = maxOfs;
             }
+            // ofs = maxOfs = 1
             if (ofs > maxOfs)
                 ofs = maxOfs;
 
             // Make offsets relative to b
+            // tmp = 0
             int tmp = lastOfs;
+            // lastOfs = 0 - 1 = -1
             lastOfs = hint - ofs;
+            // ofs = 0 - 0 = 0
             ofs = hint - tmp;
-        } else { // a[b + hint] <= key
+        }
+        // run2第一个元素大于等于run1的第一个元素
+        else { // a[b + hint] <= key
             // Gallop right until a[b+hint + lastOfs] <= key < a[b+hint + ofs]
+            // 最大的offset是run1的长度
             int maxOfs = len - hint;
+            // 从run1中一直找，一直找到key < run1中的元素
             while (ofs < maxOfs && c.compare(key, a[base + hint + ofs]) >= 0) {
+                //
                 lastOfs = ofs;
+                // ofs = 2ofs + 1
                 ofs = (ofs << 1) + 1;
+                // 防止溢出
                 if (ofs <= 0)   // int overflow
                     ofs = maxOfs;
             }
+            // run1遍历完
             if (ofs > maxOfs)
                 ofs = maxOfs;
 
             // Make offsets relative to b
+            // hint = 0，这里lastOfs和ofs都不变
             lastOfs += hint;
             ofs += hint;
         }
@@ -728,6 +769,10 @@ class TimSort<T> {
          * Now a[b + lastOfs] <= key < a[b + ofs], so key belongs somewhere to
          * the right of lastOfs but no farther right than ofs.  Do a binary
          * search, with invariant a[b + lastOfs - 1] <= key < a[b + ofs].
+         * base是run1的开始的索引
+         * hint是搜索开始位置，从run1的hint位置开始查找，这里是0
+         * 现在 run1[lastOfs] <= key < run1[ofs]
+         * 在[lastOfs, ofs]之间做二分查找
          */
         lastOfs++;
         while (lastOfs < ofs) {
@@ -747,6 +792,11 @@ class TimSort<T> {
      * element of the first run must be greater than the first element of the
      * second run (a[base1] > a[base2]), and the last element of the first run
      * (a[base1 + len1-1]) must be greater than all elements of the second run.
+     * 归并排序run1剩余部分和run2剩余部分
+     * run1剩余部分第一个元素大于run2剩余部分第一个元素
+     * run1剩余部分最后一个元素大于run2剩余部分所有元素
+     *
+     * 此时len1 <= len2
      *
      * For performance, this method should be called only when len1 <= len2;
      * its twin, mergeHi should be called if len1 >= len2.  (Either method
