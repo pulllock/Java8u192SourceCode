@@ -1340,17 +1340,22 @@ public class Arrays {
                                   int low,
                                   int high,
                                   int off) {
+        // 待排序序列的长度
         int length = high - low;
 
         // Insertion sort on smallest arrays
+        // 长度小于7，使用直接插入排序
         if (length < INSERTIONSORT_THRESHOLD) {
+            // 循环每个待排序元素
             for (int i=low; i<high; i++)
+                // 循环每个排好序的元素，进行比较，插入
                 for (int j=i; j>low &&
                          ((Comparable) dest[j-1]).compareTo(dest[j])>0; j--)
                     swap(dest, j, j-1);
             return;
         }
 
+        // 下面是归并排序
         // Recursively sort halves of dest into src
         int destLow  = low;
         int destHigh = high;
