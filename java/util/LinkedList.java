@@ -78,18 +78,52 @@ import java.util.function.Consumer;
  * @see     ArrayList
  * @since 1.2
  * @param <E> the type of elements held in this collection
+ *           线性表的链式存储结构，使用地址分散的存储单元存储数据元素，
+ *           逻辑上相邻的数据元素，在物理位置上不一定相邻。
+ *
+ *           需要采用附加信息来存储元素之间的顺序关系，存储数据元素的存储单元称为结点，
+ *           结点包括：数据域和地址域。
+ *
+ *           每个结点只有一个地址域的线性链表，称为单链表。
+ *
+ *           单链表中结点的空间是在插入和删除过程中动态申请和释放的，无需预先分配存储空间，
+ *           可以避免顺序表的扩容和复制元素的操作，提高效率和存储空间利用率。
+ *
+ *           带头结点的单链表：
+ *           1. 对单链表的插入、删除操作不需要区分操作位置
+ *           2. 单链表头指针head非空，实现共享单链表
+ *
+ *           单链表不是随机存取结构。
+ *
+ *           排序单链表
+ *
+ *           循环单链表
+ *           循环单链表指最后一个结点的next域指向head，形成环形结构。
+ *
+ *           双链表
+ *           双链表每个结点有两个地址域，分别指向前驱结点和后继结点。
+ *
+ *           循环双链表
+ *           循环双链表最后一个结点的next指向头结点，头结点的prev指向最后一个结点。
+ *
+ *           排序循环双链表
  */
 
 public class LinkedList<E>
     extends AbstractSequentialList<E>
     implements List<E>, Deque<E>, Cloneable, java.io.Serializable
 {
+    /**
+     * 链表长度
+     * 记录长度可以让一些操作的时间复杂度由O(n^2)降为O(n)
+     */
     transient int size = 0;
 
     /**
      * Pointer to first node.
      * Invariant: (first == null && last == null) ||
      *            (first.prev == null && first.item != null)
+     *            链表中第一个结点
      */
     transient Node<E> first;
 
@@ -97,6 +131,7 @@ public class LinkedList<E>
      * Pointer to last node.
      * Invariant: (first == null && last == null) ||
      *            (last.next == null && last.item != null)
+     *            链表中最后一个结点
      */
     transient Node<E> last;
 
@@ -113,6 +148,7 @@ public class LinkedList<E>
      *
      * @param  c the collection whose elements are to be placed into this list
      * @throws NullPointerException if the specified collection is null
+     * 使用给定的集合来构造一个链表
      */
     public LinkedList(Collection<? extends E> c) {
         this();
@@ -121,31 +157,49 @@ public class LinkedList<E>
 
     /**
      * Links e as first element.
+     * 将e作为链表的第一个元素
      */
     private void linkFirst(E e) {
+        // first指向的结点暂时赋值给f
         final Node<E> f = first;
+        // 使用e构造一个新节点，前驱结点为null，后继结点为f指向的节点
         final Node<E> newNode = new Node<>(null, e, f);
+        // first指向新的节点
         first = newNode;
+        // f为null的话，说明之前的链表是个空链表
         if (f == null)
+            // e加入后，当前链表只有一个结点，所以last指向新节点
             last = newNode;
         else
+            // 之前的链表不是空链表，需要将原来f的前驱指向新节点
             f.prev = newNode;
+        // 大小加1
         size++;
+        // 结构性修改次数加1
         modCount++;
     }
 
     /**
      * Links e as last element.
+     * 将e作为链表的最后一个元素
      */
     void linkLast(E e) {
+        // 原来的last暂时赋值给l
         final Node<E> l = last;
+        // 给e创建一个新节点，前驱是之前链表中的最后一个结点，后继是null
         final Node<E> newNode = new Node<>(l, e, null);
+        // 将新的最后一个结点赋值给last
         last = newNode;
+        // l为null，说明之前链表是空链表
         if (l == null)
+            // first也指向新的结点
             first = newNode;
         else
+            // 之前链表不为空，之前最后一个结点的后继指向新的最后结点
             l.next = newNode;
+        // 大小加1
         size++;
+        // 结构性修改次数加1
         modCount++;
     }
 
