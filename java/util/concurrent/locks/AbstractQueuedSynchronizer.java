@@ -285,6 +285,12 @@ import sun.misc.Unsafe;
  *
  * @since 1.5
  * @author Doug Lea
+ *
+ * 参考：
+ * - https://topsli.github.io/2016/03/13/aqs.html
+ * - http://kexianda.info/2017/08/13/%E5%B9%B6%E5%8F%91%E7%B3%BB%E5%88%97-3-%E4%BB%8EAQS%E5%88%B0futex%E4%B9%8B%E4%B8%80-AQS%E5%92%8CLockSupport/
+ * - http://ifeve.com/aqs/
+ * - https://www.cnblogs.com/binarylei/p/12533857.html
  */
 public abstract class AbstractQueuedSynchronizer
     extends AbstractOwnableSynchronizer
