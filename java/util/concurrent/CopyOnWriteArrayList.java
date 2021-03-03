@@ -171,10 +171,16 @@ public class CopyOnWriteArrayList<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable {
     private static final long serialVersionUID = 8673264195747942595L;
 
-    /** The lock protecting all mutators */
+    /**
+     * The lock protecting all mutators
+     * 可重入锁，写操作的时候用来加锁
+     */
     final transient ReentrantLock lock = new ReentrantLock();
 
-    /** The array, accessed only via getArray/setArray. */
+    /**
+     * The array, accessed only via getArray/setArray.
+     * 存储数据的数组
+     */
     private transient volatile Object[] array;
 
     /**
@@ -480,25 +486,35 @@ public class CopyOnWriteArrayList<E>
      * specified element.
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
+     * 替换指定位置处的元素，这是写操作，需要复制一份副本出来，并且写的时候要加锁
      */
     public E set(int index, E element) {
+        // 先加锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 原来数组
             Object[] elements = getArray();
+            // 从原来数组中获取指定位置的元素
             E oldValue = get(elements, index);
 
             if (oldValue != element) {
+                // 原来数组长度
                 int len = elements.length;
+                // 复制一个副本出来，写操作在这个新的副本上
                 Object[] newElements = Arrays.copyOf(elements, len);
+                // 新元素替换旧元素
                 newElements[index] = element;
+                // 用新的副本替换原来的数组
                 setArray(newElements);
             } else {
                 // Not quite a no-op; ensures volatile write semantics
                 setArray(elements);
             }
+            // 返回旧值
             return oldValue;
         } finally {
+            // 释放锁
             lock.unlock();
         }
     }
@@ -508,6 +524,7 @@ public class CopyOnWriteArrayList<E>
      *
      * @param e element to be appended to this list
      * @return {@code true} (as specified by {@link Collection#add})
+     * 添加元素，写操作，需要复制一份副本，加锁操作
      */
     public boolean add(E e) {
         // 加锁，保证同一时刻只能有一个写线程
@@ -529,6 +546,7 @@ public class CopyOnWriteArrayList<E>
             setArray(newElements);
             return true;
         } finally {
+            // 释放锁
             lock.unlock();
         }
     }
@@ -539,29 +557,41 @@ public class CopyOnWriteArrayList<E>
      * any subsequent elements to the right (adds one to their indices).
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
+     * 在指定索引位置添加元素，写操作，需要复制一份新的副本进行写操作
      */
     public void add(int index, E element) {
+        // 加锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 原来的数组
             Object[] elements = getArray();
+            // 原来长度
             int len = elements.length;
             if (index > len || index < 0)
                 throw new IndexOutOfBoundsException("Index: "+index+
                                                     ", Size: "+len);
             Object[] newElements;
+            // 需要移动的元素个数
             int numMoved = len - index;
+            // 说明在最后添加元素
             if (numMoved == 0)
+                // 拷贝一份新的数组出来
                 newElements = Arrays.copyOf(elements, len + 1);
             else {
                 newElements = new Object[len + 1];
+                // 先拷贝一份新的数组出来
                 System.arraycopy(elements, 0, newElements, 0, index);
+                // 将要移动的元素往后移动
                 System.arraycopy(elements, index, newElements, index + 1,
                                  numMoved);
             }
+            // 指定位置插入元素
             newElements[index] = element;
+            // 新的副本替换原来数组
             setArray(newElements);
         } finally {
+            // 释放锁
             lock.unlock();
         }
     }
@@ -572,26 +602,38 @@ public class CopyOnWriteArrayList<E>
      * indices).  Returns the element that was removed from the list.
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
+     * 移除指定位置处元素，写操作，需要拷贝一个副本出来操作
      */
     public E remove(int index) {
+        // 加锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 老数组
             Object[] elements = getArray();
+            // 原来数组长度
             int len = elements.length;
+            // 指定位置的值
             E oldValue = get(elements, index);
+            // 移除元素后，需要移动的元素
             int numMoved = len - index - 1;
+            // 需要移除的是最后一个元素
             if (numMoved == 0)
+                // 拷贝一个新的数组，并替换原来数组
                 setArray(Arrays.copyOf(elements, len - 1));
             else {
+                // 先拷贝一个新的数组
                 Object[] newElements = new Object[len - 1];
                 System.arraycopy(elements, 0, newElements, 0, index);
+                // 新数组中将元素移动
                 System.arraycopy(elements, index + 1, newElements, index,
                                  numMoved);
+                // 替换原来数组
                 setArray(newElements);
             }
             return oldValue;
         } finally {
+            // 释放锁
             lock.unlock();
         }
     }
@@ -608,10 +650,14 @@ public class CopyOnWriteArrayList<E>
      *
      * @param o element to be removed from this list, if present
      * @return {@code true} if this list contained the specified element
+     * 移除首次出现的元素
      */
     public boolean remove(Object o) {
+        // 旧的数组
         Object[] snapshot = getArray();
+        // 确定元素位置
         int index = indexOf(o, snapshot, 0, snapshot.length);
+        // 移除元素
         return (index < 0) ? false : remove(o, snapshot, index);
     }
 
