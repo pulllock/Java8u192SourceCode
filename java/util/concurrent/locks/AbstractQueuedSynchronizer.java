@@ -291,6 +291,42 @@ import sun.misc.Unsafe;
  * - http://kexianda.info/2017/08/13/%E5%B9%B6%E5%8F%91%E7%B3%BB%E5%88%97-3-%E4%BB%8EAQS%E5%88%B0futex%E4%B9%8B%E4%B8%80-AQS%E5%92%8CLockSupport/
  * - http://ifeve.com/aqs/
  * - https://www.cnblogs.com/binarylei/p/12533857.html
+ *
+ * 1. 操作系统中的信号量
+ * 2. 互斥锁和同步
+ * 3. 信号量实现互斥锁、实现生产者消费者
+ * 4. 管程
+ * 5. 管程和synchronize以及AQS
+ * 6. LockSupport
+ * 7. CLH队列锁
+ *
+ * 管程
+ * 信号量的使用比较繁琐，并且极容易出错，管程解决了信号量的这些问题。
+ *
+ * 管程在信号量的基础上增加了条件变量和等待队列，封装了同步操作，管程的组成如下：
+ * 一个变量、条件队列和对应的等待队列、同步队列、条件变量可执行的wait和signal操作
+ *
+ * 管程模型：
+ * 1. Hasen模型
+ * 2. Hoare模型
+ * 3. MESA模型
+ *
+ * 假设两个线程T1和T2，T1等待T2的某些操作，使得T1等待的条件成立
+ * Hasen模型：要求将notify放到代码最后，也就是T2执行完后才通知T1执行，这样就能保证同一时刻
+ * 只有一个线程执行
+ *
+ * Hoare模型：T2执行，通知T1后，T2马上阻塞，T1执行，等待T1执行完成后唤醒T2继续执行，这样
+ * T2多了一次阻塞唤醒操作
+ *
+ * MESA模型：T2执行，通知T1后，T2继续执行，T1不立刻执行，而是从条件变量的等待队列进入到入口的
+ * 等待队列。T1需要使用自旋来检测条件变量，看是否满足条件。
+ *
+ * synchronized和AQS都是基于管程实现的。
+ *
+ * 条件变量
+ *
+ * 条件变量是用来实现线程间的依赖或等待机制的方法，比如线程A阻塞等待某个条件才能继续执行，线程B
+ * 的执行使得条件成立，就会唤醒A继续执行。
  */
 public abstract class AbstractQueuedSynchronizer
     extends AbstractOwnableSynchronizer
