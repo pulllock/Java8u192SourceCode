@@ -78,6 +78,53 @@ import java.util.Spliterator;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
+ *           有界阻塞队列，使用数组存储元素
+ *
+ *           阻塞队列是典型的生产者消费者模式。
+ *
+ *           可以先回顾下使用信号量实现生产者消费者模式的场景：
+ *           使用一个信号量当做互斥锁，使用另外两个信号量充当条件变量（非空条件变量和非满条件变量）
+ *
+ *           Semaphore mutex = new Semaphore(1);
+ *           Semaphore notFull = new Semaphore(n);
+ *           Semaphore notEmpty = new Semaphore(0);
+ *
+ *           生产者方法流程如下：
+ *           // 缓冲区满的时候，生产者线程需要等待缓冲区不满
+ *           notFull.p();
+ *
+ *           // 生产者不满了，可以添加元素，需要使用互斥锁保证一次只有一个线程操作缓冲区
+ *           mutex.p();
+ *
+ *           // 将元素加入缓冲区
+ *           addElementToQueue();
+ *
+ *           // 解锁
+ *           mutex.v();
+ *
+ *           // 缓冲区中添加了新元素后，通知其他等待消费的线程现在缓冲区不空了，有元素了
+ *           notEmpty.v();
+ *
+ *           消费者方法流程如下:
+ *           // 缓冲区空的时候，消费者线程需要等待缓冲区中有元素，
+ *           notEmpty.p();
+ *
+ *           // 缓冲区有元素了，可以消费一个元素，需要使用互斥锁保证一次只有一个线程操作缓冲区
+ *           mutex.p();
+ *
+ *           // 元素从队列中移除
+ *           removeElementFromQueue();
+ *
+ *           // 解锁
+ *           mutex.v();
+ *
+ *           // 移除元素后，缓冲区中有空闲位置，通知其他等待生产的线程现在缓冲区不满了，可以生产了
+ *           notFull.v();
+ *
+ *           ArrayBlockingQueue实现原理也是使用一个锁和两个条件变量，对缓冲区的并发操作进行控制。
+ *           这里并非使用信号量进行实现，而是使用管程模式来实现，AQS就是管程模式。
+ *
+ *           使用一个可重入锁以及锁的条件变量来实现。
  */
 public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
@@ -90,16 +137,28 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      */
     private static final long serialVersionUID = -817911632652898426L;
 
-    /** The queued items */
+    /**
+     * The queued items
+     * 存放队列元素的数组
+     */
     final Object[] items;
 
-    /** items index for next take, poll, peek or remove */
+    /**
+     * items index for next take, poll, peek or remove
+     * 从队列中获取数据的索引
+     */
     int takeIndex;
 
-    /** items index for next put, offer, or add */
+    /**
+     * items index for next put, offer, or add
+     * 将数据放入队列的索引
+     */
     int putIndex;
 
-    /** Number of elements in the queue */
+    /**
+     *  Number of elements in the queue
+     *  队列中数据元素个数
+     */
     int count;
 
     /*
@@ -107,19 +166,32 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * found in any textbook.
      */
 
-    /** Main lock guarding all access */
+    /**
+     * Main lock guarding all access
+     * 主锁，对于队列的写操作都需要进行加锁
+     * 相当于信号量实现生产者消费者模式中的互斥锁
+     */
     final ReentrantLock lock;
 
-    /** Condition for waiting takes */
+    /**
+     * Condition for waiting takes
+     * 非空条件变量
+     * 相当于信号量实现生产者消费者模式中的非空条件变量
+     */
     private final Condition notEmpty;
 
-    /** Condition for waiting puts */
+    /**
+     * Condition for waiting puts
+     * 非满条件变量
+     * 相当于信号量实现生产者消费者模式中的非满条件变量
+     */
     private final Condition notFull;
 
     /**
      * Shared state for currently active iterators, or null if there
      * are known not to be any.  Allows queue operations to update
      * iterator state.
+     * 迭代器
      */
     transient Itrs itrs = null;
 
@@ -127,6 +199,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
 
     /**
      * Circularly decrement i.
+     * 循环递减i，当i减为0的时候，从原来长度重新开始递减
      */
     final int dec(int i) {
         return ((i == 0) ? items.length : i) - 1;
@@ -134,6 +207,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
 
     /**
      * Returns item at index i.
+     * 返回i位置处的元素
      */
     @SuppressWarnings("unchecked")
     final E itemAt(int i) {
@@ -153,35 +227,58 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Inserts element at current put position, advances, and signals.
      * Call only when holding lock.
+     * 将元素入队列
+     * 把元素放在数组的putIndex处
+     *
+     * 只有在持有锁的时候才能调用此方法
      */
     private void enqueue(E x) {
         // assert lock.getHoldCount() == 1;
         // assert items[putIndex] == null;
+        // 存放元素的数组
         final Object[] items = this.items;
+        // 放到putIndex处
         items[putIndex] = x;
+        // 已经放到了数组的最后一个位置，下一次放元素的位置就是数组的最开始位置
         if (++putIndex == items.length)
+            // 将下一次放元素的位置设置为数组的最开始位置
             putIndex = 0;
+        // 入队后，元素个数加1
         count++;
+        // 入队后，队列里肯定有了元素，使用非空条件变量通知等待队列不为空的那些线程，队列里有元素了
         notEmpty.signal();
     }
 
     /**
      * Extracts element at current take position, advances, and signals.
      * Call only when holding lock.
+     * 将元素出队列
+     * 从getIndex处将一个元素出队列
+     *
+     * 只有在持有锁的时候才能调用此方法
      */
     private E dequeue() {
         // assert lock.getHoldCount() == 1;
         // assert items[takeIndex] != null;
+        // 存储元素的数组
         final Object[] items = this.items;
         @SuppressWarnings("unchecked")
+        // 从takeIndex处获取元素
         E x = (E) items[takeIndex];
+        // takeIndex处获取元素后，该位置处置为null
         items[takeIndex] = null;
+        // 如果出队列元素位置是数组最后一位，则下一个出队列的位置就是数组开头
         if (++takeIndex == items.length)
+            // 将下一次元素出队列的位置设置为数组最开始处
             takeIndex = 0;
+        // 出队列后，队列元素个数减1
         count--;
+        // TODO 更新迭代器中的队列
         if (itrs != null)
             itrs.elementDequeued();
+        // 元素出队列后，队列中肯定有空闲位置了，使用非满条件变量通知那些等待队列不满的线程，队列中有空闲位置了
         notFull.signal();
+        // 返回出队列的元素
         return x;
     }
 
@@ -189,42 +286,58 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * Deletes item at array index removeIndex.
      * Utility for remove(Object) and iterator.remove.
      * Call only when holding lock.
+     * 移除指定位置处的元素
+     * 只有在持有锁的时候才能调用此方法
      */
     void removeAt(final int removeIndex) {
         // assert lock.getHoldCount() == 1;
         // assert items[removeIndex] != null;
         // assert removeIndex >= 0 && removeIndex < items.length;
         final Object[] items = this.items;
+        // 移除的元素在队列头部
         if (removeIndex == takeIndex) {
             // removing front item; just advance
+            // 移除位置处设置为null
             items[takeIndex] = null;
+            // 移除元素刚好在数组最后，下一个要移除元素的位置设置为数组的最开始
             if (++takeIndex == items.length)
                 takeIndex = 0;
+            // 元素个数减1
             count--;
             if (itrs != null)
                 itrs.elementDequeued();
-        } else {
+        }
+        // 移除的元素在队列中间或尾部
+        else {
             // an "interior" remove
 
             // slide over all others up through putIndex.
             final int putIndex = this.putIndex;
+            // i的初始值是移除元素的位置
             for (int i = removeIndex;;) {
+                // 移除元素位置刚好是数组最后一个元素
                 int next = i + 1;
                 if (next == items.length)
+                    // 将下一个元素索引设置为数组的开始
                     next = 0;
+                // 移除元素位置的下一个位置不是元素入队的位置，则需要移除元素后依次将元素移动一个位置
                 if (next != putIndex) {
                     items[i] = items[next];
                     i = next;
-                } else {
+                }
+                // 移除元素位置的下一个元素刚好是putIndex处，也就相当于将putIndex往后倒一位
+                else {
                     items[i] = null;
                     this.putIndex = i;
                     break;
                 }
             }
+            // 元素个数减1
             count--;
             if (itrs != null)
                 itrs.removedAt(removeIndex);
         }
+        // 元素移除后，有空闲位置，使用非满条件变量通知那些等待队列不满的线程，队列中共有空闲位置了
         notFull.signal();
     }
 
@@ -253,8 +366,11 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         if (capacity <= 0)
             throw new IllegalArgumentException();
         this.items = new Object[capacity];
+        // 初始化一个可重入锁，相当于信号量实现生产者消费者模式中的独占锁
         lock = new ReentrantLock(fair);
+        // 初始化非空条件变量，相当于信号量实现生产者消费者模式中的非空条件变量
         notEmpty = lock.newCondition();
+        // 初始化非满条件变量，相当于信号量实现生产者消费者模式中的非满条件变量
         notFull =  lock.newCondition();
     }
 
@@ -307,6 +423,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * @return {@code true} (as specified by {@link Collection#add})
      * @throws IllegalStateException if this queue is full
      * @throws NullPointerException if the specified element is null
+     * 将元素入队列，如果队列已经满了，会抛异常
      */
     public boolean add(E e) {
         return super.add(e);
@@ -320,19 +437,24 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * which can fail to insert an element only by throwing an exception.
      *
      * @throws NullPointerException if the specified element is null
+     * 将元素入队列，如果队列满了就返回false
      */
     public boolean offer(E e) {
         checkNotNull(e);
+        // 队列写操作先加锁
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 队列满了，返回false
             if (count == items.length)
                 return false;
+            // 队列不满，入队列，返回true
             else {
                 enqueue(e);
                 return true;
             }
         } finally {
+            // 操作完后解锁
             lock.unlock();
         }
     }
@@ -343,16 +465,22 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      *
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     * 将元素入队列，如果队列满了，则阻塞等待队列不满
      */
     public void put(E e) throws InterruptedException {
         checkNotNull(e);
+        // 操作前先加锁
         final ReentrantLock lock = this.lock;
+        // 可中断的锁
         lock.lockInterruptibly();
         try {
+            // 队列满了，使用非满条件变量进行等待队列不满
             while (count == items.length)
                 notFull.await();
+            // 队列不满，将元素入队列
             enqueue(e);
         } finally {
+            // 操作完后解锁
             lock.unlock();
         }
     }
