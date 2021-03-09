@@ -1161,6 +1161,17 @@ public abstract class AbstractQueuedSynchronizer
      * 退出条件是：当前结点的前驱结点是头结点，
      * 并且tryAcquireShared(arg)返回值大于等于0
      * 获取锁成功，才能返回
+     *
+     *            Semaphore信号量不可用时使用该方法将当前线程入队列并等待信号量可用。
+     *            这里的addWaiter就是将当前线程加入同步队列中，后续的操作以及parkAndCheckInterrupt
+     *            就是阻塞等待信号量可用，也就是等待信号量的release方法（V操作）调用。
+     *
+     *            首先是addWaiter方法，将当前线程加入同步队列，队列是CLH锁队列的变种。
+     *
+     *            接下来的操作是在阻塞等待之前，会争取看看下能不能直接获取到信号量，
+     *            如果能获取到信号量就可以直接返回，不需要阻塞等待了；如果获取不到信号量
+     *            则阻塞等待。
+     *
      */
     private void doAcquireShared(int arg) {
         final Node node = addWaiter(Node.SHARED);
@@ -1168,6 +1179,13 @@ public abstract class AbstractQueuedSynchronizer
         try {
             boolean interrupted = false;
             for (;;) {
+                /*
+                    信号量
+                    入完队列后，在阻塞等待操作之前，会先确认下这时能不能获取到信号量，如果能获取到
+                    就不用进行阻塞等待了，如果获取不到信号量，才进行阻塞等待。
+                    相当于最后再做一次挣扎。
+                 */
+
                 final Node p = node.predecessor();
                 if (p == head) {
                     int r = tryAcquireShared(arg);
@@ -1531,6 +1549,31 @@ public abstract class AbstractQueuedSynchronizer
      *        and can represent anything you like.
      * 共享式的获取同步状态，如果当前线程未获取到同步状态，将会进入同步队列等待，
      * 与独占获取的主要区别是同一时刻可以有多个线程获取到同步状态。
+     *
+     *            Semaphore信号量的acquire方法（P操作）使用该方法进行实现，先回顾下
+     *            信号量的P操作流程：先将值减1，判断如果值小于0，则将当前线程加入同步队列，
+     *            并将当前线程进行阻塞；如果值大于等于0，则p操作结束。
+     *
+     *            这里的实现也是如此，tryAcquireShared是将值减1，判断值是否小于0，
+     *            如果小于0，doAcquireShared方法将线程加入同步队列，当然这只是大概步骤，
+     *            实际的实现比这要复杂，但是原理大概就是这样。
+     *
+     *            tryAcquireShared方法是信号量p操作的将值减1，这个方法在Semaphore的
+     *            公平和非公平同步器中都有实现，逻辑基本上一样。
+     *
+     *            tryAcquireShared在Semaphore的公平同步器中实现逻辑是，先判断如果队列
+     *            中有已经在等待获取信号量的线程，则当前线程肯定也得等待，这时tryAcquireShared
+     *            直接返回-1；如果没有队列等待，则使用CAS进行减1操作，然后将减一后的值返回，
+     *            这里会做是否小于0的判断。
+     *
+     *            tryAcquireShared在Semaphore的公平同步器中实现逻辑是，无需判断队列中
+     *            有没有等待线程，直接使用CAS进行减1操作，然后将减一后的值返回，这里会做是否小于
+     *            0的判断。
+     *
+     *            如果tryAcquireShared大于等于0，说明信号量可以使用，P操作结束；如果小于0，
+     *            说明信号量不可用，需要将当前线程加入同步队列阻塞等待信号量可用。doAcquireShared
+     *            方法就是用来入队列、等待操作的。
+     *
      */
     public final void acquireShared(int arg) {
         if (tryAcquireShared(arg) < 0)
