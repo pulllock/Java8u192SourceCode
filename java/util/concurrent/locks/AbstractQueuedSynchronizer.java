@@ -909,6 +909,11 @@ public abstract class AbstractQueuedSynchronizer
      * enq方法进行入队列。
      *
      * enq方法就是使用自旋方式加CAS将结点入队列。
+     *
+     * ReentrantLock可重入锁
+     * 线程获取不到锁，将当前线程封装成一个独占模式的结点，加入到同步队列中去。
+     *
+     * cas入队或者自旋加cas入队。
      */
     private Node addWaiter(Node mode) {
         Node node = new Node(Thread.currentThread(), mode);
@@ -1287,20 +1292,26 @@ public abstract class AbstractQueuedSynchronizer
      *    当前线程就能获得锁，该方法执行结束并返回；
      * 2. 如果获取锁失败的话，先将头结点设置为SIGNAL状态，然后调用
      *    LockSupprot.park()方法是当前线程挂起等待。
+     *
+     * ReentrantLock可重入锁
+     * 上一步是将当前线程加入同步队列，这里是将线程进行挂起操作
+     *
+     * 挂起之前会再次尝试下能不能获取到锁，获取不到再挂起。
      */
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
         try {
             boolean interrupted = false;
             for (;;) {
+                // 当前节点的前驱结点（需要先熟悉CLH队列）
                 final Node p = node.predecessor();
                 /**
-                 * p == head 说明当前节点node虽然进入到了阻塞队列，
-                 * 但是是队列中的第一个。
-                 * 阻塞队列不包含head，head一般指的是占有锁的线程，
-                 * head后面的才是阻塞队列。
+                 * p == head 说明当前节点的前驱结点持有锁，当前结点可以尝试获取下锁，
+                 * 如果获取到了，设置head指向当前结点，然后就返回。
                  *
-                 * 作为头结点，可以尝试获取下锁。
+                 * 获取不到锁可能原因有：
+                 * 1. 当前节点前驱结点还持有锁
+                 * 2. 锁被其他线程抢先占有了，非公平模式下可能会出现这样的情况
                  */
                 if (p == head && tryAcquire(arg)) {
                     setHead(node);
@@ -1310,9 +1321,7 @@ public abstract class AbstractQueuedSynchronizer
                 }
 
                 /**
-                 * 走到这里，说明上面没有成功：
-                 * 1. 可能是当前结点不是队头
-                 * 2. 可能是tryAcquire失败了
+                 * 走到这里，说明还是没有获取到锁
                  *
                  * shouldParkAfterFailedAcquire 当前线程没有抢到锁，是否需要挂起当前线程
                  * 如果返回true，说明前驱结点的waitStatus == -1，是正常情况，
@@ -1706,6 +1715,18 @@ public abstract class AbstractQueuedSynchronizer
      *
      * 如果tryAcquire成功了，直接就结束了
      * 否则acquireQueued方法会将线程压到队列中
+     *
+     *            ReentrantLock可重入锁
+     *            可重入锁的获取锁的方法，相当于操作系统的互斥锁的加锁操作。
+     *            先尝试获取锁，如果获取不到就将当前线程加入同步队列。
+     *
+     *            获取不到锁的情况：
+     *            1. 非公平模式下，锁被其他线程占有，当前线程获取不到锁
+     *            2. 公平模式下，锁被其他线程占有，当前线程获取不到锁
+     *            3. 公平模式下，锁没有被其他线程占有，但是同步队列中有排队的线程
+     *
+     *            addWaiter将线程以独占模式加入同步队列
+     *            acquireQueued加入队列后再尝试获取锁，如果获取不到将线程挂起阻塞等待
      */
     public final void acquire(int arg) {
         /**
@@ -1786,8 +1807,13 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryRelease} but is otherwise uninterpreted and
      *        can represent anything you like.
      * @return the value returned from {@link #tryRelease}
-     * 独占式释放同步状态，该方法会在释放同步状态后，将同步队列中第一个
-     * 节点包含的线程唤醒。
+     * 释放锁
+     * 先尝试释放锁，释放成功，就唤醒同步队列中的后继线程
+     *
+     * ReentrantLock可重入锁，由于锁是可重入的，如果不是最后一次释放锁，tryRelease
+     * 就会返回false，此时就不会唤醒同步队列中的后继线程，需要等待重入的锁都释放了，
+     * 才会唤醒同步队列中的后继线程。
+     *
      */
     public final boolean release(int arg) {
         /**
@@ -1796,6 +1822,7 @@ public abstract class AbstractQueuedSynchronizer
         if (tryRelease(arg)) {
             Node h = head;
             if (h != null && h.waitStatus != 0)
+                // 唤醒后继线程
                 unparkSuccessor(h);
             return true;
         }
@@ -2090,6 +2117,7 @@ public abstract class AbstractQueuedSynchronizer
      *         current thread, and {@code false} if the current thread
      *         is at the head of the queue or the queue is empty
      * @since 1.7
+     * 查看同步队列中是否还有排队线程
      */
     public final boolean hasQueuedPredecessors() {
         // The correctness of this depends on head being initialized
@@ -2446,6 +2474,8 @@ public abstract class AbstractQueuedSynchronizer
      *
      * <p>This class is Serializable, but all fields are transient,
      * so deserialized conditions have no waiters.
+     * 每个条件变量都会对应一个ConditionObject
+     * 条件变量也会对应有一个等待队列，用来存放等待这个条件变量的所有线程
      */
     public class ConditionObject implements Condition, java.io.Serializable {
         private static final long serialVersionUID = 1173984872572414699L;
@@ -2669,18 +2699,24 @@ public abstract class AbstractQueuedSynchronizer
          *      {@link #acquire} with saved state as argument.
          * <li> If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
+         * 条件变量的等待操作
          * 可被中断
          * 会阻塞，直到调用signal或signalAll方法
          */
         public final void await() throws InterruptedException {
             if (Thread.interrupted())
                 throw new InterruptedException();
-            // 添加到condition条件队列中
+            // 添加到条件变量对应的条件队列中，就是正常的入队列操作，
+            // 不需要加锁，因为条件变量在使用的时候就已经是在获取锁之后了
             Node node = addConditionWaiter();
             // 释放锁，返回的是释放锁之前的state值
             int savedState = fullyRelease(node);
             int interruptMode = 0;
             /**
+             * 上面把线程加入到了条件变量对应的等待线程，并且释放掉了锁，
+             * 下面会先看线程是否在同步队列，如果不在同步队列中，需要将线程挂起，
+             * 等待条件变量的signal或者signalAll唤醒当前线程，并转移到同步队列。
+             *
              * 不在阻塞队列的话，会自旋，挂起
              * 有两种情况会退出循环：
              * 1. 进入阻塞队列
@@ -2698,7 +2734,8 @@ public abstract class AbstractQueuedSynchronizer
                     break;
             }
             /**
-             * 被唤醒之后，将进入阻塞队列，等待获取锁
+             * 被唤醒之后，线程将进入阻塞队列，等待获取锁
+             * 这里会调用acquireQueued，先尝试获取锁，获取不到就挂起线程
              */
             if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
                 interruptMode = REINTERRUPT;

@@ -175,6 +175,7 @@ import java.util.Date;
  *
  * @since 1.5
  * @author Doug Lea
+ * 条件变量
  */
 public interface Condition {
 
