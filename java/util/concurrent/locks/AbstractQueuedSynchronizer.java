@@ -613,6 +613,176 @@ public abstract class AbstractQueuedSynchronizer
          * signal()方法后，该节点会从等待队列中转移到同步队列中，加入到对同步状态的获取中。
          */
         static final int CONDITION = -2;
+
+        /*
+            PROPAGATE的引入是为了解决有些线程无法被唤醒的问题，
+            bug详情：https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6801020
+            代码变更：http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/src/main/java/util/concurrent/locks/AbstractQueuedSynchronizer.java?r1=1.73&r2=1.74
+            旧的setHeadAndPropagate方法如下：
+             private void setHeadAndPropagate(Node node, int propagate) {
+                setHead(node);
+                if (propagate > 0 && node.waitStatus != 0) {
+                    Node s = node.next;
+                    if (s == null || s.isShared())
+                        unparkSuccessor(node);
+                }
+             }
+
+             旧的releaseShared方法如下：
+             public final boolean releaseShared(int arg) {
+                 if (tryReleaseShared(arg)) {
+                    Node h = head;
+                     if (h != null && h.waitStatus != 0)
+                        unparkSuccessor(h);
+                     return true;
+                 }
+                 return false;
+             }
+
+            bug中提供的示例代码：
+            import java.util.concurrent.Semaphore;
+
+            public class TestSemaphore {
+
+                private static Semaphore sem = new Semaphore(0);
+
+                private static class Thread1 extends Thread {
+                    @Override
+                    public void run() {
+                        sem.acquireUninterruptibly();
+                    }
+                }
+
+                private static class Thread2 extends Thread {
+                    @Override
+                    public void run() {
+                        sem.release();
+                    }
+                }
+
+                public static void main(String[] args) throws InterruptedException {
+                    for (int i = 0; i < 10000000; i++) {
+                        Thread t1 = new Thread1();
+                        Thread t2 = new Thread1();
+                        Thread t3 = new Thread2();
+                        Thread t4 = new Thread2();
+                        t1.start();
+                        t2.start();
+                        t3.start();
+                        t4.start();
+                        t1.join();
+                        t2.join();
+                        t3.join();
+                        t4.join();
+                        System.out.println(i);
+                    }
+                }
+            }
+
+            按照老的代码分析下示例代码：
+            Semaphore初始化state值为0，4个线程运行，线程t1和t2同时获取锁，线程t3和t4同时释放锁.
+            由于state初始值为0，t1和t2获取锁会失败，此时同步队列中排队情况如下：
+            head --> t1 --> t2
+
+            接下来t3先释放锁，t4后释放锁
+
+            t3调用releaseShared方法，唤醒队列中的t1，此时head状态由-1变为0，t1被唤醒后从挂起的
+            地方继续执行，会先调用tryAcquireShared，该方法返回的propagate值为0，此时还未执行
+            setHeadAndPropagate方法。
+
+            此时t4调用releaseShared方法，而旧的方法代码如下：
+            public final boolean releaseShared(int arg) {
+                 if (tryReleaseShared(arg)) {
+                    Node h = head;
+                     if (h != null && h.waitStatus != 0)
+                        unparkSuccessor(h);
+                     return true;
+                 }
+                 return false;
+             }
+             此时t4读到的head和上面t1被唤醒还未执行setHeadAndPropagate方法的head是一样的，而
+             head的waitStatus=0，所以旧代码releaseShared方法中的if (h != null && h.waitStatus != 0)
+             不满足，不能调用unparkSuccessor唤醒后继结点。
+
+             而这个时候，t1继续执行setHeadAndPropagate方法，旧代码如下：
+             private void setHeadAndPropagate(Node node, int propagate) {
+                setHead(node);
+                if (propagate > 0 && node.waitStatus != 0) {
+                    Node s = node.next;
+                    if (s == null || s.isShared())
+                        unparkSuccessor(node);
+                }
+             }
+             此时唤醒t1时的propagate=0，而不能满足if (propagate > 0 && node.waitStatus != 0)条件，也不会唤醒
+             后继结点。
+
+             本来t2应该要唤醒的，但是上面的情况导致了t2不能被唤醒。
+
+             引入了PROPAGATE=-3之后的情况如下：
+             新的setHeadAndPropagate方法的代码：
+             private void setHeadAndPropagate(Node node, int propagate) {
+                Node h = head; // Record old head for check below
+                setHead(node);
+                 if (propagate > 0 || h == null || h.waitStatus < 0) {
+                     Node s = node.next;
+                     if (s == null || s.isShared())
+                        doReleaseShared();
+                 }
+             }
+
+             新的releaseShared方法的代码：
+             public final boolean releaseShared(int arg) {
+                 if (tryReleaseShared(arg)) {
+                    doReleaseShared();
+                    return true;
+                 }
+                 return false;
+             }
+
+             新的doReleaseShared方法的代码：
+             private void doReleaseShared() {
+                for (;;) {
+                    Node h = head;
+                    if (h != null && h != tail) {
+                        int ws = h.waitStatus;
+                        if (ws == Node.SIGNAL) {
+                            if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                                continue;
+                            unparkSuccessor(h);
+                        }
+                         else if (ws == 0 &&
+                             !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                             continue;
+                    }
+                     if (h == head)
+                        break;
+                }
+             }
+
+            在引入了PROPAGATE之后的情况如下：
+            t3调用releaseShared方法，唤醒队列中的t1，此时head状态由-1变为0，t1被唤醒后从挂起的
+            地方继续执行，会先调用tryAcquireShared，该方法返回的propagate值为0，此时还未执行
+            setHeadAndPropagate方法。
+
+            此时t4调用releaseShared方法，此时t4读到的head和上面t1被唤醒还未执行setHeadAndPropagate
+            方法的head是一样的，而head的waitStatus=0，此时新代码中就有对ws==0的判断，此时会将
+            head结点状态waitStatus设置为PROPAGATE（-3）
+
+            而这个时候，t1继续执行setHeadAndPropagate方法，新的代码如下：
+            private void setHeadAndPropagate(Node node, int propagate) {
+                Node h = head; // Record old head for check below
+                setHead(node);
+                 if (propagate > 0 || h == null || h.waitStatus < 0) {
+                     Node s = node.next;
+                     if (s == null || s.isShared())
+                        doReleaseShared();
+                 }
+             }
+
+             此时head的waitStatus=-3，被唤醒t1时的propagate=0，因此setHeadAndPropagate方法中
+             if (propagate > 0 || h == null || h.waitStatus < 0) 判断就能满足，会继续调用
+             releaseShared方法，后继线程
+         */
         /**
          * waitStatus value to indicate the next acquireShared should
          * unconditionally propagate
@@ -839,6 +1009,8 @@ public abstract class AbstractQueuedSynchronizer
          * 走到这里有两种情况：
          * 1. tail == null 说明队列是空的
          * 2. CAS失败，说明有线程竞争入队列
+         *
+         * 还有一种情况是条件变量的signal方法，将等待队列中的结点转移到同步队列中去
          * 不管什么情况，这里使用自旋加CAS让结点入队列，一定会入队列
          */
         for (;;) {
@@ -1079,7 +1251,9 @@ public abstract class AbstractQueuedSynchronizer
      *
      */
     private void setHeadAndPropagate(Node node, int propagate) {
+        // 旧的头结点
         Node h = head; // Record old head for check below
+        // 将当前获取到锁的结点设置新的头结点
         setHead(node);
         /*
          * Try to signal next queued node if:
@@ -1097,6 +1271,13 @@ public abstract class AbstractQueuedSynchronizer
          * racing acquires/releases, so most need signals now or soon
          * anyway.
          * 可能会造成不必要的唤醒
+         *
+         * 如果propagate大于0,（说明有其他空闲资源）
+         * 或者旧的头结点为空
+         * 或者旧的头结点的waitStatus小于0
+         * 或者新的头结点为空
+         * 或者新的头结点的waitStatus小于0
+         * 这几种条件需要唤醒后继结点
          */
         if (propagate > 0 || h == null || h.waitStatus < 0 ||
             (h = head) == null || h.waitStatus < 0) {
@@ -2545,6 +2726,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * Removes and transfers all nodes.
          * @param first (non-null) the first node on condition queue
+         *              挨个将条件等待队列中的结点转移到同步队列中去
          */
         private void doSignalAll(Node first) {
             lastWaiter = firstWaiter = null;
