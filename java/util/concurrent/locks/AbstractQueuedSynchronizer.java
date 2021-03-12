@@ -782,6 +782,107 @@ public abstract class AbstractQueuedSynchronizer
              此时head的waitStatus=-3，被唤醒t1时的propagate=0，因此setHeadAndPropagate方法中
              if (propagate > 0 || h == null || h.waitStatus < 0) 判断就能满足，会继续调用
              releaseShared方法，后继线程
+
+             PROPAGATE是为了让setHeadPropagate方法更快速的唤醒后继结点。
+             Semaphore初始化state值为0，4个线程运行，线程t1和t2同时获取锁，线程t3和t4同时释放锁.
+             由于state初始值为0，t1和t2获取锁会失败，假设此时的情况是：
+             - t1入队列并park住
+             - t2入队列但还没有park
+             - t3执行releaseShared唤醒t1
+             - t4执行releaseShared准备唤醒t2
+             此时队列中的情况如下：
+             head(waitStatus=-1) --> t1(waitStatus=0) --> t2
+
+             假设t2入队列并且park住了，此时队列应该是如下：
+             head(waitStatus=-1) --> t1(waitStatus=-1) --> t2
+             t1的waitStatus=-1，t3唤醒t1后，t1执行setHeadPropagate时会执行doReleaseShared，这里会
+             唤醒t2；或者t4在releaseShared的时候，也会执行doReleaseShared，也会唤醒t2，所以t2无论如何
+             都会被唤醒，没有问题。
+
+             假设t2入队列，还未park住，此时队列如下：
+             head(waitStatus=-1) --> t1(waitStatus=0) --> t2
+             t1的waitStatus=0，t3唤醒t1后，t1执行到了setHeadPropagate方法，此时有三种情况：
+
+             第一种情况：t1执行到了setHeadPropagate方法，但还没执行setHead(node)将自己设置为head，此时
+             t2已经入队列，但还没park住，这时候t2正在连续执行两次shouldParkAfterFailedAcquire，t2第一次
+             执行shouldParkAfterFailedAcquire会把t1的waitStatus设置为-1，t2第二次执行shouldParkAfterFailedAcquire
+             后会把自己park住，此时t1继续执行setHead后，刚好执行到if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0)，此时t1的waitStatus为-1小于0，肯定能进if，所以
+            此时调用doReleaseShared会把t2唤醒，这种情况也没有问题。
+
+            第二种情况：t1执行到了setHeadPropagate方法，并且执行了setHead(node)将自己设置为head，此时
+            t4已经执行了releaseShared，假设doReleaseShared方法代码如下，没有了PROPAGATE相关设置：
+            private void doReleaseShared() {
+                for (;;) {
+                    Node h = head;
+                    if (h != null && h != tail) {
+                        int ws = h.waitStatus;
+                        if (ws == Node.SIGNAL) {
+                            if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                                continue;
+                            unparkSuccessor(h);
+                        }
+                         // 去除了PROPAGATE，当做没有PROPAGATE
+                    }
+                     if (h == head)
+                        break;
+                }
+             }
+             此时t4执行了doReleaseShared后，没有任何操作，t1的waitStatus还是0，这时候t1继续执行setHead后
+             的操作：if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0)由于t1的waiStatus=0，此时if条件不满足，t1无法执行
+            doReleaseShared方法，t1的setHeadPropagate方法就执行完了，这时t4也已经执行完了doReleaseShared，
+            此时t4的releaseShared完了，信号量的state=1了，t1和t4都没有unpark后续t2，此时t2正在执行第一次的shouldParkAfterFailedAcquire，
+            这一次会把t1的waitStatus设置为-1，但是要执行第二次循环的时候，本应该第二次执行shouldParkAfterFailedAcquire
+            将t2进行park，但是此时在循环中的tryAcquireShared中得到了返回值为1，t2执行完setHeadPropagate后正常返回了。
+
+            如果doReleaseShared方法有PROPAGATE相关设置：
+            private void doReleaseShared() {
+                for (;;) {
+                    Node h = head;
+                    if (h != null && h != tail) {
+                        int ws = h.waitStatus;
+                        if (ws == Node.SIGNAL) {
+                            if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                                continue;
+                            unparkSuccessor(h);
+                        }
+                        else if (ws == 0 &&
+                                !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                            continue;
+                    }
+                    if (h == head)
+                        break;
+                }
+            }
+            此时t4执行了doReleaseShared时，会执行compareAndSetWaitStatus(h, 0, Node.PROPAGATE)，将head也就是t1的
+            waitStatus设置为了-3，这时候t1继续执行setHead后
+             的操作：if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0)由于t1的waiStatus=-3，此时if条件满足，将要执行doReleaseShared方法，
+            此时t2刚好执行两次shouldParkAfterFailedAcquire方法，把t1的waitStatus设置为了-1，t2自己也park住了，
+            此时t1执行doReleaseShared方法时，刚好可以把t2唤醒。
+
+            第三种情况：t1执行到了setHeadPropagate方法，并且执行了setHead(node)将自己设置为head，此时
+            t4还没有执行releaseShared方法，t1的waitStatus还是0，t2还没有park，这时t1执行if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0)发现条件不满足，直接返回了。这个时候t2继续执行两次shouldParkAfterFailedAcquire方法
+            将t1的waitStatus设置为-1，并将自己park住，这时候t4执行releaseShared方法，唤醒t2.
+
+            假设t4执行了releaseShared方法，t1的waitStatus变成-3，t2还没有park，这时t1执行if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0)发现条件满足继续执行doReleaseShared方法，这个时候t2继续执行两次shouldParkAfterFailedAcquire方法
+            将t1的waitStatus设置为-1，并将自己park住，这是t1继续执行doReleaseShared中的unparkSuccessor依然可以唤醒t2。
+
+            PROPAGATE就是更快速更高效的唤醒后继结点：
+            第一种情况：
+            t4在doReleaseShared的时候发现t1的waitStatus=0，就会将t1的waitStatus改为-3，此时t1可以满足if (propagate > 0 || h == null || h.waitStatus < 0 ||
+            (h = head) == null || h.waitStatus < 0)执行doReleaseShared方法，这时候t2执行两次shouldParkAfterFailedAcquire，将
+            t1的waitStatus设置为-1，并park自己，此时t1在执行doReleaseShared的时候就可以把t2唤醒；也可以t1先unpark t2，t2park自己的
+            时候就会没有用。
+
+            参考：
+            - https://www.zhihu.com/question/295925198/answer/1622051796
+            - http://go4ward.top/2019/07/20/AQS%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F/
+
+            // TODO 还是没搞明白PROPAGATE
          */
         /**
          * waitStatus value to indicate the next acquireShared should
