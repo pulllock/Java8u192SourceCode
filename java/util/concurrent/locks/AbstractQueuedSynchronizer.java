@@ -579,6 +579,8 @@ public abstract class AbstractQueuedSynchronizer
      * CLH锁中，等待锁的线程只需要在前驱结点的本地变量进行自旋，和MCS锁不一样，MCS在线程自己的节点上进行自旋。
      *
      * CLH是一个不可重入的独占锁。
+     *
+     * Node是CLH队列锁中的结点，是对等待获取资源的线程的封装
      */
     static final class Node {
         /**
@@ -888,6 +890,7 @@ public abstract class AbstractQueuedSynchronizer
          * waitStatus value to indicate the next acquireShared should
          * unconditionally propagate
          * 表示下一次共享式同步状态获取将会无条件的被传播下去。
+         * 共享模式下，前驱结点不仅会唤醒其后继结点，同时也可能会唤醒后继的后继结点
          */
         static final int PROPAGATE = -3;
 
@@ -928,6 +931,7 @@ public abstract class AbstractQueuedSynchronizer
          * 大于0表示此线程取消了等待
          *
          * 初始状态为0
+         * 结点的状态
          */
         volatile int waitStatus;
 

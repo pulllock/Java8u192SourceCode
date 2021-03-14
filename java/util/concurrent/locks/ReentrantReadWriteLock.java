@@ -211,6 +211,27 @@ import java.util.Collection;
  *
  * @since 1.5
  * @author Doug Lea
+ * 可重入读写锁
+ *
+ * 同一时刻允许多个线程对共享资源进行读操作；
+ * 同一时刻只允许一个线程对共享资源进行写操作。
+ *
+ * 读读共享，写写互斥，读写互斥
+ *
+ * 锁的状态依然是使用AQS的state来控制，但是读写锁有读锁和写锁区分，使用state代表
+ * 了两种锁状态。state的高16位是读锁状态，低16位是写锁状态。
+ *
+ * 将state与0x0000FFFF进行与运算，就得到了写锁数量
+ * 将state无符号右移16位(state>>>16)就得到了读锁的数量
+ *
+ * 获取读锁：state + (1<<16)
+ * 释放读锁：state - (1<<16)
+ *
+ * 获取写锁：state+1
+ * 释放写锁：state-1
+ *
+ * 在非公平模式下，如果有大量的读操作，并且读操作的时间可能会长一点，就会导致少量的写一直在同步队列
+ * 中等待，造成写操作的饥饿。可以使用StampedLock解决这个问题。
  */
 public class ReentrantReadWriteLock
         implements ReadWriteLock, java.io.Serializable {
@@ -264,14 +285,21 @@ public class ReentrantReadWriteLock
         static final int MAX_COUNT      = (1 << SHARED_SHIFT) - 1;
         static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
 
-        /** Returns the number of shared holds represented in count  */
+        /**
+         * Returns the number of shared holds represented in count
+         * state>>>16 state右移16位，得到了读锁的数量
+         */
         static int sharedCount(int c)    { return c >>> SHARED_SHIFT; }
-        /** Returns the number of exclusive holds represented in count  */
+        /**
+         * Returns the number of exclusive holds represented in count
+         * state与0x0000FFFF进行与运算，得到了写锁的数量
+         */
         static int exclusiveCount(int c) { return c & EXCLUSIVE_MASK; }
 
         /**
          * A counter for per-thread read hold counts.
          * Maintained as a ThreadLocal; cached in cachedHoldCounter
+         * 每个线程持有锁的数量
          */
         static final class HoldCounter {
             int count = 0;
@@ -366,10 +394,18 @@ public class ReentrantReadWriteLock
          * condition wait and re-established in tryAcquire.
          */
 
+        /**
+         * 写锁的释放操作
+         * @param releases
+         * @return
+         */
         protected final boolean tryRelease(int releases) {
+            // 锁只能被持有锁的当前线程释放
             if (!isHeldExclusively())
                 throw new IllegalMonitorStateException();
+            // state - 1
             int nextc = getState() - releases;
+            // exclusiveCount计算写锁数量，如果写锁数量为0，表示锁被完全释放
             boolean free = exclusiveCount(nextc) == 0;
             if (free)
                 setExclusiveOwnerThread(null);
@@ -377,6 +413,11 @@ public class ReentrantReadWriteLock
             return free;
         }
 
+        /**
+         * 写锁的加锁操作
+         * @param acquires
+         * @return
+         */
         protected final boolean tryAcquire(int acquires) {
             /*
              * Walkthrough:
@@ -390,27 +431,45 @@ public class ReentrantReadWriteLock
              *    and set owner.
              */
             Thread current = Thread.currentThread();
-            // 获取写锁当前的同步状态
+            // state
             int c = getState();
-            // 获取写锁获取的次数
+            // 获取写锁数量
             int w = exclusiveCount(c);
+            /*
+                c不为0，说明锁被占用，具体是读锁还是写锁，
+                需要根据w来判断。
+
+                c为0说明锁没有被任何线程占有
+             */
             if (c != 0) {
                 // (Note: if c != 0 and w == 0 then shared count != 0)
-                /**
-                 * 当读锁已被读线程获取或者当前线程不是已经获取写锁的线程
-                 * 当前线程获取写锁失败
+                /*
+                    w == 0 说明写锁数量为0，写锁未被占用，那就是现在读锁被占用，
+                    有读锁的情况下，写锁来获取锁，就会失败
+
+                    如果w不为0，说明有写锁占用了锁，判断下现在获取锁的线程是不是
+                    以获取锁的线程，如果不是的话，说明是其他线程来竞争锁，返回失败
                  */
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
-                // 当前线程获取写锁，支持可重复加锁
+                // 可重入锁，锁重入次数加1
                 setState(c + acquires);
                 return true;
             }
-            /**
-             * 写锁未被任何线程获取，当前线程可获取写锁
+            /*
+                c == 0 走动这里，说明锁未被任何线程占有
+                写锁未被任何线程获取，当前线程可获取写锁
+
+                锁的获取有公平和非公平两种
+                writerShouldBlock用来判断当前获取写锁的线程是否该阻塞。
+                writerShouldBlock在公平锁的实现是检查下同步队列中是否有等待的线程，
+                在非公平锁的实现是直接返回false，因为非公平的锁可以直接获取锁。
+
+                在公平模式下，如果同步队列中没有等待的线程，这里会直接cas获取写锁
+                在非公平模式下这里会直接cas获取写锁
              */
             if (writerShouldBlock() ||
                 !compareAndSetState(c, c + acquires))
@@ -419,6 +478,11 @@ public class ReentrantReadWriteLock
             return true;
         }
 
+        /**
+         * 读锁的释放操作
+         * @param unused
+         * @return
+         */
         protected final boolean tryReleaseShared(int unused) {
             Thread current = Thread.currentThread();
             if (firstReader == current) {
@@ -455,6 +519,11 @@ public class ReentrantReadWriteLock
                 "attempt to unlock read lock, not locked by current thread");
         }
 
+        /**
+         * 读锁的加锁操作
+         * @param unused
+         * @return
+         */
         protected final int tryAcquireShared(int unused) {
             /*
              * Walkthrough:
@@ -472,20 +541,43 @@ public class ReentrantReadWriteLock
              *    saturated, chain to version with full retry loop.
              */
             Thread current = Thread.currentThread();
+            // state
             int c = getState();
+            /*
+                写锁数量不为0，说明有写锁占用，如果当前获取读锁的线程不是
+                获取写锁的那个线程，获取锁失败；如果当前获取读锁的线程是
+                获取写锁的那个线程，则可以继续获取读锁。
+             */
             if (exclusiveCount(c) != 0 &&
                 getExclusiveOwnerThread() != current)
                 return -1;
+            // 读锁的数量
             int r = sharedCount(c);
+
+            /*
+                走到这里有两种情况：
+                1. 没有写锁，只有读锁
+                2. 有写锁，但此时获取读锁的线程和占有写锁的线程是同一个线程
+
+                readerShouldBlock用来判断获取读锁的线程是否应该阻塞排队，
+                readerShouldBlock在非公平模式下会判断同步队列中第一个线程是否是等待获取写锁的线程，
+                如果是获取写锁的在等待，则当前获取读锁的线程需要进行等待。
+                readerShouldBlock在公平模式下，会看队列中是否有排队的线程
+
+                如果获取读锁判断不需要阻塞，就直接cas设置读锁的个数+1
+             */
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
                 compareAndSetState(c, c + SHARED_UNIT)) {
+                // 读锁个数为0，设置当前线程为firstReader
                 if (r == 0) {
                     firstReader = current;
                     firstReaderHoldCount = 1;
                 } else if (firstReader == current) {
                     firstReaderHoldCount++;
-                } else {
+                }
+                // 使用ThreadLocal保存当前线程获取读锁的次数
+                else {
                     HoldCounter rh = cachedHoldCounter;
                     if (rh == null || rh.tid != getThreadId(current))
                         cachedHoldCounter = rh = readHolds.get();
@@ -495,6 +587,7 @@ public class ReentrantReadWriteLock
                 }
                 return 1;
             }
+            // 读锁获取需要阻塞等待或者cas失败表示有竞争，下面会使用自旋加cas来尝试获取锁
             return fullTryAcquireShared(current);
         }
 
