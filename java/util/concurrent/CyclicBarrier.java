@@ -135,6 +135,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * @see CountDownLatch
  *
  * @author Doug Lea
+ * 和CountDownLatch类似，CyclicBarrier是所有线程都到了同一个集合点后，
+ * 再一起同时开始执行后续操作。每个线程到达了集合点后就会等待，直到所有线程都到达了集合点。
  */
 public class CyclicBarrier {
     /**
