@@ -138,24 +138,30 @@ import java.util.concurrent.locks.LockSupport;
  *   private final StampedLock sl = new StampedLock();
  *
  *   void move(double deltaX, double deltaY) { // an exclusively locked method
+ *     // 写锁，返回sequence+1
  *     long stamp = sl.writeLock();
  *     try {
  *       x += deltaX;
  *       y += deltaY;
  *     } finally {
+ *       // 释放写锁
  *       sl.unlockWrite(stamp);
  *     }
  *   }
  *
  *   double distanceFromOrigin() { // A read-only method
+ *     // 乐观读
  *     long stamp = sl.tryOptimisticRead();
  *     double currentX = x, currentY = y;
+ *     // 校验乐观读返回的stamp，看是否被写锁更改
  *     if (!sl.validate(stamp)) {
+ *        // 被写锁更改，需要尝试获取悲观读锁
  *        stamp = sl.readLock();
  *        try {
  *          currentX = x;
  *          currentY = y;
  *        } finally {
+ *           // 释放悲观读
  *           sl.unlockRead(stamp);
  *        }
  *     }
@@ -187,6 +193,63 @@ import java.util.concurrent.locks.LockSupport;
  *
  * @since 1.8
  * @author Doug Lea
+ *
+ * ReentrantReadWriteLock适用于读多写少的场景，但是可能会产生写线程饥饿问题，
+ * 读写锁中读读共享，读写和写写互斥，如果有读锁则写锁需要等待读锁释放，在非公平模式下，如果有
+ * 大量的读线程进来，可能会导致写线程一直获取不到锁，导致写线程饥饿问题。
+ *
+ * StampedLock解决了ReentrantReadWriteLock的写线程饥饿问题，了解StampedLock之前
+ * 先了解下SeqLock（顺序锁，sequence lock）
+ *
+ * 参考：
+ * - https://blog.csdn.net/zhoutaopower/article/details/86611798
+ * - https://blog.csdn.net/longwang155069/article/details/52231519
+ * - http://www.yebangyu.org/blog/2016/06/26/sequence-lock/
+ * - https://cloud.tencent.com/developer/article/1021135
+ *
+ * SeqLock可以保证写线程的优先，让写线程更快的获取到锁，而不是在有读线程加锁的情况下，写
+ * 线程需要等待。
+ *
+ * 顺序锁的设计思想：
+ * 读线程在读取共享数据的时候不需要加锁，只有写线程在需要修改共享数据的时候加锁，读线程和写线程
+ * 之间引入一个整形变量sequence，写线程在进入临界区的时候会将sequence加1，写线程在退出临界区
+ * 的时候sequence还会再加1。当sequence为奇数的时候，表示有写操作正在进行，读操作需要等待，直到
+ * sequence变为偶数；当读操作进入临界区时，需要先记录下sequence的值，等退出临界区的时候，会
+ * 和当前的sequence进行比较，如果不相等则表示读操作在临界区时，有写操作发生，这时候读操作需要
+ * 重试重新读取。
+ *
+ * 顺序锁中读写是不互斥的，只有写写是互斥的。
+ *
+ * 顺序锁的写操作获取锁的过程：
+ * 1. 写操作获取锁，确保只有一个写线程进入临界区
+ * 2. sequence加1
+ *
+ * 释放锁的过程
+ * 1. 释放锁
+ * 2. sequence加1
+ *
+ * 读操作：
+ * 1. 获取sequence，如果是偶数则可以进入临界区；如果是奇数则等待变为偶数
+ * 2. 进入临界区
+ * 3. 获取sequence和老的sequence比较，如果相等则完成，否则重试
+ *
+ * 顺序锁适用于读多写少的场景，写操作较少但是写操作性能要求较高，也就是写操作随时可以更新。
+ *
+ * StampedLock
+ *
+ * 参考：
+ * - https://muhouer.github.io/posts/ab957bc5/
+ *
+ * StampedLock中有三种方式：
+ * - 独占写，和读写锁的写类似，写写互斥，写和悲观读互斥
+ * - 悲观读，和读写锁的读类似，读读共享，读写互斥
+ * - 乐观读，就是顺序锁中的读，使用sequence来判断数据是否被修改过
+ *
+ * 使用StampedLock的读操作的建议：
+ * 乐观读时，如果写操作修改了共享资源，则升级乐观读为悲观读锁，
+ * 这样可用避免乐观读反复的循环等待写锁的释放，造成CPU资源的浪费。
+ *
+ * StampedLock不支持重入、不支持条件变量
  */
 public class StampedLock implements java.io.Serializable {
     /*
@@ -314,7 +377,17 @@ public class StampedLock implements java.io.Serializable {
         volatile WNode next;
         volatile WNode cowait;    // list of linked readers
         volatile Thread thread;   // non-null while possibly parked
+        /**
+         * 等待队列中结点的状态
+         * 初始状态：0
+         * 等待中：-1
+         * 取消：1
+         */
         volatile int status;      // 0, WAITING, or CANCELLED
+
+        /**
+         * 等待写还是等待读
+         */
         final int mode;           // RMODE or WMODE
         WNode(int m, WNode p) { mode = m; prev = p; }
     }
@@ -329,13 +402,25 @@ public class StampedLock implements java.io.Serializable {
     transient WriteLockView writeLockView;
     transient ReadWriteLockView readWriteLockView;
 
-    /** Lock sequence/state */
+    /**
+     * Lock sequence/state
+     * 锁的状态，顺序锁的sequence
+     *
+     * 0-6位作为读锁计数，超过RFULL（126）时，使用readerOverflow作为读锁计数，
+     * 当获取到读锁时，state加1，释放读锁时state减1
+     *
+     * 第7位是写锁标志，1表示已获取写锁，0表示已获取读锁，线程获取写锁或者释放写锁
+     * 时，都会将state加上WBIT
+     *
+     * 8-64位是写锁版本，获取写锁和释放写锁，其值都会改变，初始状态下第8位为1，其余位为0
+     */
     private transient volatile long state;
     /** extra reader count when state read count saturated */
     private transient int readerOverflow;
 
     /**
      * Creates a new lock, initially in unlocked state.
+     * 创建一个StampedLock并初始化sequence为256
      */
     public StampedLock() {
         state = ORIGIN;
@@ -346,9 +431,23 @@ public class StampedLock implements java.io.Serializable {
      * until available.
      *
      * @return a stamp that can be used to unlock or convert mode
+     * 悲观写，和读写锁的写类似，写写互斥，写读互斥
+     * 获取写锁，如果获取写锁失败，就进入阻塞队列
      */
     public long writeLock() {
+        // s是当前的state值，也就是sequence
+        // next是获取写锁之后的state值，也就是sequence+1
         long s, next;  // bypass acquireWrite in fully unlocked case only
+        /*
+            ((s = state) & ABITS)获取低8位，用来判断是否有读锁或写锁被使用
+            有读锁，0-6位不为0；有写锁则第7位不为0
+            ((s = state) & ABITS) == 0L 表示读锁和写锁都没被使用
+
+            U.compareAndSwapLong(this, STATE, s, next = s + WBIT))使用cas更新state
+
+            cas更新成功，表示获取到了写锁，返回next（sequence+1）,此时state是奇数
+            cas更新失败，表示锁有竞争，获取写锁线程需要入同步队列
+         */
         return ((((s = state) & ABITS) == 0L &&
                  U.compareAndSwapLong(this, STATE, s, next = s + WBIT)) ?
                 next : acquireWrite(false, 0L));
@@ -420,9 +519,18 @@ public class StampedLock implements java.io.Serializable {
      * until available.
      *
      * @return a stamp that can be used to unlock or convert mode
+     * 悲观读，和读写锁的读操作类似，读读共享，读写互斥
      */
     public long readLock() {
+        // s是当前state值，就是sequence
+        // next是获取读锁之后的state的值，就是sequence+1
         long s = state, next;  // bypass acquireRead on common uncontended case
+        /*
+            whead == wtail表示同步队列为空
+
+            (s & ABITS) < RFULL表示没有写锁且读锁数量小于126
+
+         */
         return ((whead == wtail && (s & ABITS) < RFULL &&
                  U.compareAndSwapLong(this, STATE, s, next = s + RUNIT)) ?
                 next : acquireRead(false, 0L));
@@ -507,6 +615,10 @@ public class StampedLock implements java.io.Serializable {
      * if exclusively locked.
      *
      * @return a stamp, or zero if exclusively locked
+     * 乐观读
+     * 返回sequence
+     * 使用该方法返回后，需要继续调用validate方法进行验证，看当前是否有
+     * 其他线程持有写锁
      */
     public long tryOptimisticRead() {
         long s;
@@ -524,8 +636,13 @@ public class StampedLock implements java.io.Serializable {
      * @param stamp a stamp
      * @return {@code true} if the lock has not been exclusively acquired
      * since issuance of the given stamp; else false
+     * 该方法对乐观读返回的数据进行操作，如果当前时间有其他线程持有了写锁就返回false
      */
     public boolean validate(long stamp) {
+        /*
+            loadFence内存屏障，禁止load操作重排序，使得此点之前的所有读写操作
+            都执行后才可开始执行此点之后的操作
+         */
         U.loadFence();
         return (stamp & SBITS) == (state & SBITS);
     }
@@ -537,13 +654,18 @@ public class StampedLock implements java.io.Serializable {
      * @param stamp a stamp returned by a write-lock operation
      * @throws IllegalMonitorStateException if the stamp does
      * not match the current state of this lock
+     * 悲观写
+     * 释放锁，参数是加锁时返回的值，sequence+1，为奇数
+     *
      */
     public void unlockWrite(long stamp) {
         WNode h;
         if (state != stamp || (stamp & WBIT) == 0L)
             throw new IllegalMonitorStateException();
+        // sequence继续加1，为偶数
         state = (stamp += WBIT) == 0L ? ORIGIN : stamp;
         if ((h = whead) != null && h.status != 0)
+            // 释放写锁，唤醒后继结点
             release(h);
     }
 
@@ -554,6 +676,8 @@ public class StampedLock implements java.io.Serializable {
      * @param stamp a stamp returned by a read-lock operation
      * @throws IllegalMonitorStateException if the stamp does
      * not match the current state of this lock
+     * 悲观读
+     * 释放锁，参数是加锁时返回的值，sequence+1
      */
     public void unlockRead(long stamp) {
         long s, m; WNode h;
@@ -1034,9 +1158,12 @@ public class StampedLock implements java.io.Serializable {
      * @return next state, or INTERRUPTED
      */
     private long acquireWrite(boolean interruptible, long deadline) {
+        // node是当前结点，p是当前结点的前驱结点
         WNode node = null, p;
+        // 这个for循环主要用来入队列
         for (int spins = -1;;) { // spin while enqueuing
             long m, s, ns;
+            // (s = state) & ABITS 为0表示没有读锁也没有写锁，尝试cas获取锁
             if ((m = (s = state) & ABITS) == 0L) {
                 if (U.compareAndSwapLong(this, STATE, s, ns = s + WBIT))
                     return ns;
