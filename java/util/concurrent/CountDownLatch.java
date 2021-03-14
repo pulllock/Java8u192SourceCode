@@ -152,6 +152,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  *
  * @since 1.5
  * @author Doug Lea
+ * 一个线程等待其他若干个线程完成任务后，继续往下执行
  */
 public class CountDownLatch {
     /**
@@ -180,6 +181,7 @@ public class CountDownLatch {
                 if (c == 0)
                     return false;
                 int nextc = c-1;
+                // 只有在最后一个线程countDown之后，state-1变为0，才会唤醒同步队列中等待的线程
                 if (compareAndSetState(c, nextc))
                     return nextc == 0;
             }
