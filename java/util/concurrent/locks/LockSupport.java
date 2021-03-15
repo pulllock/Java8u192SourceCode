@@ -116,6 +116,15 @@ import sun.misc.Unsafe;
  *     LockSupport.unpark(waiters.peek());
  *   }
  * }}</pre>
+ *
+ * LockSupport的park和unpark是对应到具体的线程上的，在JVM的实现中，是通过该一个counter
+ * 变量来标识线程有没有呗park或unpark过，counter取值只能是0或者1，当counter为1的时候，说明
+ * 线程被unpark过，这时候调用park时，会把counter变为0，并且直接返回，也就是不会阻塞线程。
+ * 如果counter为0，调用park方法的线程会被阻塞住。
+ *
+ * 如果counter为0，并且没有park方法调用，此时如果调用了unpark方法会使得counter变为1，后续如果
+ * 多次调用unpark方法，counter始终是1，等到有方法调用park的时候，不会阻塞线程。这也就是unpark可以
+ * 先于park调用的原因。
  */
 public class LockSupport {
     private LockSupport() {} // Cannot be instantiated.
