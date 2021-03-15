@@ -125,6 +125,11 @@ import java.util.Spliterator;
  *           这里并非使用信号量进行实现，而是使用管程模式来实现，AQS就是管程模式。
  *
  *           使用一个可重入锁以及锁的条件变量来实现。
+ *
+ *           ArrayBlockingQueue缺点
+ *           - 内部使用数组实现元素存储，容量需要在初始化的时候确定，使用时需要考虑好容量
+ *           - 内部只使用了一个互斥锁来控制出队入队，效率比较低
+ *           - 消费速度如果比生产速度快，会导致生产线程阻塞
  */
 public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
