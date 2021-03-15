@@ -73,6 +73,8 @@ import java.util.function.Consumer;
  * @since 1.6
  * @author  Doug Lea
  * @param <E> the type of elements held in this collection
+ *           基于链表的双端阻塞队列，使用一把锁和两个条件变量，
+ *           和LinkedBlockingQueue不同，和ArrayBlockingQueue类似
  */
 public class LinkedBlockingDeque<E>
     extends AbstractQueue<E>
@@ -106,10 +108,14 @@ public class LinkedBlockingDeque<E>
 
     private static final long serialVersionUID = -387911632671998426L;
 
-    /** Doubly-linked list node class */
+    /**
+     * Doubly-linked list node class
+     * 链表中的结点
+     */
     static final class Node<E> {
         /**
          * The item, or null if this node has been removed.
+         * 结点中的元素
          */
         E item;
 
@@ -118,6 +124,7 @@ public class LinkedBlockingDeque<E>
          * - the real predecessor Node
          * - this Node, meaning the predecessor is tail
          * - null, meaning there is no predecessor
+         * 前驱结点
          */
         Node<E> prev;
 
@@ -126,6 +133,7 @@ public class LinkedBlockingDeque<E>
          * - the real successor Node
          * - this Node, meaning the successor is head
          * - null, meaning there is no successor
+         * 后继结点
          */
         Node<E> next;
 
@@ -154,13 +162,24 @@ public class LinkedBlockingDeque<E>
     /** Maximum number of items in the deque */
     private final int capacity;
 
-    /** Main lock guarding all access */
+    /**
+     * Main lock guarding all access
+     * 出队和入队使用的锁
+     * 只有一把锁，同一时刻只能有一个线程在队头或者队尾操作。
+     * 和LinkedBlockingQueue不一样，和ArrayBlockingQueue类似。
+     */
     final ReentrantLock lock = new ReentrantLock();
 
-    /** Condition for waiting takes */
+    /**
+     * Condition for waiting takes
+     * 非空的条件变量
+     */
     private final Condition notEmpty = lock.newCondition();
 
-    /** Condition for waiting puts */
+    /**
+     * Condition for waiting puts
+     * 非满的条件变量
+     */
     private final Condition notFull = lock.newCondition();
 
     /**
