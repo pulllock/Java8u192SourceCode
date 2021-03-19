@@ -101,6 +101,27 @@ import java.util.function.Consumer;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
+ *           基于链表的无界非阻塞队列，线程安全，基于CAS。
+ *
+ *           ConcurrentLinkedQueue基于Michael & Scott 非阻塞队列算法进行实现，做了一些修改。
+ *
+ *           ConcurrentLinkedQueue基于CAS，没有使用锁。
+ *
+ *           ConcurrentLinkedQueue有head结点和tail结点，每次元素入队列的时候，tail并不总是
+ *           指向最后一个结点；出队列的时候head也并不总是指向第一个结点。
+ *
+ *           假设tail现在指向最后一个结点，此时tail.next==null，有新元素入队列的时候，
+ *           会设置tail.next=新结点，tail并不会指向新的最后一个结点，而是等下一个元素入队列
+ *           的时候修改tail的指向。
+ *
+ *           这样就不用每次都需要cas修改tail结点，而是每两次才需要cas修改tail结点，
+ *           减少cas次数，提高效率。
+ *
+ *           假设head指向第一个结点，此时head.item不为null，此时直接将第一个结点中的元素返回，
+ *           并设置第一个结点的item=null，下一次再有需要出队列一个元素的时候，此时head.item==null，
+ *           需要将head后面的这个结点元素出队列，并将head指向刚才head的后面的后面的结点。
+ *
+ *           head也是通过减少cas的次数来提升效率。
  */
 public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         implements Queue<E>, java.io.Serializable {
@@ -177,26 +198,72 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * optimization.
      */
 
+    /**
+     * 队列中的结点
+     * @param <E>
+     */
     private static class Node<E> {
+        /**
+         * 存放元素
+         * volatile类型
+         * ConcurrentLinkedQueue使用减少CAS次数来提升出队列的效率，
+         * head结点不总是指向第一个结点，在更新head结点指向时也需要根据item
+         * 是否为null来作为判断条件，所以这里使用volatile来确保item的可见性
+         */
         volatile E item;
+
+        /**
+         * 结点的后继结点
+         * volatile类型
+         * ConcurrentLinkedQueue使用减少CAS次数来提升入队列的效率，
+         * tail结点不总是指向最后一个结点，在更新tail结点指向时也需要根据next
+         * 是否为null来作为判断条件，所以在这里使用volatile来确保next的可见性
+         */
         volatile Node<E> next;
 
         /**
          * Constructs a new node.  Uses relaxed write because item can
          * only be seen after publication via casNext.
+         * item是一个volatile类型的变量，在一个元素要入队列之前，需要先新建一个结点，
+         * 此时结点新建和设置item并没有竞争，写item时只需要作为一个普通的变量写入，
+         * 无需使用volatile类型，无需使用内存屏障。此时直接使用了UNSAFE.putObject
+         * 方法来将一个volatile类型的变量以普通变量方式进行更新，不涉及到内存屏障，
+         * 提升性能。
          */
         Node(E item) {
             UNSAFE.putObject(this, itemOffset, item);
         }
 
+        /**
+         * cas更新item，在出队列时，将元素设置为null的时候使用
+         * @param cmp
+         * @param val
+         * @return
+         */
         boolean casItem(E cmp, E val) {
             return UNSAFE.compareAndSwapObject(this, itemOffset, cmp, val);
         }
 
+        /**
+         * 使用这个方法更新next，不保证可见性。
+         * 使用UNSAFE.putOrderedObject方法来更新next，此方法设置完对应值后，不保证可见性，
+         * 通常用在volatile类型的字段上，。
+         *
+         * 在对volatile字段更新时，为了保证可见性，会使用到StoreLoad内存屏障，也就是最重的那个
+         * 内存屏障，而使用UNSAFE.putOrderedObject则只使用到StoreStore内存屏障，比StoreLoad
+         * 内存屏障性能更好。但是需要牺牲可见性，更新后可能不能马上被别的线程可见
+         * @param val
+         */
         void lazySetNext(Node<E> val) {
             UNSAFE.putOrderedObject(this, nextOffset, val);
         }
 
+        /**
+         * cas方式更新next
+         * @param cmp
+         * @param val
+         * @return
+         */
         boolean casNext(Node<E> cmp, Node<E> val) {
             return UNSAFE.compareAndSwapObject(this, nextOffset, cmp, val);
         }
@@ -232,6 +299,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * - head.item may or may not be null.
      * - it is permitted for tail to lag behind head, that is, for tail
      *   to not be reachable from head!
+     *   头结点
+     *   头结点并不总是队列中的第一个结点，不是每次出队列都更新head结点，减少cas操作
      */
     private transient volatile Node<E> head;
 
@@ -246,7 +315,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * - it is permitted for tail to lag behind head, that is, for tail
      *   to not be reachable from head!
      * - tail.next may or may not be self-pointing to tail.
-     * 尾节点，尾节点不一定是链表的最后一个节点
+     * 尾节点
+     * 尾节点并不一定是链表的最后一个节点
      *
      * tail并不总是指向队列的尾节点
      *
@@ -261,6 +331,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
 
     /**
      * Creates a {@code ConcurrentLinkedQueue} that is initially empty.
+     * 初始化的时候新建一个结点，head和tail都指向新建的结点
      */
     public ConcurrentLinkedQueue() {
         head = tail = new Node<E>(null);
@@ -302,6 +373,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      *
      * @return {@code true} (as specified by {@link Collection#add})
      * @throws NullPointerException if the specified element is null
+     * 添加一个元素到队列中，由于队列是无界的队列，所以该方法不会抛异常或返回false
      */
     public boolean add(E e) {
         return offer(e);
@@ -320,9 +392,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * Returns the successor of p, or the head node if p.next has been
      * linked to self, which will only be true if traversing with a
      * stale pointer that is now off the list.
+     * 返回p的后继结点
      */
     final Node<E> succ(Node<E> p) {
+        // p的后继结点
         Node<E> next = p.next;
+        // 如果p的后继结点指向p自己，则返回head
         return (p == next) ? head : next;
     }
 
@@ -332,56 +407,76 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      *
      * @return {@code true} (as specified by {@link Queue#offer})
      * @throws NullPointerException if the specified element is null
+     * 元素入队
      */
     public boolean offer(E e) {
         checkNotNull(e);
-        // 构造入队节点
+        // 新建一个入队列结点，使用UNSAFE.putObject设置结点元素，使用非volatile方式设置元素
         final Node<E> newNode = new Node<E>(e);
 
         /**
          * 循环，如果入队不成功，反复入队
-         * t指向tail节点的引用
+         * t指向tail节点的引用，tail并不总是指向最后一个结点
          * p用来表示队列的尾结点，默认情况下等于tail节点
          */
         for (Node<E> t = tail, p = t;;) {
             // 获取p的下一个节点
             Node<E> q = p.next;
-            // q为null，说明p是尾节点
+            // q为null，说明p是最后一个结点，tail指向最后一个结点
             if (q == null) {
                 // p is last node
-                // 设置p节点的next节点为入队节点
+                // p是最后一个结点，可以尝试使用cas将新节点入队列，设置p.next=newNode
                 if (p.casNext(null, newNode)) {
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
                     // and for newNode to become "live".
-                    /**
-                     * cas执行成功之后，p节点（原链表的tail节点）的next是newNode节点，
-                     * 这里就需要设置tail节点为newNode节点
-                     *
-                     * 如果p不等于t，说明有其他线程已经更新了tail节点，
-                     * p取到的可能是t后面的值，把tail原子更新为newNode
-                     *
+                    /*
+                        如果p==t，说明tail指向t，也就是tail指向最后一个结点，
+                        新节点入队列成功后，此时队列如下：head,.....,tail,newNode
+                        这里就不会进if，不会更新tail指向newNode。
+
+                        如果p!=t，说明tail不是指向最后一个结点，新节点入队后，此时队列如下：
+                        head,......,tail,q,newNode，此时需要将tail指向newNode，也就是
+                        tail指向最后一个结点。
+
+                        使用cas设置tail指向newNode，失败也没事，后续入队还会继续更新tail
                      */
                     if (p != t) // hop two nodes at a time
                         casTail(t, newNode);  // Failure is OK.
                     return true;
                 }
                 // Lost CAS race to another thread; re-read next
+                // 如果cas失败，说明有其他线程入队了新结点，继续执行下次循环入队列
             }
+            /*
+                q!=null，q=p.next，
+                如果p==q，说明p.next指向自己，这种情况在poll方法中会发生，
+                也就是说有别的线程使用了poll方法出队列元素，导致了p.next指向了p自己
+             */
             else if (p == q)
                 // We have fallen off list.  If tail is unchanged, it
                 // will also be off-list, in which case we need to
                 // jump to head, from which all live nodes are always
                 // reachable.  Else the new tail is a better bet.
-            /**
-             * p == q
-             * 多线程操作，可能会有别的线程使用poll方法移除元素，
-             * head的next就会变成head，需要找到新的head
+            /*
+               p == q
+               多线程操作，可能会有别的线程使用poll方法移除元素，
+               head的next就会变成head，需要找到新的head
+               TODO 和poll方法一起分析
              */
                 p = (t != (t = tail)) ? t : head;
+            /*
+                p!=null, p!=q，说明tail不是指向最后一个结点，此时队列可能是：
+                head,......,tail,q
+             */
             else
                 // Check for tail updates after two hops.
-                // 查询尾节点
+                /*
+                    p==t，说明tail结点没有被其他线程修改，此时的tail不是指向最后一个结点，
+                    所以将q赋值给p，也就是找到最后一个结点，然后继续循环，将新结点入队
+
+                    p!=t说明有并发，tail被其他线程修改，重新将p指向tail，然后继续循环
+                 */
                 p = (p != t && t != (t = tail)) ? t : q;
         }
     }
