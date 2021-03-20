@@ -247,7 +247,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         /**
          * 使用这个方法更新next，不保证可见性。
          * 使用UNSAFE.putOrderedObject方法来更新next，此方法设置完对应值后，不保证可见性，
-         * 通常用在volatile类型的字段上，。
+         * 通常用在volatile类型的字段上。
          *
          * 在对volatile字段更新时，为了保证可见性，会使用到StoreLoad内存屏障，也就是最重的那个
          * 内存屏障，而使用UNSAFE.putOrderedObject则只使用到StoreStore内存屏障，比StoreLoad
@@ -461,8 +461,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
             /*
                p == q
                多线程操作，可能会有别的线程使用poll方法移除元素，
-               head的next就会变成head，需要找到新的head
-               TODO 和poll方法一起分析
+               head的next就会变成head，也就是说head已经是老的head了，并且head已经不
+               在队列中了，需要找到新的tail
+
              */
                 p = (t != (t = tail)) ? t : head;
             /*
@@ -487,19 +488,47 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
             for (Node<E> h = head, p = h, q;;) {
                 E item = p.item;
 
+                /*
+                    head指向的结点不一定是有效的第一个结点
+                    head指向的节点的item不为null，说明指向的是第一个结点，
+                    直接cas修改head指向的第一个结点的item为null
+                 */
                 if (item != null && p.casItem(item, null)) {
                     // Successful CAS is the linearization point
                     // for item to be removed from this queue.
+                    /*
+                        如果p==h，说明head指向第一个结点，这里无需updateHead
+
+                        如果p!=h，说明head指向第一个结点是无效结点，第二个结点
+                        才是带有元素的真实的第一个结点，出队列也是将第二个结点的
+                        元素出队列，也就是此时p指向的节点，这里调用updateHead方法
+                        将head使用cas指向p的next结点。
+
+                        同时还会将旧的head的next指向自己，这个会在offer方法中有用到
+                     */
                     if (p != h) // hop two nodes at a time
                         updateHead(h, ((q = p.next) != null) ? q : p);
                     return item;
                 }
+                /*
+                    item为null，也就是head指向的节点item为null
+                    并且p的next也为null，此时是个空队列，
+                    cas更新head，并返回null
+                 */
                 else if ((q = p.next) == null) {
                     updateHead(h, p);
                     return null;
                 }
+                /*
+                    p.item == null q=p.next && p=p.next，说明p已经被移除出队列，跳出循环从头来
+                 */
                 else if (p == q)
                     continue restartFromHead;
+                /*
+                p的item为null
+                p.next不为null
+                将p指向p.next，也就是指向可出队列的那个结点
+                 */
                 else
                     p = q;
             }
@@ -572,6 +601,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * applications.
      *
      * @return the number of elements in this queue
+     * size不准确
      */
     public int size() {
         int count = 0;
