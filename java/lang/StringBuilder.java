@@ -72,6 +72,8 @@ package java.lang;
  * @see         java.lang.StringBuffer
  * @see         java.lang.String
  * @since       1.5
+ * StringBuilder和StringBuffer设计基本一样，只不过StringBuilder不是线程安全的，在一些
+ * 删除、插入等操作上没有使用互斥锁。
  */
 public final class StringBuilder
     extends AbstractStringBuilder

@@ -106,11 +106,37 @@ import java.util.regex.PatternSyntaxException;
  * @see     java.lang.StringBuilder
  * @see     java.nio.charset.Charset
  * @since   JDK1.0
+ *
+ * 数据结构中的串
+ *
+ * 字符串是由字符组成的有序序列，串的逻辑结构是线性表，是一种特殊的线性表，
+ * 通常采用顺序存储结构存储。
+ *
+ * 串的存储结构
+ *
+ * 串有顺序存储和链式存储两种存储结构。
+ *
+ * 顺序存储结构的串，使用字符数组存储数据，具有随机存储特性，存取指定位置字符
+ * 的时间复杂度为O(1)，插入和删除需要移动元素，数组容量不够时需要重新申请一
+ * 个更大数组，并复制原数组中的所有元素，插入和删除操作时间复杂度为O(n)。
+ *
+ * 串的链式存储结构有单字符链表和块链表。单字符链表是每个节点的数据域只包含一
+ * 个字符的单链表；块链表是每个结点的数据域包含若干个字符的单链表。
+ *
+ * Java字符串类主要有常量字符串类String和变量字符串类StringBuffer等。
+ *
+ * String存储常量字符串，一旦创建实例，就不能修改，是线程安全的，但是每次连接
+ * 等运算结果都讲创建新的实例。
+ *
+ * StringBuffer采用缓冲区存储可变长的字符串，避免在运算时频繁的申请内存。
  */
 
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence {
-    /** The value is used for character storage. */
+    /**
+     * The value is used for character storage.
+     * 字符数组，存储字符串的字符序列
+     */
     private final char value[];
 
     /** Cache the hash code for the string */

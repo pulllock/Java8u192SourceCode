@@ -93,6 +93,10 @@ import java.util.Arrays;
  * @see     java.lang.StringBuilder
  * @see     java.lang.String
  * @since   JDK1.0
+ * StringBuffer采用缓冲区存储可变长的字符串，避免运算时频繁的申请内存。
+ * 仍是采用数组存储字符数据，但是在运算时可动态扩展数组大小，有点类似ArrayList。
+ *
+ * StringBuffer的插入和删除等操作使用互斥锁的方式，来控制并发安全。
  */
  public final class StringBuffer
     extends AbstractStringBuilder
