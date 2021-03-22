@@ -159,6 +159,14 @@ import java.io.IOException;
  * @see     TreeMap
  * @see     Hashtable
  * @since   1.4
+ * LinkedHashMap基于HashMap实现，增加了双向链表，能够实现保持元素的插入顺序和访问顺序。
+ *
+ * 保持插入顺序：LinkedHashMap中有head和tail结点，新增元素的时候会创建新节点，并让tail
+ * 指向新结点，保持插入顺序。
+ *
+ * 保持访问顺序：每次访问一个元素结点的时候，都会把该节点移动到链表最后。
+ *
+ * 利用保持访问顺序这个功能，可以基于LinkedHashMap实现一个LRU策略的缓存。
  */
 public class LinkedHashMap<K,V>
     extends HashMap<K,V>
@@ -188,6 +196,7 @@ public class LinkedHashMap<K,V>
 
     /**
      * HashMap.Node subclass for normal LinkedHashMap entries.
+     * 双向链表的结点
      */
     static class Entry<K,V> extends HashMap.Node<K,V> {
         Entry<K,V> before, after;
@@ -200,11 +209,13 @@ public class LinkedHashMap<K,V>
 
     /**
      * The head (eldest) of the doubly linked list.
+     * 头结点
      */
     transient LinkedHashMap.Entry<K,V> head;
 
     /**
      * The tail (youngest) of the doubly linked list.
+     * 尾结点
      */
     transient LinkedHashMap.Entry<K,V> tail;
 
@@ -213,6 +224,7 @@ public class LinkedHashMap<K,V>
      * for access-order, <tt>false</tt> for insertion-order.
      *
      * @serial
+     * 为true的话，保持访问顺序，false保持插入顺序
      */
     final boolean accessOrder;
 
@@ -294,6 +306,11 @@ public class LinkedHashMap<K,V>
             a.before = b;
     }
 
+    /**
+     * 插入新结点之后的操作，这里是插入新节点后看是否需要移除最老的那个结点
+     * head结点是最老的，新插入的是在tail尾结点处
+     * @param evict
+     */
     void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry<K,V> first;
         if (evict && (first = head) != null && removeEldestEntry(first)) {
@@ -302,6 +319,10 @@ public class LinkedHashMap<K,V>
         }
     }
 
+    /**
+     * 访问结点后的操作，这里是将访问后的结点移到链表的最后，也就是保持了访问顺序
+     * @param e
+     */
     void afterNodeAccess(Node<K,V> e) { // move node to last
         LinkedHashMap.Entry<K,V> last;
         if (accessOrder && (last = tail) != e) {
