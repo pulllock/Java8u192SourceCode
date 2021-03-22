@@ -137,10 +137,39 @@ import sun.misc.SharedSecrets;
  * @see     TreeMap
  * @see     Hashtable
  * @since   1.2
+ *
+ * 数据结构中的散列
+ *
+ * 散列（Hash）是一种按关键字编址的存储和查找技术。
+ *
+ * 散列表（Hash Table）
+ * 散列表根据元素的关键字确定元素的存储位置，查找、插入、删除效率接近O(1)。
+ *
+ * 冲突解决办法：开放定址法和链地址法
+ *
+ * 开放定址法
+ * 当产生冲突时，在散列表内寻找另一个位置存储冲突元素，寻找位置的方法有线性探查法、二次探查法
+ *
+ * 开放定址法的线性探查法：
+ * 如果检测到冲突，则向后继续查找，直到找到一个空位置。
+ *
+ * 线性探查法解决冲突，可能会占用其他元素位置；查找可能会退化成顺序查找；不能删除元素，否则探测
+ * 序列会被中断。
+ *
+ * 链地址法
+ *
+ * 链地址法在遇到冲突时，会将冲突元素组成一个链表
+ *
+ * 散列映射（HashMap)是使用散列表存储元素实现的映射。
+ *
+ *
  * 链表的长度大于等于8并且hash桶的长度大于等于64的时候，链表会转换为红黑树
  *
  * JDK 1.7进行多线程put操作，之后遍历，直接死循环，CPU飙到100%，
  * JDK 1.8中进行多线程操作会出现节点和value值丢失
+ *
+ * HashMap中会使用链表和红黑树来存储冲突的数据，使用链表存储数据时使用Node，使用红黑树存储
+ * 数据时使用TreeNode
  */
 public class HashMap<K,V> extends AbstractMap<K,V>
     implements Map<K,V>, Cloneable, Serializable {
@@ -239,6 +268,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The default initial capacity - MUST be a power of two.
+     * 默认初始容量16
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
 
@@ -246,11 +276,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
+     * 最大容量
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
      * The load factor used when none specified in constructor.
+     * 默认装载因子
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
@@ -261,7 +293,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * than 2 and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
-     * 链表长度到8的时候，并且桶的长度大于等于64的时候会转成红黑树
+     * 链表长度到8的时候会转成红黑树
      */
     static final int TREEIFY_THRESHOLD = 8;
 
@@ -403,6 +435,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * necessary. When allocated, length is always a power of two.
      * (We also tolerate length zero in some operations to allow
      * bootstrapping mechanics that are currently not needed.)
+     * 用来存储元素结点的数组
      * hash桶，第一次用的时候初始化
      */
     transient Node<K,V>[] table;
@@ -582,6 +615,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @param hash hash for key
      * @param key the key
      * @return the node, or null if none
+     * 获取指定key对应的结点，如果是红黑树存储，返回的是TreeNode，如果是链表存储，
+     * 返回的是Node。
      */
     final Node<K,V> getNode(int hash, Object key) {
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
