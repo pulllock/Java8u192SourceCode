@@ -264,6 +264,9 @@ import java.util.stream.Stream;
  * @author Doug Lea
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ *           使用volatile + cas + synchronized保证并发安全
+ *
+ *           实现结构：数组，冲突解决使用链表加红黑树
  */
 public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     implements ConcurrentMap<K,V>, Serializable {
@@ -630,6 +633,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * in bulk tasks.  Subclasses of Node with a negative hash field
      * are special, and contain null keys and values (but are never
      * exported).  Otherwise, keys and vals are never null.
+     * 存储键值对的结点，冲突解决最初是链表的时候使用该Node存储元素
+     *
+     * value和next是volatile类型
      */
     static class Node<K,V> implements Map.Entry<K,V> {
         final int hash;
@@ -765,16 +771,43 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * writes to be conservative.
      */
 
+    /**
+     * 使用getObjectVolatile获取数组中的元素，具有volatile语义，用来保证数组
+     * 元素的可见性
+     * @param tab
+     * @param i
+     * @param <K>
+     * @param <V>
+     * @return
+     */
     @SuppressWarnings("unchecked")
     static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
         return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);
     }
 
+    /**
+     * cas设置数组中的元素
+     * @param tab
+     * @param i
+     * @param c
+     * @param v
+     * @param <K>
+     * @param <V>
+     * @return
+     */
     static final <K,V> boolean casTabAt(Node<K,V>[] tab, int i,
                                         Node<K,V> c, Node<K,V> v) {
         return U.compareAndSwapObject(tab, ((long)i << ASHIFT) + ABASE, c, v);
     }
 
+    /**
+     * 使用putObjectVolatile设置数组指定位置元素，具有volatile语义
+     * @param tab
+     * @param i
+     * @param v
+     * @param <K>
+     * @param <V>
+     */
     static final <K,V> void setTabAt(Node<K,V>[] tab, int i, Node<K,V> v) {
         U.putObjectVolatile(tab, ((long)i << ASHIFT) + ABASE, v);
     }
@@ -786,12 +819,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Size is always a power of two. Accessed directly by iterators.
      * 桶数组，存储node
      * 延迟初始化，第一次插入元素的时候才初始化
+     * volatile类型
      */
     transient volatile Node<K,V>[] table;
 
     /**
      * The next table to use; non-null only while resizing.
-     * 不为null的话，表示正在扩容。
+     * 扩容的时候使用，不为null的话，表示正在扩容。
      * 是扩容后的数组，长度为原来的两倍。
      */
     private transient volatile Node<K,V>[] nextTable;
