@@ -264,9 +264,49 @@ import java.util.stream.Stream;
  * @author Doug Lea
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
+ *
+ *           学习要点：
+ *           - 整体结构
+ *           - 各个Node的含义、用途、其中的字段含义和用途
+ *           - 主要字段的含义和用途
+ *           - 扩容、转移
+ *           - 并发统计个数
+ *
+ *
+ *           参考：
+ *           - https://my.oschina.net/qq785482254/blog/4307177
+ *           - https://segmentfault.com/a/1190000024528036
+ *
  *           使用volatile + cas + synchronized保证并发安全
  *
  *           实现结构：数组，冲突解决使用链表加红黑树
+ *
+ *           ConcurrentHashMap中数组存储的也是Node类型结点，
+ *           冲突时先是Node结点组成链表，转化为树的时候有一点不同，
+ *           树的根结点使用的是TreeBin，树的其他结点使用的是TreeNode。
+ *
+ *           Node
+ *           数组中存储的是Node，作为链表的时候，存储的是Node结点。
+ *
+ *           TreeNode
+ *           红黑树中存储的结点是TreeNode，红黑树中的TreeNode实际上还保持
+ *           有链表的指针，可以用链表的方式进行遍历
+ *
+ *           TreeBin
+ *           红黑树的头结点是TreeBin，此时数组对应的位置处存储的是TreeBin。
+ *           TreeBin带有读写锁。
+ *
+ *           TreeBin不是红黑树的存储结点，通过root来维护红黑树根节点。红黑树
+ *           在旋转的时候根节点可能会被子节点替换掉，在这时候如果有线程要写红黑树
+ *           就出现了线程不安全问题，TreeBin通过自带读写锁和waiter属性来表示
+ *           持有红黑树的线程，防止其他线程进入。
+ *
+ *           ForwardingNode
+ *           在转移的时候用来连接新旧两个数组的结点，包含一个nextTable指针指向
+ *           新数组。在转移的时候，如果旧数组的某个桶数组已经全部转移完，就会在
+ *           旧数组该桶位置放一个ForwardingNode，指向新数组。当旧数组有读操作
+ *           发生，找到了一个ForwardingNode时，就会跳到新数组进行读操作；当旧
+ *           数组有写操作发生，找到了一个ForwardingNode时，会尝试帮助扩容。
  */
 public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     implements ConcurrentMap<K,V>, Serializable {
@@ -576,6 +616,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * serves as a lower bound to avoid resizers encountering
      * excessive memory contention.  The value should be at least
      * DEFAULT_CAPACITY.
+     * 扩容搬运时，批量搬运的最小槽位数
      */
     private static final int MIN_TRANSFER_STRIDE = 16;
 
@@ -600,16 +641,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Encodings for Node hash fields. See above for explanation.
      */
     /**
-     * node的hash值为-1，表示当前节点已经被处理过了
-     * 出现在多线程扩容的情况下
+     * ForwardingNode的哈希值，固定为-1
+     * ForwardingNode在扩容转移的时候用
      */
     static final int MOVED     = -1; // hash for forwarding nodes
     /**
-     * node的hash值为-2，表示当前节点是TreeBin
+     * TreeBin的哈希值，固定为-2，TreeBin持有红黑树根节点
      */
     static final int TREEBIN   = -2; // hash for roots of trees
     /**
-     * node的hash值为-3，保留的hash值，用在ReservationNode上
+     * ReservationNode的哈希值，固定为-3
+     * ReservationNode是保留结点，是一个占位符，
+     * 在JDK1.8新的方法computeIfAbsent和compute中才会出现
      */
     static final int RESERVED  = -3; // hash for transient reservations
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
@@ -825,8 +868,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The next table to use; non-null only while resizing.
-     * 扩容的时候使用，不为null的话，表示正在扩容。
-     * 是扩容后的数组，长度为原来的两倍。
+     * 扩容的时候使用，是扩容后的新数组，长度为原来的两倍。
+     * 不为null的话，表示正在扩容。
      */
     private transient volatile Node<K,V>[] nextTable;
 
@@ -846,7 +889,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * when table is null, holds the initial table size to use upon
      * creation, or 0 for default. After initialization, holds the
      * next element count value upon which to resize the table.
-     * 表初始化和扩容的控制位。当是负数的时候表示正在初始化或者扩容操作。
+     * 数组初始化和扩容的控制位。当是负数的时候表示正在初始化或者扩容操作。
      * -1 表示初始化
      * -N 表示有N-1个线程正在进行扩容操作
      * 0 表示哈希桶是null
@@ -856,6 +899,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The next table index (plus one) to split while resizing.
+     * 转移数据时对应桶的索引，转移时是从数组的后面往前开始的
+     * 如果没有线程进行转移任务时，transferIndex小于等于0
      */
     private transient volatile int transferIndex;
 
@@ -990,18 +1035,125 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * {@code null}.  (There can be at most one such mapping.)
      *
      * @throws NullPointerException if the specified key is null
+     * get操作没有使用锁，是如何保证并发安全的？
+     * get操作一般是不加锁的，但是如果槽中的结点是TreeBin，会有加锁逻辑，
+     * TreeBin自带读写锁。
      */
     public V get(Object key) {
         Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
+        // 计算key的哈希值
         int h = spread(key.hashCode());
+
+        /*
+           table是volatile类型的，这里可以直接读到最新的数组。
+           如果当前table数组是null，说明数组未初始化或者正在初始化但未完成，直接返回null。
+
+           tabAt使用volatile的形式来获取数组中对应位置的元素
+         */
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (e = tabAt(tab, (n - 1) & h)) != null) {
+            /*
+                找到了key对应元素所在的槽，直接看下槽中的Node是不是就是要查找
+                的元素，如果是就直接返回。在冲突不多或几乎没有冲突的情况下一般
+                槽中的Node就是要查找的元素
+
+                槽中的结点对应哈希值有四种情况：
+                1. 如果槽中结点是Node类型，Node的哈希值就是key的哈希值
+                2. 如果槽中结点是ForwardingNode，则结点对应哈希值是固定的MOVED=-1
+                3. 如果槽中结点是TreeBin，则结点对应哈希值是固定的TREEBIN=-2
+                4. 如果槽中结点是ReservationNode，则结点对应哈希值是固定的RESERVED=-3
+
+                此时if中的判断条件(eh = e.hash) == h表明这个槽中是个正经的Node结点，
+                并且存储着元素。
+             */
             if ((eh = e.hash) == h) {
                 if ((ek = e.key) == key || (ek != null && key.equals(ek)))
                     return e.val;
             }
+            /*
+                如果槽中的结点的哈希值是负数，则结点只可能是三种类型结点：ForwardingNode、
+                TreeBin、ReservationNode。此时key对应的元素查找就交给这三种结点的具体实现
+                去查找，对应方法是find。
+
+                读是怎么保证线程安全的？分三种情况：
+                1. 读取的是红黑树
+                2. 读取的是个ForwardingNode
+                3. 读取的是个ReservationNode
+
+                读取的是红黑树
+                如果读取的是红黑树，则槽中对应的结点是TreeBin类型，TreeBin自带读写锁，使用一个
+                int类型的lockState控制，第1位是写锁标志，第2位是等待写锁标志为，3-32位是共享
+                锁标志位。读写互斥、读读共享、同一时刻只允许一个写线程进行写操作。使用该读写锁可
+                保证读的安全性。
+
+                读取红黑树时可能有三种情况：
+                1. 读取红黑树时，树正在链表化
+                2. 读取红黑树时，正在扩容并且当前槽正在被转移
+                3. 读取红黑树时，有其他线程在操作红黑树（put、remove、replace）
+
+                读取红黑树时，树正在链表化
+                树的链表化，也不会破坏红黑树结构，因此读取红黑树并不会有线程安全问题。在链表化完成
+                后，会将槽中的TreeBin使用cas替换为普通的Node类型结点。
+
+                读取红黑树时，正在扩容并且当前槽正在被转移
+                在扩容转移的时候，旧的红黑树结构不会被破坏，因此读取红黑树并不会有线程安全问题。在
+                转移完成后，会将槽中TreeBin结点替换为ForwardingNode。
+
+                读取红黑树时，有其他线程在操作红黑树（put、remove、replace）
+                如果读取红黑树时有其他线程获取到了写锁或者有线程正在等待获取写锁，则读取操作使用链表
+                进行遍历搜索，因为红黑树保留有链表的结构，虽然链表的搜索性能没有树的查找性能好，但是
+                能在写的同时进行链表遍历操作，不至于读操作一直长时间等待写操作，或者等待获取写锁的操
+                作一直等待很多的读操作完成。
+                每次遍历链表下一个结点的时候都会判断写锁有没有释放掉，如果已经没有了写锁，此时就可以
+                将链表遍历查找操作转换为树的查找方式，提升效率。
+
+                树的查找会加写锁，每次查找完后会释放写锁，同时判断有没有等待获取写锁的线程，如果有的
+                话就将等等待写锁的线程唤醒。
+
+                读取的是个ForwardingNode
+                如果读取到的是一个ForwardingNode，则说明当前桶位置的链表已经完全迁移到了
+                新的数组中去，则直接调用ForwardingNode的next指向的新数组去查找。在到新的数组中
+                查找的时候，可能由于高并发操作导致了多次扩容，新的数组已经不是最新的了，查找则会继续
+                向下一个ForwardingNode的next指向的更新的数组中去执行。
+
+                读取的是个ReservationNode
+                ReservationNode用于compute或者computeIfAbsent等原子计算方法计算时使用，如果还在
+                计算中，则对应槽中存放的是ReservationNode，用来占位。
+                对ReservationNode的读操作会直接返回null，对ReservationNode的写操作会有互斥锁进行
+                保护，其余写线程会挂起等待，等到compute计算完成后被唤醒。
+
+             */
             else if (eh < 0)
                 return (p = e.find(h, key)) != null ? p.val : null;
+            /*
+                while循环是遍历链表的操作
+                走到这里，说明槽中的结点是正经的Node类型，并且槽中这个Node不是要查找的key对应
+                的元素，所以需要遍历这个Node链表。
+
+                遍历链表的时候没有加锁，是怎么保证线程安全的？分三种情况：
+                1. 遍历链表的时候，链表正在进行树化
+                2. 遍历链表的时候，正在扩容并且当前链表正在被转移到新的数组中去
+                3. 遍历链表的时候，有其他线程在操作链表（put、remove、replace）
+
+                遍历链表的时候，链表正在树化
+                链表在树化，Node转换为TreeNode的时候，并不会破坏掉原来链表的结构，也就是在转换
+                成树后，依然可以通过原来链表的方式进行遍历元素。树化的时候可以安全的进行遍历链表。
+                链表树化完成后，会通过cas将槽中Node替换为新的TreeBin
+
+                遍历链表的时候，正在扩容并且当前链表正在被转移到新的数组中去
+                扩容的时候，也不会破坏旧链表的结构，因此也可以在扩容的时候进行并发遍历链表。
+                扩容完成后，会通过cas将旧链表对应的槽中的Node替换为ForwardingNode
+
+                遍历链表的时候，有其他线程在操作链表（put、remove、replace）
+                put操作是在链表的最后进行插入，遍历的时候没有线程安全问题。
+                remove操作也没有线程安全问题，因为当读一个结点的时候正好该结点被remove，此时
+                该结点的next指针并没有发生变化，依然可以通过next指针继续遍历链表。
+                replace操作只是替换Node的value，不会有线程安全问题。并且value是volatile类型，
+                也可以保证可见性。
+
+                链表在单线程写并且是在最后插入元素，对于并发读取是安全的，不会存在误读、链表断开
+                导致的漏读、读到环装链表等安全问题。
+             */
             while ((e = e.next) != null) {
                 if (e.hash == h &&
                     ((ek = e.key) == key || (ek != null && key.equals(ek))))
@@ -1061,45 +1213,68 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @return the previous value associated with {@code key}, or
      *         {@code null} if there was no mapping for {@code key}
      * @throws NullPointerException if the specified key or value is null
+     *
      */
     public V put(K key, V value) {
         return putVal(key, value, false);
     }
 
-    /** Implementation for put and putIfAbsent */
+    /**
+     * Implementation for put and putIfAbsent
+     * 插入的时候，会锁住槽中的结点，Node或者TreeBin
+     *
+     * 如果槽为空，直接进行cas
+     * 如槽是ForwardingNode，协助进行扩容转移
+     * 如果槽是Node或者TreeBin，则锁住槽中结点，进行put操作
+     */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
         if (key == null || value == null) throw new NullPointerException();
         // 得到哈希值
         int hash = spread(key.hashCode());
-        // 记录相应链表的长度
+        // 一个槽中元素的个数
         int binCount = 0;
+        // 循环，自旋 + cas
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; int n, i, fh;
             // table为空的时候，初始化，而不是在构造方法中初始化table
             if (tab == null || (n = tab.length) == 0)
+                // 初始化操作
                 tab = initTable();
-            /**
-             * key不存在，直接插入新的键值对
-             * 找该哈希值对应的数组下标，并得到第一个结点f
-             * 如果该位置为空，就使用cas操作插入，成功的话，就基本结束了，可以跳到最后面
-             * 如果cas失败了，说明有并发操作，继续下一个循环
+            /*
+                tabAt方法通过volatile方式获取数组中指定位置的元素。
+                如果对应槽位置处没有头结点，直接cas插入一个Node，如果cas插入头结点
+                成功，就跳出循环；如果cas插入头结点失败，说明有其他线程已经提前操作
+                了，继续循环插入当前要插入的元素
              */
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
-                // cas插入
+                // cas插入一个新结点到空的槽中
                 if (casTabAt(tab, i, null,
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
-            // 对应位置的元素已经被标记为MOVED，表示正在扩容操作，当前线程会帮助扩容
+            /*
+                如果槽中是ForwardingNode，ForwardingNode的哈希值是MOVED=-1，
+                说明正在扩容，并且当前槽位置处已经扩容完成，这时候需要协助进行扩容
+                转移元素到新数组中去
+             */
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
-            // 往下表示计算后的索引处不为null，出现了碰撞，碰撞会锁住这个node对象
+            /*
+                槽中有结点，但不是ForwardingNode结点，应该是：Node、TreeBin、ReservationNode
+                三种中的一个。
+
+                f是槽中的结点，可以理解为"头结点"
+             */
             else {
                 V oldVal = null;
-                // 加锁，防止增加链表时导致成环
+                // 加锁，锁住槽中的结点
                 synchronized (f) {
+                    // double check一下头结点
                     if (tabAt(tab, i) == f) {
-                        // 头结点的哈希值大于0，说明是链表，添加到链表中
+                        /*
+                            头结点的哈希值大于0，说明是链表，结点类型是Node。
+                            需要将新结点添加到链表的最后
+                         */
                         if (fh >= 0) {
                             // 记录链表的长度
                             binCount = 1;
@@ -1114,7 +1289,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                         e.val = value;
                                     break;
                                 }
-                                // 到了链表的最后端，将新值放到链表最后
+                                // 到了链表的最后端，将新结点放到链表最后
                                 Node<K,V> pred = e;
                                 if ((e = e.next) == null) {
                                     pred.next = new Node<K,V>(hash, key,
@@ -1123,7 +1298,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 }
                             }
                         }
-                        // TreeBin，插入到红黑树
+                        /*
+                            头结点是TreeBin，是一颗红黑树
+                            插入到红黑树中，会有读写锁进行控制
+                         */
                         else if (f instanceof TreeBin) {
                             Node<K,V> p;
                             binCount = 2;
@@ -1137,11 +1315,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     }
                 }
                 if (binCount != 0) {
-                    // 链表长度大于等于8，转成树
+                    // 槽中元素个数大于等于8，链表转成红黑树
                     if (binCount >= TREEIFY_THRESHOLD)
-                    /**
-                     * 不一定会进行红黑树转换
-                     * 如果当前数组的长度小于64，会选择进行数组扩容，而不是转换为红黑树
+                    /*
+                        不会直接进行红黑树转换，需要看下数组长度，如果数组长度小于64，
+                        会优先选择扩容，产生冲突的根本原因是因为数组太小，在数组很小
+                        时元素个数增多很容易产生扩容，如果早早就进行树化，频繁的扩容
+                        导致频繁的进行红黑树的拆分。
                      */
                         treeifyBin(tab, i);
                     if (oldVal != null)
@@ -1150,7 +1330,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
             }
         }
-        // 更新baseCount
+        // 更新baseCount，判断是否需要扩容
         addCount(1L, binCount);
         return null;
     }
@@ -2244,6 +2424,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * A node inserted at head of bins during transfer operations.
      * 扩容的时候会用到此类。
+     * ForwardingNode是迁移时用到的临时结点，在迁移的时候，如果旧数组中某个桶中的
+     * 全部结点都迁移到了新的数组中，就数组就会在对应桶中放一个ForwardingNode指向
+     * 新的数组。ForwardingNode中的nextTable指向新数组。当在旧数组上有读操作碰到
+     * ForwardingNode时，就会将操作转发到新数组上去；如果旧数组上有写操作碰到ForwardingNode
+     * 时，就会尝试帮忙扩容。
+     *
+     * ForwardingNode的哈希值为-1。
      */
     static final class ForwardingNode<K,V> extends Node<K,V> {
         final Node<K,V>[] nextTable;
@@ -2264,11 +2451,27 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     if ((eh = e.hash) == h &&
                         ((ek = e.key) == k || (ek != null && k.equals(ek))))
                         return e;
+                    /*
+                        eh小于0，槽中的结点的哈希值是负数，则结点只可能是三种类型结点：
+                        ForwardingNode、TreeBin、ReservationNode。
+
+                        如果是ForwardingNode类型结点，说明当前这个新数组已经不是新
+                        数组了，可能是高并发下面导致的多次扩容，继续找当前这个ForwardingNode
+                        的next指向的更新的数组。
+
+                        如果是TreeBin，说明是红黑树，调用TreeBin的find方法继续查找，
+                        TreeBin会使用读写锁进行保护
+
+                        如果是ReservationNode，说明当前有compute计算，整个槽还是空的，
+                        直接返回null
+                     */
                     if (eh < 0) {
+                        // 当前槽中是ForwardingNode，继续找下一个更新的数组
                         if (e instanceof ForwardingNode) {
                             tab = ((ForwardingNode<K,V>)e).nextTable;
                             continue outer;
                         }
+                        // TreeBin或者ReservationNode，直接调用其find方法进行查找
                         else
                             return e.find(h, k);
                     }
@@ -2456,10 +2659,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
         int n = tab.length, stride;
+        // 计算一次搬运最少的槽位数
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE; // subdivide range
+        // nextTab为null，首个搬运线程，需要初始化nextTable
         if (nextTab == null) {            // initiating
             try {
+                // 2倍扩容
                 @SuppressWarnings("unchecked")
                 Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
                 nextTab = nt;
@@ -2468,11 +2674,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 return;
             }
             nextTable = nextTab;
+            // 转移的槽的索引是数组的最后
             transferIndex = n;
         }
         int nextn = nextTab.length;
+        // tab对应的nextTab中公共的ForwardingNode
         ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
         boolean advance = true;
+        // 保证提交nextTable之前已经遍历完旧表所有的槽位
         boolean finishing = false; // to ensure sweep before committing nextTab
         for (int i = 0, bound = 0;;) {
             Node<K,V> f; int fh;
@@ -2766,6 +2975,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         /**
          * Returns the TreeNode (or null if not found) for the given key
          * starting at given root.
+         * 红黑树查找
          */
         final TreeNode<K,V> findTreeNode(int h, Object k, Class<?> kc) {
             if (k != null) {
@@ -2773,10 +2983,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 do  {
                     int ph, dir; K pk; TreeNode<K,V> q;
                     TreeNode<K,V> pl = p.left, pr = p.right;
+                    // 要查找key的哈希值比当前结点p的哈希值小，则从左子树查找
                     if ((ph = p.hash) > h)
                         p = pl;
+                    // 要查找key的哈希值比当前结点p的哈希值大，则从右子树查找
                     else if (ph < h)
                         p = pr;
+                    // 找到了对应元素
                     else if ((pk = p.key) == k || (pk != null && k.equals(pk)))
                         return p;
                     else if (pl == null)
@@ -2806,16 +3019,54 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * forcing writers (who hold bin lock) to wait for readers (who do
      * not) to complete before tree restructuring operations.
      * ConcurrentHashMap的桶里存的是TreeBin，TreeBin内部维护一个红黑树。
-     * 还维护这读写锁
+     * 还维护了一个读写锁。
+     *
+     * TreeBin需要额外的锁机制，如果是链表的话，在更新期间链表是可以遍历的，但是树却不一样，
+     * 树旋转时可能改变根节点或者其他链接，所以需要锁。
+     *
+     * 红黑树中的TreeNode实际上还保持有链表的指针，可以用链表的方式进行遍历。
+     *
+     * 红黑树的读写锁是互斥的，以红黑树的方式进行读写操作互斥。但是当线程持有红黑树的写锁时，
+     * 读线程不会以红黑树方式进行读取，而是以链表的方式进行读取，此时读操作和写操作可以并发执行。
+     *
+     * 当有线程持有红黑树的读锁时，写红黑树的线程会阻塞，但是因为红黑树查找很快，写线程阻塞
+     * 时间会很短
      */
     static final class TreeBin<K,V> extends Node<K,V> {
+        /**
+         * 红黑树的根节点
+         */
         TreeNode<K,V> root;
+
+        /**
+         * 链表结构的头结点
+         */
         volatile TreeNode<K,V> first;
+        /**
+         * 最近一个设置WAITER标志位的线程
+         */
         volatile Thread waiter;
+        /**
+         * int类型，32位
+         * 右边第1位是写锁标志位，第2位是写锁等待标志位，3到32位是共享锁标志位，也就是读锁
+         * 允许多个读锁
+         *
+         * 读写互斥，同一时刻只允许一个线程进行写操作，不允许读写操作并行。
+         */
         volatile int lockState;
         // values for lockState
+        /**
+         * 写锁状态，二进制001
+         */
         static final int WRITER = 1; // set while holding write lock
+        /**
+         * 等待获取写锁的状态，二进制010
+         */
         static final int WAITER = 2; // set when waiting for write lock
+        /**
+         * 读锁状态，读锁可以叠加，二进制100
+         * 红黑树可以并发读，没有一个读线程，lockState都加一个READER值
+         */
         static final int READER = 4; // increment value for setting read lock
 
         /**
@@ -2884,14 +3135,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Acquires write lock for tree restructuring.
+         * 操作红黑树之前获取互斥锁（写锁）
          */
         private final void lockRoot() {
+            /**
+             * 直接cas尝试获取写锁，将lockState设置为WRITER=1，
+             * 如果cas获取锁失败，则进行循环获取锁或者当前线程挂起
+             * 等待
+             */
             if (!U.compareAndSwapInt(this, LOCKSTATE, 0, WRITER))
                 contendedLock(); // offload to separate method
         }
 
         /**
          * Releases write lock for tree restructuring.
+         * 释放写锁
          */
         private final void unlockRoot() {
             lockState = 0;
@@ -2899,10 +3157,15 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Possibly blocks awaiting root lock.
+         * 循环进行获取锁或者线程挂起等待
          */
         private final void contendedLock() {
             boolean waiting = false;
             for (int s;;) {
+                /*
+                    lockState除了第2位上，其他位都为0，表示红黑树上没有写锁
+                    也没有读锁，只有一个等待写锁的线程，可以尝试直接获取写锁
+                 */
                 if (((s = lockState) & ~WAITER) == 0) {
                     if (U.compareAndSwapInt(this, LOCKSTATE, s, WRITER)) {
                         if (waiting)
@@ -2910,12 +3173,22 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         return;
                     }
                 }
+                /*
+                    如果lockState第2位是0，表示没有线程在等待写锁，
+                    但是由于此时有线程在持有写锁，所以将当前线程标记为
+                    正在等待写锁，将lockState第2位设置为1。
+                    设置完后会继续循环，再判断看看写锁有没有释放，如果
+                    写锁还没释放，则会将当前线程挂起
+                 */
                 else if ((s & WAITER) == 0) {
                     if (U.compareAndSwapInt(this, LOCKSTATE, s, s | WAITER)) {
                         waiting = true;
                         waiter = Thread.currentThread();
                     }
                 }
+                /*
+                    挂起当前线程，等待其他线程释放了写锁后唤醒当前线程
+                 */
                 else if (waiting)
                     LockSupport.park(this);
             }
@@ -2928,22 +3201,52 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          */
         final Node<K,V> find(int h, Object k) {
             if (k != null) {
+                /*
+                    这个for循环里既有链表遍历又有红黑树查找。
+                    首先看下当前如果有写锁或者有等待写锁，则走链表遍历搜索，而不是使用
+                    红黑树的查找。这样可以让在红黑树有写锁的情况下，依然可以使用链表进
+                    行遍历查找，红黑树中还保存有原来的链表结构，虽然链表遍历查找效率低，
+                    但是可以在写的时候进行读并且是安全的，对于链表来说，写操作是在尾部，
+                    对安全没有影响。
+
+                    如果发现有等待写锁的，读线程也会走链表遍历搜索，这样是为了避免太多
+                    的读锁导致写锁线程需要等待获取写锁的时间太久。
+
+                    在链表遍历搜索时，每遍历到下一个结点都会做判断，如果发现此时没有了
+                    写锁也没有了等待写锁的，就会直接使用红黑树查找来进行搜索，树的查找
+                    性能比链表性能好很多。
+                 */
                 for (Node<K,V> e = first; e != null; ) {
                     int s; K ek;
+                    /*
+                        如果有写锁或者有等待写锁的线程，则直接使用链表遍历搜索，
+                        每次遍历下一个结点都会进行判断有没有写锁或者有没有等待
+                        写锁的线程，如果有则继续使用链表遍历，如果没有了则使用
+                        树的查找提高性能
+                     */
                     if (((s = lockState) & (WAITER|WRITER)) != 0) {
                         if (e.hash == h &&
                             ((ek = e.key) == k || (ek != null && k.equals(ek))))
                             return e;
                         e = e.next;
                     }
+                    /*
+                        下面使用树的查找算法，先将锁状态的读锁计数加1，表明当前
+                        树有读锁，如果此时有写锁要写红黑树，则需要等待。
+                     */
                     else if (U.compareAndSwapInt(this, LOCKSTATE, s,
                                                  s + READER)) {
                         TreeNode<K,V> r, p;
                         try {
+                            // 树的查找
                             p = ((r = root) == null ? null :
                                  r.findTreeNode(h, k, null));
                         } finally {
                             Thread w;
+                            /*
+                                树查找完后，释放读锁，如果释放完读锁后发现有等待写锁的，就将
+                                等待写锁的线程唤醒
+                             */
                             if (U.getAndAddInt(this, LOCKSTATE, -READER) ==
                                 (READER|WAITER) && (w = waiter) != null)
                                 LockSupport.unpark(w);
@@ -3002,10 +3305,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     if (!xp.red)
                         x.red = true;
                     else {
+                        /*
+                            红黑树写操作前加互斥锁，就是将lockState置为WRITER=1，
+                            如果有竞争导致获取锁失败了，则进行循环获取锁或者线程阻塞
+                            等待
+                         */
                         lockRoot();
                         try {
                             root = balanceInsertion(root, x);
                         } finally {
+                            // 释放互斥锁，就是将lockState置为0
                             unlockRoot();
                         }
                     }
