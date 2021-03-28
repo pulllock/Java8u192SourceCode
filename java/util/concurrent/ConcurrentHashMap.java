@@ -616,7 +616,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * serves as a lower bound to avoid resizers encountering
      * excessive memory contention.  The value should be at least
      * DEFAULT_CAPACITY.
-     * 扩容搬运时，批量搬运的最小槽位数
+     * 扩容搬运时，每个线程处理的最小桶数。默认每个线程处理16个桶。
      */
     private static final int MIN_TRANSFER_STRIDE = 16;
 
@@ -2656,13 +2656,28 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Moves and/or copies the nodes in each bin to new table. See
      * above for explanation.
+     * 扩容转移的的时候，一个线程可以分得一个区间进行转移，每个线程通过cas设置transferIndex
+     * 来确定自己处理的区间，确定好区间后，就循环处理自己区间里面的桶，每次处理一个桶的时候
+     * 就会使用synchronized锁住桶进行转移数据。
+     *
+     * 转移数据的时候，会将桶里的数据分成两部分，一部分是结点哈希值和桶中链表长度取余为0的结点，
+     * 这部分数据转移到新数组中时还是放在原来位置；另外一部分是取余为1的结点，放到新数组中的位置：
+     * 原来位置+原数组长度。
+     *
+     * 一个桶中所有元素转移完后，会将原来桶中设置为ForwardingNode，指向新的数组。
      */
     private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
         int n = tab.length, stride;
-        // 计算一次搬运最少的槽位数
+        /*
+            计算一次搬运最少的桶数，默认一个线程处理16个桶。
+            数组的length/8，再除以cpu数目，如果结果小于16，则默认使用16，
+            否则使用计算得到的值。
+         */
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE; // subdivide range
-        // nextTab为null，首个搬运线程，需要初始化nextTable
+        /*
+            nextTab为null，说明是首个搬运线程，需要初始化nextTable
+         */
         if (nextTab == null) {            // initiating
             try {
                 // 2倍扩容
@@ -2673,22 +2688,63 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 sizeCtl = Integer.MAX_VALUE;
                 return;
             }
+            // 更新成员变量nextTable
             nextTable = nextTab;
-            // 转移的槽的索引是数组的最后
+            // 转移的桶的索引是数组的最后
             transferIndex = n;
         }
+        // 新数组的长度
         int nextn = nextTab.length;
-        // tab对应的nextTab中公共的ForwardingNode
+        /*
+            迁移时，旧数组tab中使用的ForwardingNode，
+            这个ForwardingNode指向新的数组。
+            当旧数组对应桶的位置元素已经迁移完后，需要将原来桶位置处的结点替换
+            为ForwardingNode结点。
+         */
         ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
+        /*
+            advance是指是否继续处理下一个桶，true表示可以继续处理下一个桶；
+            false表示当前桶还没处理完，不能处理下一个桶
+         */
         boolean advance = true;
-        // 保证提交nextTable之前已经遍历完旧表所有的槽位
+        /*
+            finishing保证提交nextTable之前已经遍历完旧表所有的槽位。
+            finishing为true表示扩容结束
+         */
         boolean finishing = false; // to ensure sweep before committing nextTab
+        /*
+            bound是指当前线程此次可以处理的区间的最小下标，
+            如果超过这个下标，需要重新领取新的区间或者扩容结束
+
+            i表示处理的桶的索引下标
+         */
         for (int i = 0, bound = 0;;) {
             Node<K,V> f; int fh;
             while (advance) {
+                /*
+                    第一次进while循环i=0，bound=0，finishing=false，transferIndex=tab.length，
+                    if (--i >= bound || finishing)这个判断不成立，
+                    else if ((nextIndex = transferIndex) <= 0)这个判断也不成立，同时
+                    这里将nextIndex赋值为当前的transferIndex也就是：tab.length，
+                    所以第一次进入while循环会执行最后一个分支，
+                    使用cas设置transferIndex为tab.length-区间值stride，剩下的区间给其他的线程来操作。
+                    如果当前线程成功设置了transferIndex为tab.length-区间值stride，说明当前线程可以针对
+                    这个区间进行转移操作，设置当前线程处理的区间最小下标bound=nextBound，
+                    第一次设置i为当前处理区间最大下标，第一次就是tab.length-1，
+                    advance设置为false，跳出while循环，开始处理当前线程能处理的区间。
+
+
+                 */
                 int nextIndex, nextBound;
+                /*
+                    --i >= bound说明当前区间处理完成
+                    finishing表示整个扩容结束
+                 */
                 if (--i >= bound || finishing)
                     advance = false;
+                /*
+                    说明整个扩容结束
+                 */
                 else if ((nextIndex = transferIndex) <= 0) {
                     i = -1;
                     advance = false;
@@ -2714,17 +2770,52 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
                         return;
                     finishing = advance = true;
+                    // 最后一个线程退出前将i回退到最高位，然后会做一次全表扫描，防止有桶漏掉
                     i = n; // recheck before commit
                 }
             }
+            /*
+                获取i位置处的结点，并判断此处是否为null，
+                如果为null，说明这个桶中已经没有了元素，使用cas将
+                当前桶中设置为ForwardingNode，如果cas设置成功，
+                advance为true，表示可以处理当前区间下一个桶了，
+                去while循环中看当前区间是否处理完，如果没有处理完
+                就设置advance为false跳出while循环，继续处理当前
+                区间下一个桶
+             */
             else if ((f = tabAt(tab, i)) == null)
                 advance = casTabAt(tab, i, null, fwd);
+            /*
+                如果i位置处的节点的哈希值是MOVED，也就是ForwardingNode，
+                表示该位置已经处理结束，设置advance为true，表示可以处理
+                当前区间下一个桶了，去while循环中看当前区间是否处理完，
+                如果没有处理完就设置advance为false跳出while循环，
+                继续处理当前区间下一个桶
+             */
             else if ((fh = f.hash) == MOVED)
                 advance = true; // already processed
+            /*
+                到这里，说明该桶中需要进行转移操作，锁住该桶中的元素进行
+                元素转移操作，上锁是为了防止和putVal插入数组的有竞争。
+             */
             else {
                 synchronized (f) {
+                    // double check
                     if (tabAt(tab, i) == f) {
+                        /*
+                            ln 低位桶
+                            hn 高位桶
+                         */
                         Node<K,V> ln, hn;
+                        /*
+                            桶中结点哈希值大于0，说明是链表。
+                            链表中数据会分成两部分，一部分是节点的哈希值和链表长度length取余
+                            结果为0的，这部分数据放在新数组中原来的索引位置；另外一部分数据是
+                            取余结果为1的，放在新数组中新的索引为值，新的索引是原来的索引+老数组长度
+                            得到的新的位置。
+
+                            红黑树的处理也是一样，但如果新的节点数小于6，则转换成链表
+                         */
                         if (fh >= 0) {
                             int runBit = fh & n;
                             Node<K,V> lastRun = f;
@@ -2755,6 +2846,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                             setTabAt(tab, i, fwd);
                             advance = true;
                         }
+                        /*
+                            桶中元素是TreeBin，说明是红黑树
+                         */
                         else if (f instanceof TreeBin) {
                             TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> lo = null, loTail = null;
