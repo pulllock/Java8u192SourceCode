@@ -71,6 +71,16 @@ import java.io.Serializable;
  * LongAdder适合场景：统计计数。
  *
  * 最后结果是base+Cell数组中的所有元素的和。
+ *
+ * ConcurrentHashMap中的计数和LongAdder基本类似。
+ *
+ * LongAdder使用一个base和Cell数组来分散的表示一个long类型值，没有竞争的时候，
+ * 直接更新base，Cell数组为null，此时base就是long的真实值；
+ * 如果有竞争了，就不再继续更新base，而是将累加的值更新到Cell数组中，分散竞争时
+ * 的压力，此时base和Cell数组中所有元素的和才是long的真实值。
+ *
+ * 获取long的值的时候，会统计base和Cell数组中所有元素的和，如果遇到并发写，得到
+ * 的和可能不准确，因此比较适用于计数统计，但不是要求很精确的场景下。
  */
 public class LongAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
@@ -89,10 +99,20 @@ public class LongAdder extends Striped64 implements Serializable {
     public void add(long x) {
         Cell[] as; long b, v; int m; Cell a;
         /*
-            如果
+            如果cells数组为null，说明暂时没有竞争，直接cas更新base即可，
+            如果cas更新base失败了，说明有竞争，需要将数据写入cells数组中。
+
+            如果cells数组不为null，说明已经发生了竞争，直接将数据写入cells中。
          */
         if ((as = cells) != null || !casBase(b = base, b + x)) {
             boolean uncontended = true;
+            /*
+                cells数组为null
+                cells数组中没有元素
+                cells数组中指定位置没有元素
+                cas更新cells数组中指定位置元素失败
+                这几种情况都会进到longAccumulate方法中处理
+             */
             if (as == null || (m = as.length - 1) < 0 ||
                 (a = as[getProbe() & m]) == null ||
                 !(uncontended = a.cas(v = a.value, v + x)))

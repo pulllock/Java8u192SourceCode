@@ -223,19 +223,30 @@ abstract class Striped64 extends Number {
         if ((h = getProbe()) == 0) {
             ThreadLocalRandom.current(); // force initialization
             h = getProbe();
+            // wasUncontended=false表示cas更新数组元素失败，有竞争
             wasUncontended = true;
         }
+        // collide表示是否需要扩容
         boolean collide = false;                // True if last slot nonempty
         for (;;) {
             Cell[] as; Cell a; int n; long v;
+            /*
+                cells不为null，且cells中有元素
+             */
             if ((as = cells) != null && (n = as.length) > 0) {
+                /*
+                    cells数组中指定位置还没有元素
+                 */
                 if ((a = as[(n - 1) & h]) == null) {
+                    // cellsBusy为0表示锁没有被占用
                     if (cellsBusy == 0) {       // Try to attach new Cell
                         Cell r = new Cell(x);   // Optimistically create
+                        // 看锁有没有被占用，没有的话cas获取锁
                         if (cellsBusy == 0 && casCellsBusy()) {
                             boolean created = false;
                             try {               // Recheck under lock
                                 Cell[] rs; int m, j;
+                                // 将新的Cell元素更新到数组中
                                 if ((rs = cells) != null &&
                                     (m = rs.length) > 0 &&
                                     rs[j = (m - 1) & h] == null) {
@@ -254,13 +265,24 @@ abstract class Striped64 extends Number {
                 }
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
+
+                /*
+                    将x累加到数组元素中
+                 */
                 else if (a.cas(v = a.value, ((fn == null) ? v + x :
                                              fn.applyAsLong(v, x))))
                     break;
+                /*
+                    长度大于等于cpu个数，或者正在扩容，
+                    设置collide为false，表示不需要继续扩容了
+                 */
                 else if (n >= NCPU || cells != as)
                     collide = false;            // At max size or stale
                 else if (!collide)
                     collide = true;
+                /*
+                    尝试cas加锁cellsBusy，进行扩容
+                 */
                 else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
                         if (cells == as) {      // Expand table unless stale
@@ -277,10 +299,16 @@ abstract class Striped64 extends Number {
                 }
                 h = advanceProbe(h);
             }
+            /*
+                cells为null或者是cells中没有元素会走到这里，
+                这里需要进行cells数组初始化。
+                初始化前需要先获取锁cellsBusy。
+             */
             else if (cellsBusy == 0 && cells == as && casCellsBusy()) {
                 boolean init = false;
                 try {                           // Initialize table
                     if (cells == as) {
+                        // 初始化数组的长度是2
                         Cell[] rs = new Cell[2];
                         rs[h & 1] = new Cell(x);
                         cells = rs;
@@ -292,6 +320,10 @@ abstract class Striped64 extends Number {
                 if (init)
                     break;
             }
+            /*
+                cas获取锁失败后，会走到这里，这里会尝试直接cas更新base，
+                如果成功了就跳出循环。
+             */
             else if (casBase(v = base, ((fn == null) ? v + x :
                                         fn.applyAsLong(v, x))))
                 break;                          // Fall back on using base
