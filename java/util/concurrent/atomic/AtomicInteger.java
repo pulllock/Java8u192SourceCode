@@ -50,6 +50,9 @@ import sun.misc.Unsafe;
  *
  * @since 1.5
  * @author Doug Lea
+ *
+ * AtomicInteger使用volatile+cas来实现变量更新的原子性。
+ * CAS模式使用会有ABA问题
 */
 public class AtomicInteger extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 6214790243416807050L;
@@ -105,6 +108,9 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      *
      * @param newValue the new value
      * @since 1.6
+     *
+     * putOrderedInt使用普通变量的方式来更新volatile类型变量，
+     * 不保证可见性，但是效率会高一点
      */
     public final void lazySet(int newValue) {
         unsafe.putOrderedInt(this, valueOffset, newValue);
@@ -115,6 +121,9 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      *
      * @param newValue the new value
      * @return the previous value
+     * 1. 获取value当前值
+     * 2. cas设置value为新值
+     * 3. 返回value旧值
      */
     public final int getAndSet(int newValue) {
         return unsafe.getAndSetInt(this, valueOffset, newValue);
@@ -128,6 +137,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @param update the new value
      * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
+     * cas操作
      */
     public final boolean compareAndSet(int expect, int update) {
         return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
@@ -153,6 +163,11 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * Atomically increments by one the current value.
      *
      * @return the previous value
+     * 1. 获取value当前值
+     * 2. cas将value+1
+     * 3. 返回第一步中旧的value值
+     *
+     * 相当于i++
      */
     public final int getAndIncrement() {
         return unsafe.getAndAddInt(this, valueOffset, 1);
@@ -181,6 +196,11 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * Atomically increments by one the current value.
      *
      * @return the updated value
+     * 1. 获取value当前值
+     * 2. cas将value+1
+     * 3. 返回第一步中就的value+1
+     *
+     * 相当于++i
      */
     public final int incrementAndGet() {
         return unsafe.getAndAddInt(this, valueOffset, 1) + 1;
