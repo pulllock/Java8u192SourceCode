@@ -319,6 +319,44 @@ import java.util.*;
  *
  * @since 1.5
  * @author Doug Lea
+ *
+ * 参考：
+ * - https://zhuanlan.zhihu.com/p/86343934
+ * - https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html
+ * - https://blog.csdn.net/qq_33879355/article/details/107078708
+ * - https://zhuanlan.zhihu.com/p/338583938
+ * - https://www.cnblogs.com/thisiswhy/p/12690630.html
+ *
+ * 线程池的主要组成：
+ * - 线程集合（workers，一个集合HashSet），包括：核心线程和最大线程
+ * - 队列（workQueue，存放等待的线程）
+ * - 拒绝策略（RejectedPolicy）
+ *
+ * 线程池工作流程：
+ * 当线程池有新线程到达，首先判断核心线程数是否已经被用完，如果没有被用完，
+ * 则直接使用核心线程处理；如果核心线程用完，则将队列放到阻塞队列中，等待
+ * 核心线程从队列中获取任务执行。如果队列也满了，则看是否到达了最大线程数，
+ * 如果没有达到最大线程数，则创建新线程处理任务；如果到达了最大线程数，则
+ * 执行拒绝策略。
+ *
+ * 线程池状态：
+ * - RUNNING，处在运行中
+ * - SHUTDOWN，关闭状态，不能接受新任务，但是能处理已经有的任务
+ * - STOP，停止状态，不能接受新任务，不处理已有任务，中断正在处理的任务
+ * - TIDYING，是整理的意思，所有任务已终止
+ * - TERMINATED，终止状态
+ *
+ * 拒绝策略：
+ * - CallerRunsPolicy，调用方线程执行任务
+ * - AbortPolicy，终止并抛异常
+ * - DiscardPolicy，丢弃新任务
+ * - DiscardOldestPolicy，丢弃最老任务
+ *
+ * 线程数的设置：
+ * - 按照理论上的东西一般会分：CPU密集型和IO密集型，其中CPU密集型设置为CPU+1，
+ * IO密集型设置为2*CPU。
+ * - 实际应用上需要根据不同场景去设置。
+ * - 还可以使用动态配置的方式，在运行时动态更改线程数。
  */
 public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
@@ -377,6 +415,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * we can only terminate if, after seeing that it is empty, we see
      * that workerCount is 0 (which sometimes entails a recheck -- see
      * below).
+     *
+     * ctl表示线程池的状态和线程池内有效线程的数量，高三位表示状态，低29位保存线程数量。
+     * 线程池状态：
+     * - RUNNING
+     * - SHUTDOWN
+     * - STOP
+     * - TIDYING
+     * - TERMINATED
      */
     private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
     /**
@@ -475,6 +521,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * queues such as DelayQueues for which poll() is allowed to
      * return null even if it may later return non-null when delays
      * expire.
+     * 工作队列，存放等待的线程。是阻塞队列。
      */
     private final BlockingQueue<Runnable> workQueue;
 
@@ -490,17 +537,20 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * also hold mainLock on shutdown and shutdownNow, for the sake of
      * ensuring workers set is stable while separately checking
      * permission to interrupt and actually interrupting.
+     * 互斥锁，可重入
      */
     private final ReentrantLock mainLock = new ReentrantLock();
 
     /**
      * Set containing all worker threads in pool. Accessed only when
      * holding mainLock.
+     * 线程集合，保存核心线程和最大线程
      */
     private final HashSet<Worker> workers = new HashSet<Worker>();
 
     /**
      * Wait condition to support awaitTermination
+     * 条件变量
      */
     private final Condition termination = mainLock.newCondition();
 
