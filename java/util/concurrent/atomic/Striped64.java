@@ -116,6 +116,8 @@ abstract class Striped64 extends Number {
      *
      * JVM intrinsics note: It would be possible to use a release-only
      * form of CAS here, if it were provided.
+     * Cell可以理解为是一个long值，volatile类型。
+     * 使用Contended注解，会建一个long的缓存行填充至64字节，防止伪共享问题发生。
      */
     @sun.misc.Contended static final class Cell {
         volatile long value;
@@ -144,17 +146,21 @@ abstract class Striped64 extends Number {
 
     /**
      * Table of cells. When non-null, size is a power of 2.
+     * Cell数组，每个Cell相当于一个long类型值，存储的是累计新增的值
      */
     transient volatile Cell[] cells;
 
     /**
      * Base value, used mainly when there is no contention, but also as
      * a fallback during table initialization races. Updated via CAS.
+     * 在没有竞争的时候直接写base这个值，有竞争的时候就将增加的值写入到cells数组中。
+     * 在写cells数组有竞争的时候，cas失败后，也会尝试直接更新base。
      */
     transient volatile long base;
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating Cells.
+     * 扩容或者创建Cell元素的时候使用的自旋锁
      */
     transient volatile int cellsBusy;
 

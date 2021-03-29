@@ -66,6 +66,11 @@ import java.io.Serializable;
  *
  * @since 1.8
  * @author Doug Lea
+ * AtomicLong使用自旋+cas更新值，竞争激烈的情况下大量的自旋会造成cpu消耗极大。
+ *
+ * LongAdder适合场景：统计计数。
+ *
+ * 最后结果是base+Cell数组中的所有元素的和。
  */
 public class LongAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
@@ -83,6 +88,9 @@ public class LongAdder extends Striped64 implements Serializable {
      */
     public void add(long x) {
         Cell[] as; long b, v; int m; Cell a;
+        /*
+            如果
+         */
         if ((as = cells) != null || !casBase(b = base, b + x)) {
             boolean uncontended = true;
             if (as == null || (m = as.length - 1) < 0 ||
