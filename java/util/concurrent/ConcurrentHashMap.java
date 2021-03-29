@@ -879,6 +879,27 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * races. Updated via CAS.
      * Map中元素个数。
      * 如果多线程操作的话，该数目不准确，要结合counterCells来保证记录正确性。
+     *
+     * ConcurrentHashMap中的size是由两部分组成：baseCount和counterCells
+     * 数组中所有元素的和，这俩加一起才是最终元素大小，但是也只是一个估计值，
+     * 不是准群的值。
+     *
+     * 为什么使用baseCount和counterCells两部分来表示size？
+     * 在没有并发或者低并发场景下，以及高并发场景下，更新一个baseCount正确性是
+     * 没有差别的，但是在高并发场景下更新这个共享的变量，性能会很差。多个CPU同时
+     * 更新一个共享变量，根据MESI协议，会频繁相互的让各个CPU彼此的缓存失效，导
+     * 致性能下降。
+     *
+     * ConcurrentHashMap在有并发更新size的时候不会直接竞争更新baseCount，而
+     * 是将大小保存到CounterCells数组中，数组中每个元素就是一次操作新增后的大小。
+     *
+     * CounterCell可以认为是一个long类型的变量，只不过CounterCell使用了内存填
+     * 充，让一个long类型变量填满一个缓存行（一般一个缓存行64字节），让每个cpu操作
+     * 的时候都尽可能命中缓存，不会导致伪共享问题的发生。CounterCells数组可认为
+     * 是一个long类型数组。
+     *
+     * 另外在counterCells数组初始化时，如果没有获取到cellsBusy锁，也会再次尝试
+     * 直接写baseCount。
      */
     private transient volatile long baseCount;
 
@@ -906,11 +927,19 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+     * 在CounterCell数组扩容或者初始化的时候使用的自旋锁
      */
     private transient volatile int cellsBusy;
 
     /**
      * Table of counter cells. When non-null, size is a power of 2.
+     * CounterCell数组，可认为是long类型数组，每个CounterCell可认为是一个long类型元素。
+     * CounterCell是进行缓存行填充了的long类型变量，防止伪共享问题。
+     *
+     * CounterCells中存储的每个CounterCell代表了加上每次操作新增的长度后的大小，
+     * CounterCells数组重元素的和+baseCount就是ConcurrentHashMap的大小，是个近似值。
+     *
+     * counterCells一旦初始化，后续size变化都会写到此数组中，此数组可以扩容
      */
     private transient volatile CounterCell[] counterCells;
 
@@ -1010,6 +1039,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * {@inheritDoc}
+     * baseCount加上counterCells数组中的元素的和
+     * int类型返回值，如果个数超过int表示范围，可以使用mappingCount方法，
+     * mappingCount返回的是long类型
      */
     public int size() {
         long n = sumCount();
@@ -1330,7 +1362,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
             }
         }
-        // 更新baseCount，判断是否需要扩容
+        // 更新map大小，判断是否需要扩容
         addCount(1L, binCount);
         return null;
     }
@@ -2546,10 +2578,23 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     private final void addCount(long x, int check) {
         CounterCell[] as; long b, s;
+        /*
+            如果counterCells不为null，说明有并发更新baseCount的场景导致已经使用了
+            counterCells数组，此时可以使用counterCells数组来记录增加的大小；
+
+            如果counterCells为null，说明没有并发更新baseCount，此时可以直接使用
+            cas更新baseCount，如果cas失败了，说明有竞争，此时也使用counterCells
+            数组来记录增加的大小
+         */
         if ((as = counterCells) != null ||
             !U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
             CounterCell a; long v; int m;
+            // 表示cas更新数组中的元素是不是有竞争
             boolean uncontended = true;
+            /*
+                如果cas更新数组成功，则不进入此if条件；如果cas更新失败了，说明有竞争，
+                进入fullAddCount方法完成新增大小的写入
+             */
             if (as == null || (m = as.length - 1) < 0 ||
                 (a = as[ThreadLocalRandom.getProbe() & m]) == null ||
                 !(uncontended =
@@ -2557,10 +2602,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 fullAddCount(x, uncontended);
                 return;
             }
+            /*
+                走到这里说明cas设置数组中元素成功了，判断需不需要进行扩容。
+             */
             if (check <= 1)
                 return;
             s = sumCount();
         }
+        // 下面是扩容的逻辑
         if (check >= 0) {
             Node<K,V>[] tab, nt; int n, sc;
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
@@ -2895,6 +2944,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * A padded cell for distributing counts.  Adapted from LongAdder
      * and Striped64.  See their internal docs for explanation.
+     * 相当于一个long，使用Contended注解，会让long对应的缓存行大小填充到64个字节，
+     * 防止伪共享的问题。
      */
     @sun.misc.Contended static final class CounterCell {
         volatile long value;
@@ -2914,6 +2965,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     // See LongAdder version for explanation
+    /**
+     * 如果counterCells数组没有初始化或者cas设置数组元素失败都会调用此方法
+     * 自旋加cas，将x加入数组中或者累加到数组元素中，
+     * 也可能会进行扩容，需要使用cellBusy加锁，
+     * 初始化CounterCells数组大小为2，长度不能超过cpu个数。
+     * @param x
+     * @param wasUncontended
+     */
     private final void fullAddCount(long x, boolean wasUncontended) {
         int h;
         if ((h = ThreadLocalRandom.getProbe()) == 0) {
@@ -2921,13 +2980,22 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             h = ThreadLocalRandom.getProbe();
             wasUncontended = true;
         }
+        // counterCells是否扩容的标志
         boolean collide = false;                // True if last slot nonempty
         for (;;) {
             CounterCell[] as; CounterCell a; int n; long v;
+            /*
+                counterCells不为null，并且数组长度大于0，
+                说明counter已经初始化过了
+             */
             if ((as = counterCells) != null && (n = as.length) > 0) {
+                // 数组中指定位置元素为null
                 if ((a = as[(n - 1) & h]) == null) {
+                    // cellsBusy未被占有
                     if (cellsBusy == 0) {            // Try to attach new Cell
+                        // 创建CounterCell对象入数组
                         CounterCell r = new CounterCell(x); // Optimistic create
+                        // cellsBusy加锁
                         if (cellsBusy == 0 &&
                             U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
                             boolean created = false;
@@ -2951,12 +3019,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
+                /*
+                    x累加到数组元素中
+                 */
                 else if (U.compareAndSwapLong(a, CELLVALUE, v = a.value, v + x))
                     break;
+                /*
+                    正在扩容或者数组长度大于cpu个数
+                 */
                 else if (counterCells != as || n >= NCPU)
                     collide = false;            // At max size or stale
                 else if (!collide)
                     collide = true;
+                /*
+                    尝试加锁cellBusy，扩容counterCells数组
+                 */
                 else if (cellsBusy == 0 &&
                          U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
                     try {
@@ -2974,6 +3051,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 h = ThreadLocalRandom.advanceProbe(h);
             }
+            /*
+                counterCells数组为null或者长度为0的时候，
+                使用cas获取到cellBusy锁，初始化counterCells数组，长度为2
+             */
             else if (cellsBusy == 0 && counterCells == as &&
                      U.compareAndSwapInt(this, CELLSBUSY, 0, 1)) {
                 boolean init = false;
@@ -2990,6 +3071,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 if (init)
                     break;
             }
+            /*
+                counterCells数组为null并且长度为0且cas获取cellBusy锁失败后，
+                会尝试直接cas更新baseCount
+             */
             else if (U.compareAndSwapLong(this, BASECOUNT, v = baseCount, v + x))
                 break;                          // Fall back on using base
         }
