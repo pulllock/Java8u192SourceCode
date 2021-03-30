@@ -323,9 +323,8 @@ import java.util.*;
  * 参考：
  * - https://zhuanlan.zhihu.com/p/86343934
  * - https://tech.meituan.com/2020/04/02/java-pooling-pratice-in-meituan.html
- * - https://blog.csdn.net/qq_33879355/article/details/107078708
- * - https://zhuanlan.zhihu.com/p/338583938
  * - https://www.cnblogs.com/thisiswhy/p/12690630.html
+ * - https://tech101.cn/2019/10/02/ThreadPoolExecutor%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86#%E7%BC%A9%E5%AE%B9
  *
  * 线程池的主要组成：
  * - 线程集合（workers，一个集合HashSet），包括：核心线程和最大线程
@@ -359,10 +358,22 @@ import java.util.*;
  * - 还可以使用动态配置的方式，在运行时动态更改线程数。
  *
  * 提交任务到线程池的流程，execute方法：
+ * 如果线程池不是RUNNING状态，就不能提交任务到线程池中。
+ * 如果线程池是RUNNING状态，并且当前线程池中线程数小于核心线程数，则创建核心线程
+ * 处理任务；
+ * 如果线程池中线程数大于核心线程数，并且等待队列不满，则将任务放入等待队列中；
+ * 如果等待队列满了，但是小于最大线程数，则创建新线程处理任务；
+ * 如果超过了最大线程数，则执行拒绝策略。
  *
  * 执行任务的流程，runWorker方法：
+ * 如果能创建新的线程，则创建新的线程并开始执行任务；如果不能创建新的线程，则将
+ * 任务放到队列中去。正在执行任务的线程在执行完任务后，从等待队列中获取任务执行。
+ * 如果获取不到任务，则阻塞在等待队列上，等待有任务来。如果支持超时销毁线程，则
+ * 阻塞在等待队列一定时间后返回，将这个空闲的线程销毁掉。
  *
  * 获取任务的流程：getTask方法：
+ * 获取任务就是循环在队列上获取数据，如果获取不到任务，则阻塞在等待队列上，等待有任务来。
+ * 如果支持超时销毁线程，则阻塞在等待队列一定时间后返回。
  *
  * 初始化线程池的时候可以预先创建线程吗？可以
  * - 初始化线程池后，调用prestartAllCoreThreads方法可以预先创建所有核心线程。
@@ -371,10 +382,18 @@ import java.util.*;
  * 线程池的核心线程可以被回收吗？可以
  * allowCoreThreadTimeOut用来控制是否允许核心线程被回收。
  * 核心线程之所以不会被回收，是因为在到阻塞队列中获取任务的时候，如果使用take方法获取不到任务，就会
- * 阻塞等待，线程不会被回收掉。而如果允许核心线程被回收，则会使用poll方法获取任务，如果获取不到会
- * 等待keepAliveTime这么长时间，然后直接返回null，这样线程就可能会被回收掉。
+ * 阻塞等待，线程不会被回收掉。而如果允许核心线程被回收，则会使用带超时的poll方法获取任务，如果获取不到会
+ * 等待keepAliveTime这么长时间，然后标记超时后会将线程数减1并返回null，这样线程就可能会被回收掉。
  *
  * 线程池是怎样缩容的？
+ * 如果直接指定了允许回收核心线程，则只要有有线程空闲下来，就会被回收掉。
+ * 如果不允许回收核心线程，并且当前线程池中线程数量大于核心线程数，这时候如果有线程空闲下来，也会被回收掉。
+ *
+ * 如果一个线程没有任务在处理，就会阻塞在获取任务的队列上，如果想要实现线程的超时销毁，可以利用
+ * 带有超时机制的poll方法，阻塞在队列上一段时间后，就会返回，此时可以设置超时标志，下次循环看到
+ * 当前线程超时了是空闲的，就可以返回回收改线程。
+ *
+ * 缩容就是将空闲线程从线程集合中移除掉。
  */
 public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
@@ -577,12 +596,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * Tracks largest attained pool size. Accessed only under
      * mainLock.
+     * 线程池中线程数量曾达到过的最大值
      */
     private int largestPoolSize;
 
     /**
      * Counter for completed tasks. Updated only on termination of
      * worker threads. Accessed only under mainLock.
+     * 已完成任务的数量
      */
     private long completedTaskCount;
 
@@ -1199,6 +1220,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         mainLock.lock();
         try {
             completedTaskCount += w.completedTasks;
+            // 将Worker从集合中移除
             workers.remove(w);
         } finally {
             mainLock.unlock();
@@ -1274,26 +1296,21 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
             // Are workers subject to culling?
             /*
-                timed表示：
-                - 允许回收核心线程
-                - 不允许回收核心线程但是线程池中线程数大于核心线程数
-
-                其实就是用来判断是不是要缩容，销毁一些线程。如果允许回收核心线程，那就没有
-                什么顾虑，意味着线程池中所有线程都可以在适当时候进行销毁。
-
-                如果不允许回收核心线程，那就是要保留核心线程，其他的多余线程也需要回收掉。
-
-                如果允许回收核心线程的时候timed一直为true；如果不允许回收核心线程，只有在
-                线程池中线程数大于核心线程数时为true，也就是存在最大线程。
+                timed表示需要进行超时检测，有两个场景下会要求进行超时检测：
+                - 允许回收核心线程时
+                - 不允许回收核心线程但是线程池中线程数大于核心线程数时
              */
             boolean timed = allowCoreThreadTimeOut || wc > corePoolSize;
 
-            /**
-             * 这里 break，是为了不往下执行后一个 if (compareAndDecrementWorkerCount(c))
-             * 两个 if 一起看：如果当前线程数 wc > maximumPoolSize，或者超时，都返回 null
-             * 那这里的问题来了，wc > maximumPoolSize 的情况，为什么要返回 null？
-             * 换句话说，返回 null 意味着关闭线程。
-             * 那是因为有可能开发者调用了 setMaximumPoolSize 将线程池的 maximumPoolSize 调小了
+            /*
+                如果当前线程池中的线程数大于允许的最大线程数，或者当前需要进行超时检测并且
+                上次循环时从等待队列中获取执行任务发生了超时；
+                并且当前不是唯一的线程，并且等待队列中没有任务。
+
+                这两个条件如果同时发生，说明工作线程发生了超时需要回收，这里线程数减1，返回null。
+
+                为什么出现当前线程池中的线程数比最大线程数多的情况？
+                因为maximumPoolSize可以动态设置
              */
             if ((wc > maximumPoolSize || (timed && timedOut))
                 && (wc > 1 || workQueue.isEmpty())) {
@@ -1303,12 +1320,17 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             }
 
             try {
-                // workQueue中获取任务
+                /*
+                    workQueue中获取任务
+                    如果需要超时，就设置超时时间使用poll方法，如果不需要超时
+                    则使用take方法阻塞等待
+                 */
                 Runnable r = timed ?
                     workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
                     workQueue.take();
                 if (r != null)
                     return r;
+                // 标记超时
                 timedOut = true;
             } catch (InterruptedException retry) {
                 timedOut = false;
@@ -1873,14 +1895,24 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @param corePoolSize the new core size
      * @throws IllegalArgumentException if {@code corePoolSize < 0}
      * @see #getCorePoolSize
+     * 可以使用此方法进行动态改变核心线程数
      */
     public void setCorePoolSize(int corePoolSize) {
         if (corePoolSize < 0)
             throw new IllegalArgumentException();
         int delta = corePoolSize - this.corePoolSize;
+        // 设置新的核心线程数
         this.corePoolSize = corePoolSize;
+        /*
+            设置完新的核心线程数后，线程池中工作线程比核心线程数多，
+            可以进行终端空闲的线程
+         */
         if (workerCountOf(ctl.get()) > corePoolSize)
             interruptIdleWorkers();
+        /*
+            新的核心线程数比原来的核心线程数大，需要增加线程池中
+            的核心线程
+         */
         else if (delta > 0) {
             // We don't really know how many new threads are "needed".
             // As a heuristic, prestart enough new workers (up to new
