@@ -84,8 +84,21 @@ public class Executors {
      * @param nThreads the number of threads in the pool
      * @return the newly created thread pool
      * @throws IllegalArgumentException if {@code nThreads <= 0}
+     * 创建一个固定大小的线程池
      */
     public static ExecutorService newFixedThreadPool(int nThreads) {
+        /*
+            核心线程数和最大线程数一样，
+            空闲线程超时时间为0，
+            使用LinkedBlockingQueue阻塞队列。
+
+            由于使用无界队列，导致最大线程数无效。实际只有核心线程在运行，其余
+            任务进入无界队列。
+
+            队列中大量任务堆积可能造成OOM。
+
+            在流量比较平稳的时候还可以，如果突发大流量就会导致队列急剧增大。
+         */
         return new ThreadPoolExecutor(nThreads, nThreads,
                                       0L, TimeUnit.MILLISECONDS,
                                       new LinkedBlockingQueue<Runnable>());
@@ -166,8 +179,25 @@ public class Executors {
      * guaranteed not to be reconfigurable to use additional threads.
      *
      * @return the newly created single-threaded Executor
+     * 创建一个单线程的线程池
      */
     public static ExecutorService newSingleThreadExecutor() {
+        /*
+            核心线程数为1，
+            最大线程数为1，
+            空闲线程超时时间为0，
+            队列为LinkedBlockingQueue，可认为无限大。
+
+            由于是无界队列，所以最大线程数用不到，是无效的。
+
+            核心线程数只有一个，一次只能有一个任务在处理，其他任务进来都会
+            到无界队列中排队。
+
+            如果唯一的这个线程异常退出了，还可以继续新建一个线程继续处理。
+
+            由于是个无界队列，可以无限制增加任务，会造成OOM
+
+         */
         return new FinalizableDelegatedExecutorService
             (new ThreadPoolExecutor(1, 1,
                                     0L, TimeUnit.MILLISECONDS,
@@ -211,8 +241,31 @@ public class Executors {
      * may be created using {@link ThreadPoolExecutor} constructors.
      *
      * @return the newly created thread pool
+     * 可缓存的线程池，可认为是一个伸缩的线程池，随着任务增多而增大，任务变少而减小。
      */
     public static ExecutorService newCachedThreadPool() {
+        /*
+            SynchronousQueue不能存储元素，容量为0，offer方法添加元素时，
+            如果正好有线程获取元素，则返回true；如果offer添加元素的时候，
+            没有线程获取元素，则返回false。
+
+            核心线程数为0，
+            最大线程数为Integer的MAX_VALUE，可认为无限大，
+            空闲线程存活时间60秒，
+            使用的SynchronousQueue阻塞队列。
+
+            由于核心线程数为0，所以提交任务到线程池的时候就会直接选择入队列，
+            但是由于队列是SynchronousQueue，不存储元素，如果此时没有线程
+            到队列中获取元素，就会直接创建新线程处理任务；如果此时有线程到队
+            列中获取元素，则使用已有线程处理任务。如果线程有空闲超过60秒，就
+            会被销毁，如果线程池中一个任务都没有，则所有线程都会被销毁。
+
+            最大线程数可认为是无限大，所以理论上可以有无限多的线程被创建，这
+            样会导致大量线程存在，造成系统瘫痪。
+
+            适用于耗时较短的任务，处理大量耗时较短的任务不会有太多线程，但是
+            一旦任务耗时稍长导致线程增多，或者线程大量无限增多，会导致系统崩溃。
+         */
         return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
                                       new SynchronousQueue<Runnable>());
