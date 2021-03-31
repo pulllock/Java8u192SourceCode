@@ -73,6 +73,19 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * AtomicXFieldUpdaters and instead directly use Unsafe intrinsics.
      */
 
+    /*
+        Future
+        Future代表一个异步计算的结果。
+
+        RunnableFuture
+        RunnableFuture继承了Runnable和Future，可以类比生产者消费者模型，Runnable
+        是生产者，通过run方法计算出结果；Future是消费者，通过get方法获取结果，如果获取
+        不到结果就会阻塞等待。
+
+        FutureTask
+        FutureTask表示一个异步计算
+     */
+
     /**
      * The run state of this task, initially NEW.  The run state
      * transitions to a terminal state only in methods set,
@@ -88,23 +101,54 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * NEW -> COMPLETING -> EXCEPTIONAL
      * NEW -> CANCELLED
      * NEW -> INTERRUPTING -> INTERRUPTED
+     * 任务执行的状态
      */
     private volatile int state;
+    // 任务初始化状态
     private static final int NEW          = 0;
+    // 正在进行结果设置，是个中间状态
     private static final int COMPLETING   = 1;
+    // 任务正常完成后的状态
     private static final int NORMAL       = 2;
+    // 任务异常后的状态
     private static final int EXCEPTIONAL  = 3;
+    // 取消任务后的状态
     private static final int CANCELLED    = 4;
+    // 线程被中断的中间状态
     private static final int INTERRUPTING = 5;
+    // 线程被中断后的状态
     private static final int INTERRUPTED  = 6;
 
-    /** The underlying callable; nulled out after running */
+    /**
+     * The underlying callable; nulled out after running
+     * 当前要执行的任务
+     */
     private Callable<V> callable;
-    /** The result to return or exception to throw from get() */
+    /**
+     * The result to return or exception to throw from get()
+     * 当前任务执行的结果。
+     * 如果发生异常则是对应的异常信息
+     *
+     * 非volatile，由状态state来保证安全
+     */
     private Object outcome; // non-volatile, protected by state reads/writes
-    /** The thread running the callable; CASed during run() */
+    /**
+     * The thread running the callable; CASed during run()
+     * 当前执行任务的线程
+     */
     private volatile Thread runner;
     /** Treiber stack of waiting threads */
+    /*
+        Treiber stack
+        是一个无锁并发栈，使用cas实现无锁算法。
+        Treiber stack是一个使用单向链表来表示的栈，链表头是栈顶，出栈和入栈
+        使用cas来保证下线程安全。
+
+        这个栈用来保存使用Future.get方法阻塞的线程。每当有一个线程调用了Future.get
+        方法获取任务执行结果，而此时任务还在运行中没有结束，调用get方法的线程就会加入到
+        Treiber栈中，并将新的结点赋值给waiters。
+
+     */
     private volatile WaitNode waiters;
 
     /**
