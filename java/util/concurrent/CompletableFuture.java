@@ -106,6 +106,13 @@ import java.util.concurrent.locks.LockSupport;
  *
  * @author Doug Lea
  * @since 1.8
+ * Future获取结果的时候使用get方法，该方法会阻塞等待执行完成。或者使用isDone
+ * 来轮询看是否已经完成，如果完成再使用get方法获取结果。
+ *
+ * 这两种方法获取结果都会导致主线程等待，一个是阻塞等待，一个是忙等待。
+ * 可以使用CompletableFuture来解决Future的这个问题。
+ *
+ * CompletableFuture使用观察者模式实现异步回调
  */
 public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 

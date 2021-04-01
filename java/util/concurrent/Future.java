@@ -92,6 +92,12 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  * @param <V> The result type returned by this Future's {@code get} method
+ *           Future获取结果的时候使用get方法，该方法会阻塞等待执行完成。或者使用isDone
+ *           来轮询看是否已经完成，如果完成再使用get方法获取结果。
+ *
+ *           这两种方法获取结果都会导致主线程等待，一个是阻塞等待，一个是忙等待。
+ *
+ *           可以使用CompletableFuture来解决Future的这个问题。
  */
 public interface Future<V> {
 
