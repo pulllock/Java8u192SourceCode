@@ -83,7 +83,10 @@ public class FutureTask<V> implements RunnableFuture<V> {
         不到结果就会阻塞等待。
 
         FutureTask
-        FutureTask表示一个异步计算
+        FutureTask表示一个异步计算。
+
+        当任务还没有完成，如果有线程通过get方法获取结果，这个线程会被封装成WaitNode并加入到
+        Treiber栈中，线程挂起；任务执行完后，将栈中的线程唤醒，让其拿到结果返回。
      */
 
     /**
@@ -127,7 +130,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
     /**
      * The result to return or exception to throw from get()
      * 当前任务执行的结果。
-     * 如果发生异常则是对应的异常信息
+     * 如果发生异常则是对应的异常信息。
+     * 如果任务被取消，则为null
      *
      * 非volatile，由状态state来保证安全
      */
@@ -158,11 +162,15 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     @SuppressWarnings("unchecked")
     private V report(int s) throws ExecutionException {
+        // 任务执行结果
         Object x = outcome;
+        // 如果是正常结束，直接返回结果
         if (s == NORMAL)
             return (V)x;
+        // 任务被取消，抛出被取消异常
         if (s >= CANCELLED)
             throw new CancellationException();
+        // 执行的异常，抛出执行中的异常
         throw new ExecutionException((Throwable)x);
     }
 
@@ -206,6 +214,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
+        // 只有状态为NEW的才有可能会被取消成功
         if (!(state == NEW &&
               UNSAFE.compareAndSwapInt(this, stateOffset, NEW,
                   mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
@@ -228,11 +237,16 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * @throws CancellationException {@inheritDoc}
+     * 会进行自旋等待获取，直到任务执行完成（正常或者异常或者中断）
+     * 当一个线程调用get方法，获取任务的结果，如果任务还没有完成（正常、异常、中断），
+     * 就会生成一个新的WaitNode，并加入等待队列，当前获取任务结果的线程挂起。
      */
     public V get() throws InterruptedException, ExecutionException {
         int s = state;
+        // 状态如果是新建或者是正在完成，则继续等待，否则调用report方法返回结果
         if (s <= COMPLETING)
             s = awaitDone(false, 0L);
+        // 返回结果
         return report(s);
     }
 
@@ -297,24 +311,55 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public void run() {
+        /*
+            state状态有如下几种：
+            - NEW，新建创建，未执行
+            - COMPLETING，正在完成，是个中间状态
+            - NORMAL，正常结束状态
+            — EXCEPTIONAL，异常结束状态
+            - CANCELLED，取消状态
+            - INTERRUPTING，正在被中断
+            - INTERRUPTED，
+
+            如果state不是NEW状态，说明已经执行了，不需要再次执行，直接返回；
+            如果state是NEW状态，但是cas设置当前线程为执行线程失败了，说明当前线程也已经
+            在执行了，不需要再次执行，直接返回。
+         */
         if (state != NEW ||
             !UNSAFE.compareAndSwapObject(this, runnerOffset,
                                          null, Thread.currentThread()))
             return;
         try {
+            // 要执行的任务
             Callable<V> c = callable;
+            // 再次判断下当前状态是不是NEW
             if (c != null && state == NEW) {
                 V result;
                 boolean ran;
                 try {
+                    // 执行任务，拿到结果
                     result = c.call();
                     ran = true;
                 } catch (Throwable ex) {
                     result = null;
                     ran = false;
+                    /*
+                        设置异常信息，包括如下几步：
+                        1. cas设置state为COMPLETING中间状态
+                        2. 设置异常信息给outcome
+                        3. cas设置state为EXCEPTIONAL
+                        4. 将waiters中所有等待获取结果的线程唤醒并移除
+                     */
                     setException(ex);
                 }
                 if (ran)
+                    /*
+                        设置正常结束信息，包括如下几步：
+                        1. cas设置state为COMPLETING中间状态
+                        2. 设置结果给outcome
+                        3. cas设置state为NORMAL
+                        4. 将waiters中所有等待获取结果的线程唤醒并移除
+                     */
                     set(result);
             }
         } finally {
@@ -449,26 +494,37 @@ public class FutureTask<V> implements RunnableFuture<V> {
             }
 
             int s = state;
+            // 已经完成（正常或者异常或者中断），直接返回
             if (s > COMPLETING) {
                 if (q != null)
                     q.thread = null;
                 return s;
             }
+            // 正在完成状态，让出当前线程的时间片
             else if (s == COMPLETING) // cannot time out yet
                 Thread.yield();
+            /*
+                到这里说明当前任务状态还是NEW，需要将当前调用get的线程
+                封装成一个WaitNode，并放到等待栈中去
+             */
             else if (q == null)
                 q = new WaitNode();
+            /*
+                这里将等待的线程放入到栈中
+             */
             else if (!queued)
                 queued = UNSAFE.compareAndSwapObject(this, waitersOffset,
                                                      q.next = waiters, q);
             else if (timed) {
                 nanos = deadline - System.nanoTime();
+                // 超时，返回
                 if (nanos <= 0L) {
                     removeWaiter(q);
                     return state;
                 }
                 LockSupport.parkNanos(this, nanos);
             }
+            // 挂起当前调用get的线程
             else
                 LockSupport.park(this);
         }
