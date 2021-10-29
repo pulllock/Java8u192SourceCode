@@ -117,6 +117,9 @@ public abstract class SocketChannel
     extends AbstractSelectableChannel
     implements ByteChannel, ScatteringByteChannel, GatheringByteChannel, NetworkChannel
 {
+        /*
+            SocketChannel通过TCP读写网络中的数据
+         */
 
     /**
      * Initializes a new instance of this class.
@@ -140,6 +143,7 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     * 打开SocketChannel
      */
     public static SocketChannel open() throws IOException {
         return SelectorProvider.provider().openSocketChannel();
@@ -180,6 +184,7 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     * 打开SocketChannel
      */
     public static SocketChannel open(SocketAddress remote)
         throws IOException
@@ -385,6 +390,8 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *          如果SocketChannel是非阻塞模式，调用connect()方法又可能在连接建立之前
+     *          就会返回，需要调用finishConnect()方法来确认是否连接建立。
      */
     public abstract boolean connect(SocketAddress remote) throws IOException;
 

@@ -114,6 +114,9 @@ public abstract class DatagramChannel
     extends AbstractSelectableChannel
     implements ByteChannel, ScatteringByteChannel, GatheringByteChannel, MulticastChannel
 {
+    /*
+        DatagramChannel通过UDP读写网络中的数据
+     */
 
     /**
      * Initializes a new instance of this class.

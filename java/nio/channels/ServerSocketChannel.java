@@ -75,6 +75,9 @@ public abstract class ServerSocketChannel
     extends AbstractSelectableChannel
     implements NetworkChannel
 {
+    /*
+        ServerSocketChannel监听新的TCP连接，并为新连接创建一个对应的SocketChannel
+     */
 
     /**
      * Initializes a new instance of this class.

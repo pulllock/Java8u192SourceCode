@@ -215,6 +215,7 @@ public abstract class SelectableChannel
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
+     * 将Channel注册到Selector上
      */
     public abstract SelectionKey register(Selector sel, int ops, Object att)
         throws ClosedChannelException;
@@ -273,6 +274,7 @@ public abstract class SelectableChannel
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
+     * 将Channel注册到Selector上
      */
     public final SelectionKey register(Selector sel, int ops)
         throws ClosedChannelException
@@ -311,6 +313,8 @@ public abstract class SelectableChannel
      *
      * @throws IOException
      *         If an I/O error occurs
+     * 设置Channel的阻塞模式，true是阻塞，false是非阻塞
+     * 如果设置了非阻塞，可以在异步调用connect()、read()、write()等方法
      */
     public abstract SelectableChannel configureBlocking(boolean block)
         throws IOException;

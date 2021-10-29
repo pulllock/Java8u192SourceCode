@@ -49,6 +49,9 @@ import java.nio.ByteBuffer;
 public interface ScatteringByteChannel
     extends ReadableByteChannel
 {
+    /*
+        scattering 分散，就是将从Channel中读取的数据分散写到多个Buffer中。
+     */
 
     /**
      * Reads a sequence of bytes from this channel into a subsequence of the

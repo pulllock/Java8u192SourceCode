@@ -156,6 +156,10 @@ public abstract class FileChannel
     extends AbstractInterruptibleChannel
     implements SeekableByteChannel, GatheringByteChannel, ScatteringByteChannel
 {
+    /*
+        FileChannel可以从文件中读写数据
+     */
+
     /**
      * Initializes a new instance of this class.
      */

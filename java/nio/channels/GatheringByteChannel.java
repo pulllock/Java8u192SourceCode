@@ -49,6 +49,9 @@ import java.nio.ByteBuffer;
 public interface GatheringByteChannel
     extends WritableByteChannel
 {
+    /*
+        gathering，聚集，就是将多个Buffer中的数据写到同一个Channel中。
+     */
 
     /**
      * Writes a sequence of bytes to this channel from a subsequence of the

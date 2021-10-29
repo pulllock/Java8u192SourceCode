@@ -1064,6 +1064,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     * 压缩，比如当前Buffer中还有部分未读的数据，但是此时想要继续写数据进当前Buffer，此时可以
+     * 使用compact方法，将未读的数据移到Buffer的最前面，这样就可以继续写当前Buffer。
      */
     public abstract ByteBuffer compact();
 

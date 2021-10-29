@@ -224,6 +224,7 @@ public abstract class SelectionKey {
      * end-of-stream, has been remotely shut down for further reading, or has
      * an error pending, then it will add <tt>OP_READ</tt> to the key's
      * ready-operation set and add the key to its selected-key&nbsp;set.  </p>
+     * 读事件
      */
     public static final int OP_READ = 1 << 0;
 
@@ -237,6 +238,7 @@ public abstract class SelectionKey {
      * remotely shut down for further writing, or has an error pending, then it
      * will add <tt>OP_WRITE</tt> to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
+     * 写事件
      */
     public static final int OP_WRITE = 1 << 2;
 
@@ -250,6 +252,7 @@ public abstract class SelectionKey {
      * connection sequence, or has an error pending, then it will add
      * <tt>OP_CONNECT</tt> to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
+     * 连接事件
      */
     public static final int OP_CONNECT = 1 << 3;
 
@@ -263,6 +266,7 @@ public abstract class SelectionKey {
      * another connection, or has an error pending, then it will add
      * <tt>OP_ACCEPT</tt> to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
+     * 接收新连接事件
      */
     public static final int OP_ACCEPT = 1 << 4;
 

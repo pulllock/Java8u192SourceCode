@@ -182,9 +182,31 @@ public abstract class Buffer {
         Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED;
 
     // Invariants: mark <= position <= limit <= capacity
+    /**
+     * 标记，可以在Buffer中设置一个标记位置，后面根据实际需要可以调用
+     * reset()方法回到这个标记位置
+     */
     private int mark = -1;
+
+    /**
+     * 读或者写的当前位置，也就是当前读到了哪里或者当前写到了哪里；
+     * 或者也可以说是当前可以读的位置和当前可以写的位置。
+     */
     private int position = 0;
+
+    /**
+     * 读或者写的最大索引
+     *
+     * 写模式下，一般limit和capacity相等，也就是Buffer有多大，就可以写多大。
+     *
+     * 读模式下，limit表示可以读的最大索引，比如一个Buffer长10，数据有6，limit就是6，
+     * 也就是你只能读到6的位置，读到7也没啥意义，没有数据
+     */
     private int limit;
+
+    /**
+     * 缓冲区的容量
+     */
     private int capacity;
 
     // Used only by direct buffers
@@ -324,10 +346,15 @@ public abstract class Buffer {
      * in which that might as well be the case. </p>
      *
      * @return  This buffer
+     * 清空，逻辑意义上的清空，只是将Buffer的position和limit等重置，并没有把Buffer中的
+     * 数据清除掉。
      */
     public final Buffer clear() {
+        // position设为0，可以从最开始处写
         position = 0;
+        // limit重置成和capacity一样
         limit = capacity;
+        // 重置标记
         mark = -1;
         return this;
     }
@@ -352,10 +379,18 @@ public abstract class Buffer {
      * one place to another.  </p>
      *
      * @return  This buffer
+     * 翻转，将Buffer从写模式切换到读模式。
+     *
+     * 写模式下limit和capacity相等，表示可以写的最大索引，position表示写到了哪个位置。翻转为
+     * 读模式后，当前写到的位置就变成了可以读的最大位置，可读的最开始位置是从头开始，也就是0，所
+     * 以翻转为读模式后，position变为0，limit变为写到的当前的位置
      */
     public final Buffer flip() {
+        // 翻转为读模式后，limit表示可读的最大位置，也即是当前写模式下写到的位置
         limit = position;
+        // 读模式从Buffer的最开始处读
         position = 0;
+        // 重置标记
         mark = -1;
         return this;
     }
@@ -374,9 +409,12 @@ public abstract class Buffer {
      * buf.get(array);    // Copy data into array</pre></blockquote>
      *
      * @return  This buffer
+     * 倒回，也就是从头开始再次读一边，需要把position重新设置为0
      */
     public final Buffer rewind() {
+        // position重新设置为0
         position = 0;
+        // 重置标记
         mark = -1;
         return this;
     }
