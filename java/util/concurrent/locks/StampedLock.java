@@ -331,16 +331,31 @@ public class StampedLock implements java.io.Serializable {
 
     private static final long serialVersionUID = -6001602636862214147L;
 
-    /** Number of processors, for spin control */
+    /**
+     * Number of processors, for spin control
+     *
+     * CPU核数，控制自旋次数
+     */
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
 
-    /** Maximum number of retries before enqueuing on acquisition */
+    /**
+     * Maximum number of retries before enqueuing on acquisition
+     *
+     * 未获得锁的时候自旋的次数，超过次数后加入等待队列
+     */
     private static final int SPINS = (NCPU > 1) ? 1 << 6 : 0;
 
-    /** Maximum number of retries before blocking at head on acquisition */
+    /**
+     * Maximum number of retries before blocking at head on acquisition
+     * 等待队列头节点自旋获取锁的次数，超过该值后继续阻塞
+     */
     private static final int HEAD_SPINS = (NCPU > 1) ? 1 << 10 : 0;
 
-    /** Maximum number of retries before re-blocking */
+    /**
+     * Maximum number of retries before re-blocking
+     *
+     * 再次进入阻塞前的最大重试次数
+     */
     private static final int MAX_HEAD_SPINS = (NCPU > 1) ? 1 << 16 : 0;
 
     /** The period for yielding when waiting for overflow spinlock */
@@ -351,13 +366,32 @@ public class StampedLock implements java.io.Serializable {
 
     // Values for lock state and stamp operations
     private static final long RUNIT = 1L;
+
+    /**
+     * 写锁标志位
+     */
     private static final long WBIT  = 1L << LG_READERS;
+
+    /**
+     * 读状态标志位
+     */
     private static final long RBITS = WBIT - 1L;
+
+    /**
+     * 读锁最大数量
+     */
     private static final long RFULL = RBITS - 1L;
+
+    /**
+     * 用于获取读写状态
+     */
     private static final long ABITS = RBITS | WBIT;
     private static final long SBITS = ~RBITS; // note overlap with ABITS
 
     // Initial value for lock state; avoid failure value zero
+    /**
+     * 初始化state值
+     */
     private static final long ORIGIN = WBIT << 1;
 
     // Special value from cancelled acquire methods so caller can throw IE
@@ -368,15 +402,42 @@ public class StampedLock implements java.io.Serializable {
     private static final int CANCELLED =  1;
 
     // Modes for nodes (int not boolean to allow arithmetic)
+    /**
+     * 读模式
+     */
     private static final int RMODE = 0;
+
+    /**
+     * 写模式
+     */
     private static final int WMODE = 1;
 
-    /** Wait nodes */
+    /**
+     * Wait nodes
+     *
+     * 等待队列中的节点
+     */
     static final class WNode {
+        /**
+         * 前驱节点
+         */
         volatile WNode prev;
+
+        /**
+         * 后继节点
+         */
         volatile WNode next;
+
+        /**
+         * 读模式使用该节点形成栈
+         */
         volatile WNode cowait;    // list of linked readers
+
+        /**
+         * 节点对应的线程
+         */
         volatile Thread thread;   // non-null while possibly parked
+
         /**
          * 等待队列中结点的状态
          * 初始状态：0
@@ -386,20 +447,40 @@ public class StampedLock implements java.io.Serializable {
         volatile int status;      // 0, WAITING, or CANCELLED
 
         /**
-         * 等待写还是等待读
+         * 节点模式：写模式还是读模式
          */
         final int mode;           // RMODE or WMODE
         WNode(int m, WNode p) { mode = m; prev = p; }
     }
 
-    /** Head of CLH queue */
+    /**
+     * Head of CLH queue
+     *
+     * CLH等待队列的头结点
+     */
     private transient volatile WNode whead;
-    /** Tail (last) of CLH queue */
+
+    /**
+     * Tail (last) of CLH queue
+     *
+     * CLH等待队列的尾结点
+     */
     private transient volatile WNode wtail;
 
     // views
+    /**
+     * 读锁
+     */
     transient ReadLockView readLockView;
+
+    /**
+     * 写锁
+     */
     transient WriteLockView writeLockView;
+
+    /**
+     * 读写锁
+     */
     transient ReadWriteLockView readWriteLockView;
 
     /**
@@ -415,11 +496,17 @@ public class StampedLock implements java.io.Serializable {
      * 8-64位是写锁版本，获取写锁和释放写锁，其值都会改变，初始状态下第8位为1，其余位为0
      */
     private transient volatile long state;
-    /** extra reader count when state read count saturated */
+
+    /**
+     * extra reader count when state read count saturated
+     *
+     * 读锁只是用了7位，当读锁数量超过了128，则使用readerOverflow来记录读锁数量
+     */
     private transient int readerOverflow;
 
     /**
      * Creates a new lock, initially in unlocked state.
+     *
      * 创建一个StampedLock并初始化sequence为256
      */
     public StampedLock() {
@@ -431,22 +518,24 @@ public class StampedLock implements java.io.Serializable {
      * until available.
      *
      * @return a stamp that can be used to unlock or convert mode
+     *
      * 悲观写，和读写锁的写类似，写写互斥，写读互斥
      * 获取写锁，如果获取写锁失败，就进入阻塞队列
      */
     public long writeLock() {
-        // s是当前的state值，也就是sequence
-        // next是获取写锁之后的state值，也就是sequence+1
+        /*
+            s是当前的state值，也就是sequence；
+            next是获取写锁之后的state值，也就是sequence+1
+         */
         long s, next;  // bypass acquireWrite in fully unlocked case only
         /*
-            ((s = state) & ABITS)获取低8位，用来判断是否有读锁或写锁被使用
-            有读锁，0-6位不为0；有写锁则第7位不为0
-            ((s = state) & ABITS) == 0L 表示读锁和写锁都没被使用
+            ((s = state) & ABITS)获取低8位，用来判断是否有读锁或写锁被使用，
+            如果有读锁，则0-6位不为0；如果有写锁，则第7位不为0，
+            ((s = state) & ABITS) == 0L 表示读锁和写锁都没被使用。
 
-            U.compareAndSwapLong(this, STATE, s, next = s + WBIT))使用cas更新state
-
-            cas更新成功，表示获取到了写锁，返回next（sequence+1）,此时state是奇数
-            cas更新失败，表示锁有竞争，获取写锁线程需要入同步队列
+            U.compareAndSwapLong(this, STATE, s, next = s + WBIT))使用cas更新state，
+            cas更新成功，表示获取到了写锁，返回next（sequence+1），此时state是奇数；
+            cas更新失败，表示锁有竞争，获取写锁线程需要入同步队列。
          */
         return ((((s = state) & ABITS) == 0L &&
                  U.compareAndSwapLong(this, STATE, s, next = s + WBIT)) ?
@@ -519,17 +608,21 @@ public class StampedLock implements java.io.Serializable {
      * until available.
      *
      * @return a stamp that can be used to unlock or convert mode
+     *
      * 悲观读，和读写锁的读操作类似，读读共享，读写互斥
      */
     public long readLock() {
-        // s是当前state值，就是sequence
-        // next是获取读锁之后的state的值，就是sequence+1
+        /*
+            s是当前state值，就是sequence；
+            next是获取读锁之后的state的值，就是sequence+1
+         */
         long s = state, next;  // bypass acquireRead on common uncontended case
         /*
-            whead == wtail表示同步队列为空
+            whead == wtail表示同步队列为空；
+            (s & ABITS) < RFULL表示没有写锁且读锁数量小于126。
 
-            (s & ABITS) < RFULL表示没有写锁且读锁数量小于126
-
+            同步队列为空并且写锁也没有被占用的情况下，直接cas获取读锁，成功了就返回next值；
+            cas失败了，获取读锁的线程需要进入同步队列排队。
          */
         return ((whead == wtail && (s & ABITS) < RFULL &&
                  U.compareAndSwapLong(this, STATE, s, next = s + RUNIT)) ?
@@ -1084,6 +1177,8 @@ public class StampedLock implements java.io.Serializable {
      *
      * @param s a reader overflow stamp: (s & ABITS) >= RFULL
      * @return new stamp on success, else zero
+     *
+     * 使用readerOverflow来记录读锁数量
      */
     private long tryIncReaderOverflow(long s) {
         // assert (s & ABITS) >= RFULL;
@@ -1261,24 +1356,40 @@ public class StampedLock implements java.io.Serializable {
      * @param deadline if nonzero, the System.nanoTime value to timeout
      * at (and return zero)
      * @return next state, or INTERRUPTED
+     *
+     * 先尝试自旋的读锁获取，获取不到则加入等待队列并挂起阻塞线程
      */
     private long acquireRead(boolean interruptible, long deadline) {
+        // node是当前要入队的节点，p是入队之前的尾结点
         WNode node = null, p;
         for (int spins = -1;;) {
+            // h是队列的头结点
             WNode h;
+            // 头结点和尾结点相等，表示队列为空或者只有头结点，直接尝试获取读锁
             if ((h = whead) == (p = wtail)) {
+                // s是state，就是sequence；ns是获取读锁之后的值，就是sequence+1；m是写锁的状态
                 for (long m, s, ns;;) {
+                    /*
+                        (m = (s = state) & ABITS) < RFULL用来判断写锁是否被占用，
+                        如果写锁没有被占用并且读锁数量未超限，直接cas更新同步状态；
+                        如果写锁没有被占用但是读锁数量超限，则超出的数量放到readerOverflow中记录，
+                        获取写锁成功就直接返回。
+                     */
                     if ((m = (s = state) & ABITS) < RFULL ?
                         U.compareAndSwapLong(this, STATE, s, ns = s + RUNIT) :
                         (m < WBIT && (ns = tryIncReaderOverflow(s)) != 0L))
                         return ns;
+                    // m >= WBIT说明写锁被占用
                     else if (m >= WBIT) {
+                        // 需要自旋尝试获取锁
                         if (spins > 0) {
                             if (LockSupport.nextSecondarySeed() >= 0)
                                 --spins;
                         }
                         else {
+                            // 用完最大自旋次数后
                             if (spins == 0) {
+                                // nh是当前队列的头节点，np是当前队列的尾结点
                                 WNode nh = whead, np = wtail;
                                 if ((nh == h && np == p) || (h = nh) != (p = np))
                                     break;
@@ -1288,21 +1399,29 @@ public class StampedLock implements java.io.Serializable {
                     }
                 }
             }
+            // p == null说明队列为空，需要初始化同步队列
             if (p == null) { // initialize queue
+                // 初始化一个新节点，写模式的节点
                 WNode hd = new WNode(WMODE, null);
+                // cas更新队列的头结点为新节点
                 if (U.compareAndSwapObject(this, WHEAD, null, hd))
+                    // 新节点赋值给尾结点
                     wtail = hd;
             }
+            // 初始化当前节点，读模式的节点，p是当前队列的尾结点
             else if (node == null)
                 node = new WNode(RMODE, p);
+            // h == p说明队列只有一个头节点，p.mode != RMODE说明尾结点不是读节点
             else if (h == p || p.mode != RMODE) {
                 if (node.prev != p)
                     node.prev = p;
+                // cas直接将新节点添加到队列
                 else if (U.compareAndSwapObject(this, WTAIL, p, node)) {
                     p.next = node;
                     break;
                 }
             }
+            // 队列不为空，且队尾是读节点，将当前节点添加到队尾节点的cowait链中，形成一个栈
             else if (!U.compareAndSwapObject(p, WCOWAIT,
                                              node.cowait = p.cowait, node))
                 node.cowait = null;
