@@ -341,13 +341,15 @@ public class StampedLock implements java.io.Serializable {
     /**
      * Maximum number of retries before enqueuing on acquisition
      *
-     * 未获得锁的时候自旋的次数，超过次数后加入等待队列
+     * 未获得锁的时候自旋的次数，超过次数后加入等待队列，在节点入同步队列之前，如果whead和wtail相等，
+     * 就会先自旋SPINS指定的次数，自旋完后还没获取到锁，再加入同步队列。
      */
     private static final int SPINS = (NCPU > 1) ? 1 << 6 : 0;
 
     /**
      * Maximum number of retries before blocking at head on acquisition
-     * 等待队列头节点自旋获取锁的次数，超过该值后继续阻塞
+     * 等待队列头节点自旋获取锁的次数，超过该值后继续阻塞。在阻塞线程前，如果whead和wtail相等，
+     * 就会先自旋HEAD_SPINS指定的次数，自旋完后还没获取到锁，再进行阻塞。
      */
     private static final int HEAD_SPINS = (NCPU > 1) ? 1 << 10 : 0;
 
@@ -361,24 +363,31 @@ public class StampedLock implements java.io.Serializable {
     /** The period for yielding when waiting for overflow spinlock */
     private static final int OVERFLOW_YIELD_RATE = 7; // must be power 2 - 1
 
-    /** The number of bits to use for reader count before overflowing */
+    /**
+     * The number of bits to use for reader count before overflowing
+     *
+     * 读锁最大的位
+     */
     private static final int LG_READERS = 7;
 
     // Values for lock state and stamp operations
+    /**
+     * 获取悲观读成功时，state增加的值
+     */
     private static final long RUNIT = 1L;
 
     /**
-     * 写锁标志位
+     * 写锁标志位128（10000000），写锁获取成功时，state增加的值
      */
     private static final long WBIT  = 1L << LG_READERS;
 
     /**
-     * 读状态标志位
+     * 读状态标志位，127
      */
     private static final long RBITS = WBIT - 1L;
 
     /**
-     * 读锁最大数量
+     * 读锁最大数量，126
      */
     private static final long RFULL = RBITS - 1L;
 
@@ -395,10 +404,20 @@ public class StampedLock implements java.io.Serializable {
     private static final long ORIGIN = WBIT << 1;
 
     // Special value from cancelled acquire methods so caller can throw IE
+    /**
+     * 线程被中断，获取读写锁时返回的值
+     */
     private static final long INTERRUPTED = 1L;
 
     // Values for node status; order matters
+    /**
+     * 节点的等待状态
+     */
     private static final int WAITING   = -1;
+
+    /**
+     * 节点的取消状态
+     */
     private static final int CANCELLED =  1;
 
     // Modes for nodes (int not boolean to allow arithmetic)
@@ -469,17 +488,17 @@ public class StampedLock implements java.io.Serializable {
 
     // views
     /**
-     * 读锁
+     * 读锁视图，不可重入，不支持条件变量
      */
     transient ReadLockView readLockView;
 
     /**
-     * 写锁
+     * 写锁视图，不可重入，不支持条件变量
      */
     transient WriteLockView writeLockView;
 
     /**
-     * 读写锁
+     * 读写锁视图
      */
     transient ReadWriteLockView readWriteLockView;
 
@@ -1365,7 +1384,7 @@ public class StampedLock implements java.io.Serializable {
         for (int spins = -1;;) {
             // h是队列的头结点
             WNode h;
-            // 头结点和尾结点相等，表示队列为空或者只有头结点，直接尝试获取读锁
+            // 头结点和尾结点相等，表示队列为空或者只有头结点，直接先自旋一段时间尝试获取读锁
             if ((h = whead) == (p = wtail)) {
                 // s是state，就是sequence；ns是获取读锁之后的值，就是sequence+1；m是写锁的状态
                 for (long m, s, ns;;) {
@@ -1425,9 +1444,11 @@ public class StampedLock implements java.io.Serializable {
             else if (!U.compareAndSwapObject(p, WCOWAIT,
                                              node.cowait = p.cowait, node))
                 node.cowait = null;
+            // 队列不为空，当前节点不为空，头节点和尾节点不相等，当前锁状态是读锁状态，当前节点cas加入尾节点的cowait栈失败
             else {
                 for (;;) {
                     WNode pp, c; Thread w;
+                    // 头节点不为空，并且头节点的cowait栈不为空，并且线程也不为空，则将cowait栈唤醒
                     if ((h = whead) != null && (c = h.cowait) != null &&
                         U.compareAndSwapObject(h, WCOWAIT, c, c.cowait) &&
                         (w = c.thread) != null) // help release
