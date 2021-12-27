@@ -755,7 +755,7 @@ public class StampedLock implements java.io.Serializable {
             loadFence内存屏障，禁止load操作重排序，使得此点之前的所有读写操作
             都执行后才可开始执行此点之后的操作
          */
-        U.();
+        U.loadFence();
         return (stamp & SBITS) == (state & SBITS);
     }
 
