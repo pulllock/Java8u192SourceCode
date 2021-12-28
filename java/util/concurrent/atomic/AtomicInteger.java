@@ -59,15 +59,23 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
     // setup to use Unsafe.compareAndSwapInt for updates
     private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    /**
+     * value字段的内存地址偏移量
+     */
     private static final long valueOffset;
 
     static {
         try {
+            // 获取value的内存地址偏移量
             valueOffset = unsafe.objectFieldOffset
                 (AtomicInteger.class.getDeclaredField("value"));
         } catch (Exception ex) { throw new Error(ex); }
     }
 
+    /**
+     * 存储数据的字段，volatile类型
+     */
     private volatile int value;
 
     /**
