@@ -481,6 +481,8 @@ public final class Unsafe {
      *
      * @see #getByte(long)
      * @see #putByte(long, byte)
+     *
+     * 分配内存
      */
     public native long allocateMemory(long bytes);
 
@@ -500,6 +502,8 @@ public final class Unsafe {
      * @throws OutOfMemoryError if the allocation is refused by the system
      *
      * @see #allocateMemory
+     *
+     * 扩充内存
      */
     public native long reallocateMemory(long address, long bytes);
 
@@ -519,6 +523,8 @@ public final class Unsafe {
      * the stores take place in units of 'int' or 'short'.
      *
      * @since 1.7
+     *
+     * 在给定的内存块中设置值
      */
     public native void setMemory(Object o, long offset, long bytes, byte value);
 
@@ -528,6 +534,8 @@ public final class Unsafe {
      * as discussed in {@link #getInt(Object,long)}.
      *
      * <p>Equivalent to <code>setMemory(null, address, bytes, value)</code>.
+     *
+     * 在给定的地址处的内存块中设置值
      */
     public void setMemory(long address, long bytes, byte value) {
         setMemory(null, address, bytes, value);
@@ -549,6 +557,8 @@ public final class Unsafe {
      * the transfer takes place in units of 'int' or 'short'.
      *
      * @since 1.7
+     *
+     * 内存复制
      */
     public native void copyMemory(Object srcBase, long srcOffset,
                                   Object destBase, long destOffset,
@@ -559,6 +569,8 @@ public final class Unsafe {
      * as discussed in {@link #getInt(Object,long)}.
      *
      * Equivalent to <code>copyMemory(null, srcAddress, null, destAddress, bytes)</code>.
+     *
+     * 内存复制
      */
     public void copyMemory(long srcAddress, long destAddress, long bytes) {
         copyMemory(null, srcAddress, null, destAddress, bytes);
@@ -570,6 +582,8 @@ public final class Unsafe {
      * this method may be null, in which case no action is taken.
      *
      * @see #allocateMemory
+     *
+     * 释放内存
      */
     public native void freeMemory(long address);
 
@@ -670,6 +684,8 @@ public final class Unsafe {
      * However, for consistency with other methods in this class,
      * this method reports its result as a long value.
      * @see #getInt(Object, long)
+     *
+     * 获取对象属性的内存地址偏移量
      */
     public native long objectFieldOffset(Field f);
 
@@ -682,6 +698,8 @@ public final class Unsafe {
      * which is a "cookie", not guaranteed to be a real Object, and it should
      * not be used in any way except as argument to the get and put routines in
      * this class.
+     *
+     * 获取静态属性的内存地址偏移量
      */
     public native Object staticFieldBase(Field f);
 
@@ -849,12 +867,18 @@ public final class Unsafe {
     public native Object allocateInstance(Class<?> cls)
             throws InstantiationException;
 
-    /** Lock the object.  It must get unlocked via {@link #monitorExit}. */
+    /**
+     * Lock the object.  It must get unlocked via {@link #monitorExit}.
+     *
+     * 获得对象锁
+     */
     public native void monitorEnter(Object o);
 
     /**
      * Unlock the object.  It must have been locked via {@link
      * #monitorEnter}.
+     *
+     * 释放对象锁
      */
     public native void monitorExit(Object o);
 
@@ -862,6 +886,8 @@ public final class Unsafe {
      * Tries to lock the object.  Returns true or false to indicate
      * whether the lock succeeded.  If it did, the object must be
      * unlocked via {@link #monitorExit}.
+     *
+     * 尝试获取对象锁
      */
     public native boolean tryMonitorEnter(Object o);
 
@@ -982,6 +1008,8 @@ public final class Unsafe {
      * so when calling from native code.
      * @param thread the thread to unpark.
      *
+     * 取消阻塞线程
+     *
      */
     public native void unpark(Object thread);
 
@@ -995,6 +1023,8 @@ public final class Unsafe {
      * "reason"). Note: This operation is in the Unsafe class only
      * because <tt>unpark</tt> is, so it would be strange to place it
      * elsewhere.
+     *
+     * 阻塞线程
      */
     public native void park(boolean isAbsolute, long time);
 
@@ -1118,6 +1148,8 @@ public final class Unsafe {
      * Ensures lack of reordering of loads before the fence
      * with loads or stores after the fence.
      * @since 1.8
+     *
+     * 内存屏障，禁止屏障前后的load操作重排序
      */
     public native void loadFence();
 
@@ -1125,6 +1157,8 @@ public final class Unsafe {
      * Ensures lack of reordering of stores before the fence
      * with loads or stores after the fence.
      * @since 1.8
+     *
+     * 内存屏障，禁止屏障前后的store操作重排序
      */
     public native void storeFence();
 
@@ -1132,6 +1166,8 @@ public final class Unsafe {
      * Ensures lack of reordering of loads or stores before the fence
      * with loads or stores after the fence.
      * @since 1.8
+     *
+     * 内存屏障，禁止load store操作重排序
      */
     public native void fullFence();
 
