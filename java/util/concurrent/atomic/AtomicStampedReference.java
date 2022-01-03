@@ -46,11 +46,24 @@ package java.util.concurrent.atomic;
  * @since 1.5
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
+ *
+ * 可以原子的更新对象引用，使用版本号来解决CAS的ABA问题
  */
 public class AtomicStampedReference<V> {
 
+    /**
+     * 用来维护对象引用和版本
+     * @param <T>
+     */
     private static class Pair<T> {
+        /**
+         * 对象的引用
+         */
         final T reference;
+
+        /**
+         * 版本
+         */
         final int stamp;
         private Pair(T reference, int stamp) {
             this.reference = reference;

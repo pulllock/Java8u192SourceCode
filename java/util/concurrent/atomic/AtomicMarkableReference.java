@@ -46,11 +46,25 @@ package java.util.concurrent.atomic;
  * @since 1.5
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
+ *
+ * 可以原子的更新对象引用，和AtomicStampedReference类似，AtomicMarkableReference使用
+ * 一个布尔类型值来记录引用是否被修改过
  */
 public class AtomicMarkableReference<V> {
 
+    /**
+     * 用来维护对象的引用和mark标记
+     * @param <T>
+     */
     private static class Pair<T> {
+        /**
+         * 对象的引用
+         */
         final T reference;
+
+        /**
+         * 用来记录对象是否被修改过
+         */
         final boolean mark;
         private Pair(T reference, boolean mark) {
             this.reference = reference;

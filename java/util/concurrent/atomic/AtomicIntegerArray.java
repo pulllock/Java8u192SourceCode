@@ -45,29 +45,53 @@ import sun.misc.Unsafe;
  * variables.
  * @since 1.5
  * @author Doug Lea
+ *
+ * 对Integer类型的数组元素进行原子的更新
  */
 public class AtomicIntegerArray implements java.io.Serializable {
     private static final long serialVersionUID = 2862133569453604235L;
 
     private static final Unsafe unsafe = Unsafe.getUnsafe();
+
+    /**
+     * 数组中第一个元素的内存地址偏移量
+     */
     private static final int base = unsafe.arrayBaseOffset(int[].class);
     private static final int shift;
+
+    /**
+     * 存放元素的数组
+     */
     private final int[] array;
 
     static {
+        // 数组单个元素的字节数，int类型是4个字节
         int scale = unsafe.arrayIndexScale(int[].class);
         if ((scale & (scale - 1)) != 0)
             throw new Error("data type scale not a power of two");
+        // 31 - 29 = 2，左移2位
         shift = 31 - Integer.numberOfLeadingZeros(scale);
     }
 
+    /**
+     * 检查i是否越界，并返回索引i位置的从base开始的内存地址偏移量
+     * @param i
+     * @return
+     */
     private long checkedByteOffset(int i) {
+        // 判断是否越界
         if (i < 0 || i >= array.length)
             throw new IndexOutOfBoundsException("index " + i);
 
+        // 返回索引i位置的从base开始的内存地址偏移量
         return byteOffset(i);
     }
 
+    /**
+     * 返回索引i位置的从base开始的内存地址偏移量
+     * @param i
+     * @return
+     */
     private static long byteOffset(int i) {
         return ((long) i << shift) + base;
     }
@@ -108,11 +132,19 @@ public class AtomicIntegerArray implements java.io.Serializable {
      *
      * @param i the index
      * @return the current value
+     *
+     * 获取索引i位置处的元素
      */
     public final int get(int i) {
+        // 先获取i索引的内存偏移量，再获取内存处的值
         return getRaw(checkedByteOffset(i));
     }
 
+    /**
+     * 获取内存地址偏移量处的值
+     * @param offset
+     * @return
+     */
     private int getRaw(long offset) {
         return unsafe.getIntVolatile(array, offset);
     }
@@ -122,6 +154,8 @@ public class AtomicIntegerArray implements java.io.Serializable {
      *
      * @param i the index
      * @param newValue the new value
+     *
+     * 设置指定索引处的值
      */
     public final void set(int i, int newValue) {
         unsafe.putIntVolatile(array, checkedByteOffset(i), newValue);

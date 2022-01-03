@@ -51,6 +51,7 @@ import sun.misc.Unsafe;
  * @since 1.5
  * @author Doug Lea
  *
+ * 对Integer类型的值进行原子操作。
  * AtomicInteger使用volatile+cas来实现变量更新的原子性。
  * CAS模式使用会有ABA问题
 */

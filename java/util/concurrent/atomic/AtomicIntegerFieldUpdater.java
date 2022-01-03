@@ -63,6 +63,8 @@ import sun.reflect.Reflection;
  * @since 1.5
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
+ *
+ * 可以原子的更新对象的Integer类型的字段
  */
 public abstract class AtomicIntegerFieldUpdater<T> {
     /**
@@ -70,8 +72,8 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * The Class argument is needed to check that reflective types and
      * generic types match.
      *
-     * @param tclass the class of the objects holding the field
-     * @param fieldName the name of the field to be updated
+     * @param tclass the class of the objects holding the field 要操作的类
+     * @param fieldName the name of the field to be updated 要更新的字段名字
      * @param <U> the type of instances of tclass
      * @return the updater
      * @throws IllegalArgumentException if the field is not a
@@ -80,6 +82,8 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      * exception if the class does not hold field or is the wrong type,
      * or the field is inaccessible to the caller according to Java language
      * access control
+     *
+     * 获取更新器
      */
     @CallerSensitive
     public static <U> AtomicIntegerFieldUpdater<U> newUpdater(Class<U> tclass,
@@ -365,25 +369,40 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
     /**
      * Standard hotspot implementation using intrinsics.
+     *
+     * Integer字段原子更新器的默认实现
      */
     private static final class AtomicIntegerFieldUpdaterImpl<T>
         extends AtomicIntegerFieldUpdater<T> {
         private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+
+        /**
+         * 字段的内存地址偏移量
+         */
         private final long offset;
         /**
          * if field is protected, the subclass constructing updater, else
          * the same as tclass
+         *
+         * 要操作的类
          */
         private final Class<?> cclass;
-        /** class holding the field */
+
+        /**
+         * class holding the field
+         *
+         * 要操作的类
+         */
         private final Class<T> tclass;
 
         AtomicIntegerFieldUpdaterImpl(final Class<T> tclass,
                                       final String fieldName,
                                       final Class<?> caller) {
+            // 要更新的字段
             final Field field;
             final int modifiers;
             try {
+                // 反射获取要更新的字段
                 field = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Field>() {
                         public Field run() throws NoSuchFieldException {
@@ -405,9 +424,11 @@ public abstract class AtomicIntegerFieldUpdater<T> {
                 throw new RuntimeException(ex);
             }
 
+            // 必须是int类型的字段
             if (field.getType() != int.class)
                 throw new IllegalArgumentException("Must be integer type");
 
+            // 字段必须使用volatile修饰
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
@@ -423,6 +444,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
                            !isSamePackage(tclass, caller))
                           ? caller : tclass;
             this.tclass = tclass;
+            // 字段的内存地址偏移量
             this.offset = U.objectFieldOffset(field);
         }
 

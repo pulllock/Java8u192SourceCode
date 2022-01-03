@@ -63,6 +63,8 @@ import sun.reflect.Reflection;
  * @since 1.5
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
+ *
+ * 可以原子的更新对象的Long类型的字段
  */
 public abstract class AtomicLongFieldUpdater<T> {
     /**
@@ -366,6 +368,10 @@ public abstract class AtomicLongFieldUpdater<T> {
         return next;
     }
 
+    /**
+     * 使用cas进行更新操作
+     * @param <T>
+     */
     private static final class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
         private final long offset;
@@ -507,6 +513,10 @@ public abstract class AtomicLongFieldUpdater<T> {
         }
     }
 
+    /**
+     * 使用synchronized加锁的方式进行更新
+     * @param <T>
+     */
     private static final class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
         private final long offset;

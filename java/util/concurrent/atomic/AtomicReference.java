@@ -45,6 +45,8 @@ import sun.misc.Unsafe;
  * @since 1.5
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
+ *
+ * 对对象的引用进行原子操作
  */
 public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;

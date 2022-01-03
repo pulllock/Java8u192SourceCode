@@ -48,6 +48,8 @@ import sun.misc.Unsafe;
  * @since 1.5
  * @author Doug Lea
  * @param <E> The base class of elements held in this array
+ *
+ * 对对象类型的数组元素进行原子操作
  */
 public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final long serialVersionUID = -6209656149925076980L;
