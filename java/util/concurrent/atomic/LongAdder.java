@@ -66,6 +66,9 @@ import java.io.Serializable;
  *
  * @since 1.8
  * @author Doug Lea
+ *
+ * Long类型的累加器
+ *
  * AtomicLong使用自旋+cas更新值，竞争激烈的情况下大量的自旋会造成cpu消耗极大。
  *
  * LongAdder适合场景：统计计数。
@@ -95,14 +98,25 @@ public class LongAdder extends Striped64 implements Serializable {
      * Adds the given value.
      *
      * @param x the value to add
+     *
+     * 增加值
      */
     public void add(long x) {
-        Cell[] as; long b, v; int m; Cell a;
-        /*
-            如果cells数组为null，说明暂时没有竞争，直接cas更新base即可，
-            如果cas更新base失败了，说明有竞争，需要将数据写入cells数组中。
+        // as是Cell数组
+        Cell[] as;
 
-            如果cells数组不为null，说明已经发生了竞争，直接将数据写入cells中。
+        // b是base值，v是Cell元素的值
+        long b, v;
+
+        // m是Cell数组长度
+        int m;
+
+        // a是Cell元素
+        Cell a;
+        /*
+            如果Cell数组为null，说明暂时没有竞争，直接cas更新base即可，
+            如果cas更新base失败了，说明有竞争，需要将数据写入Cell数组中；
+            如果Cell数组不为null，说明已经发生了竞争，直接将数据写入Cell数组中。
          */
         if ((as = cells) != null || !casBase(b = base, b + x)) {
             boolean uncontended = true;
@@ -111,7 +125,7 @@ public class LongAdder extends Striped64 implements Serializable {
                 cells数组中没有元素
                 cells数组中指定位置没有元素
                 cas更新cells数组中指定位置元素失败
-                这几种情况都会进到longAccumulate方法中处理
+                这几种情况都会进到longAccumulate方法中处理，使用自旋进行更新。
              */
             if (as == null || (m = as.length - 1) < 0 ||
                 (a = as[getProbe() & m]) == null ||

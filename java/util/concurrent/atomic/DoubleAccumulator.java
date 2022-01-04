@@ -74,6 +74,8 @@ import java.util.function.DoubleBinaryOperator;
  *
  * @since 1.8
  * @author Doug Lea
+ *
+ * Double类型的累加器
  */
 public class DoubleAccumulator extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;

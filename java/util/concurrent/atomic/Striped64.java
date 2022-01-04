@@ -116,6 +116,7 @@ abstract class Striped64 extends Number {
      *
      * JVM intrinsics note: It would be possible to use a release-only
      * form of CAS here, if it were provided.
+     *
      * Cell可以理解为是一个long值，volatile类型。
      * 使用Contended注解，会建一个long的缓存行填充至64字节，防止伪共享问题发生。
      */
@@ -141,18 +142,24 @@ abstract class Striped64 extends Number {
         }
     }
 
-    /** Number of CPUS, to place bound on table size */
+    /**
+     * Number of CPUS, to place bound on table size
+     *
+     * CPU数量
+     */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
 
     /**
      * Table of cells. When non-null, size is a power of 2.
-     * Cell数组，每个Cell相当于一个long类型值，存储的是累计新增的值
+     *
+     * Cell数组，每个Cell相当于一个long类型值，存储的是累计新增的值。
      */
     transient volatile Cell[] cells;
 
     /**
      * Base value, used mainly when there is no contention, but also as
      * a fallback during table initialization races. Updated via CAS.
+     *
      * 在没有竞争的时候直接写base这个值，有竞争的时候就将增加的值写入到cells数组中。
      * 在写cells数组有竞争的时候，cas失败后，也会尝试直接更新base。
      */
@@ -160,6 +167,7 @@ abstract class Striped64 extends Number {
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating Cells.
+     *
      * 扩容或者创建Cell元素的时候使用的自旋锁
      */
     transient volatile int cellsBusy;
@@ -172,6 +180,8 @@ abstract class Striped64 extends Number {
 
     /**
      * CASes the base field.
+     *
+     * 使用cas更新base字段值
      */
     final boolean casBase(long cmp, long val) {
         return UNSAFE.compareAndSwapLong(this, BASE, cmp, val);
@@ -179,6 +189,8 @@ abstract class Striped64 extends Number {
 
     /**
      * CASes the cellsBusy field from 0 to 1 to acquire lock.
+     *
+     * 使用cas更新cellsBusy字段值
      */
     final boolean casCellsBusy() {
         return UNSAFE.compareAndSwapInt(this, CELLSBUSY, 0, 1);
@@ -216,10 +228,14 @@ abstract class Striped64 extends Number {
      * @param fn the update function, or null for add (this convention
      * avoids the need for an extra field or function in LongAdder).
      * @param wasUncontended false if CAS failed before call
+     *
+     * long类型计数的实现
      */
     final void longAccumulate(long x, LongBinaryOperator fn,
                               boolean wasUncontended) {
+        // 存储线程的probe值
         int h;
+        // 获取线程的probe值，如果为0需要初始化线程probe值
         if ((h = getProbe()) == 0) {
             ThreadLocalRandom.current(); // force initialization
             h = getProbe();
@@ -229,33 +245,50 @@ abstract class Striped64 extends Number {
         // collide表示是否需要扩容
         boolean collide = false;                // True if last slot nonempty
         for (;;) {
-            Cell[] as; Cell a; int n; long v;
-            /*
-                cells不为null，且cells中有元素
-             */
+            // as是Cell数组
+            Cell[] as;
+
+            // a是Cell数组中的某个Cell
+            Cell a;
+
+            // n是Cell数组的长度
+            int n;
+
+            // v是表示Cell的值或者base的值
+            long v;
+            // Cell数组不为null，且数组中有元素
             if ((as = cells) != null && (n = as.length) > 0) {
-                /*
-                    cells数组中指定位置还没有元素
-                 */
+                // Cell数组中指定位置还没有元素
                 if ((a = as[(n - 1) & h]) == null) {
-                    // cellsBusy为0表示锁没有被占用
+                    // cellsBusy在扩容或者创建Cell元素的时候使用，为0表示锁没有被占用，这里可以进行Cell元素创建
                     if (cellsBusy == 0) {       // Try to attach new Cell
+                        // 创建一个新的Cell元素，初始化的值是指定的x
                         Cell r = new Cell(x);   // Optimistically create
-                        // 看锁有没有被占用，没有的话cas获取锁
+                        // 再次查看锁有没有被占用，没有的话就使用cas获取锁
                         if (cellsBusy == 0 && casCellsBusy()) {
+                            // 记录有没有创建成功
                             boolean created = false;
                             try {               // Recheck under lock
-                                Cell[] rs; int m, j;
+                                // 获取锁之后需要重新检查一下
+                                // rs是Cell数组
+                                Cell[] rs;
+
+                                // m是Cell数组长度，j是具体的Cell的索引
+                                int m, j;
                                 // 将新的Cell元素更新到数组中
                                 if ((rs = cells) != null &&
                                     (m = rs.length) > 0 &&
                                     rs[j = (m - 1) & h] == null) {
+                                    // 新创建的Cell元素r添加到Cell数组中
                                     rs[j] = r;
+                                    // 记录已创建
                                     created = true;
                                 }
                             } finally {
+                                // 将cellsBusy锁释放掉
                                 cellsBusy = 0;
                             }
+                            // 新创建Cell元素成功加入Cell数组后，跳出循环
                             if (created)
                                 break;
                             continue;           // Slot is now non-empty
@@ -266,26 +299,31 @@ abstract class Striped64 extends Number {
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
 
-                /*
-                    将x累加到数组元素中
-                 */
+                // 线程对应的Cell元素位置已经有值了，需要将x累加到这个Cell元素上，使用cas更新，成功后跳出循环
                 else if (a.cas(v = a.value, ((fn == null) ? v + x :
                                              fn.applyAsLong(v, x))))
                     break;
                 /*
-                    长度大于等于cpu个数，或者正在扩容，
-                    设置collide为false，表示不需要继续扩容了
+                    如果数组长度已经大于等于cpu个数，或者数组正在扩容，
+                    设置collide为false，表示不应该再扩容了
                  */
                 else if (n >= NCPU || cells != as)
                     collide = false;            // At max size or stale
+
+                /*
+                    走到这说明当前循环中找到的Cell元素处已有值，
+                    但是上一次循环的时候找到的Cell元素处没有值，
+                    这里将collide设置为true，并继续下一次循环，
+                    如果下一次循环还是有竞争，不能成功累加数据
+                    到Cell数组中，则下次循环会尝试进行扩容。
+                 */
                 else if (!collide)
                     collide = true;
-                /*
-                    尝试cas加锁cellsBusy，进行扩容
-                 */
+                // 需要进行扩容了，尝试cas加锁cellsBusy，进行扩容
                 else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
                         if (cells == as) {      // Expand table unless stale
+                            // 新数组翻倍
                             Cell[] rs = new Cell[n << 1];
                             for (int i = 0; i < n; ++i)
                                 rs[i] = as[i];
@@ -299,10 +337,10 @@ abstract class Striped64 extends Number {
                 }
                 h = advanceProbe(h);
             }
+
             /*
-                cells为null或者是cells中没有元素会走到这里，
-                这里需要进行cells数组初始化。
-                初始化前需要先获取锁cellsBusy。
+                Cell数组为null或者是Cell数组中没有元素会走到这里，
+                这里需要进行Cell数组初始化，初始化前需要先获取锁cellsBusy。
              */
             else if (cellsBusy == 0 && cells == as && casCellsBusy()) {
                 boolean init = false;

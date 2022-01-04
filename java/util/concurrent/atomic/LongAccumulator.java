@@ -76,6 +76,8 @@ import java.util.function.LongBinaryOperator;
  *
  * @since 1.8
  * @author Doug Lea
+ *
+ * Long类型的累加器
  */
 public class LongAccumulator extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
@@ -99,9 +101,27 @@ public class LongAccumulator extends Striped64 implements Serializable {
      * Updates with the given value.
      *
      * @param x the value
+     *
+     * 累加值
      */
     public void accumulate(long x) {
-        Cell[] as; long b, v, r; int m; Cell a;
+        // as是Cell数组
+        Cell[] as;
+
+        // b是base值，v是Cell元素值，r是自定函数计算出的值
+        long b, v, r;
+
+        // m是Cell数组的长度
+        int m;
+
+        // a是Cell元素
+        Cell a;
+
+        /*
+            如果Cell数组为null，说明暂时没有竞争，直接cas更新base即可，
+            如果cas更新base失败了，说明有竞争，需要将数据写入Cell数组中；
+            如果Cell数组不为null，说明已经发生了竞争，直接将数据写入Cell数组中。
+         */
         if ((as = cells) != null ||
             (r = function.applyAsLong(b = base, x)) != b && !casBase(b, r)) {
             boolean uncontended = true;
