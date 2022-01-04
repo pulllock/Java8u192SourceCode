@@ -37,6 +37,8 @@ import java.util.Objects;
  *
  * @see Consumer
  * @since 1.8
+ *
+ * 消费型接口，接收一个double值进行消费
  */
 @FunctionalInterface
 public interface DoubleConsumer {

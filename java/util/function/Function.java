@@ -36,6 +36,8 @@ import java.util.Objects;
  * @param <R> the type of the result of the function
  *
  * @since 1.8
+ *
+ * 功能型接口，接收一个对象用于完成一些操作，并返回结果
  */
 @FunctionalInterface
 public interface Function<T, R> {
@@ -45,6 +47,8 @@ public interface Function<T, R> {
      *
      * @param t the function argument
      * @return the function result
+     *
+     * 接收一个对象，返回一个结果
      */
     R apply(T t);
 

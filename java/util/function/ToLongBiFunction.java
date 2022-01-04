@@ -37,6 +37,8 @@ package java.util.function;
  *
  * @see BiFunction
  * @since 1.8
+ *
+ * 功能型接口，接收两个对象用于完成一些操作，并返回long类型的结果
  */
 @FunctionalInterface
 public interface ToLongBiFunction<T, U> {

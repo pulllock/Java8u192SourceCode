@@ -35,6 +35,8 @@ import java.util.Objects;
  * @param <T> the type of the input to the predicate
  *
  * @since 1.8
+ *
+ * 判断型接口，对某种类型数据进行判断
  */
 @FunctionalInterface
 public interface Predicate<T> {
@@ -45,6 +47,8 @@ public interface Predicate<T> {
      * @param t the input argument
      * @return {@code true} if the input argument matches the predicate,
      * otherwise {@code false}
+     *
+     * 接受一个对象进行判断，返回一个boolean类型值
      */
     boolean test(T t);
 
@@ -63,6 +67,8 @@ public interface Predicate<T> {
      * @return a composed predicate that represents the short-circuiting logical
      * AND of this predicate and the {@code other} predicate
      * @throws NullPointerException if other is null
+     *
+     * 实现与逻辑的判断
      */
     default Predicate<T> and(Predicate<? super T> other) {
         Objects.requireNonNull(other);
@@ -75,6 +81,8 @@ public interface Predicate<T> {
      *
      * @return a predicate that represents the logical negation of this
      * predicate
+     *
+     * 实现非逻辑的判断
      */
     default Predicate<T> negate() {
         return (t) -> !test(t);
@@ -95,6 +103,8 @@ public interface Predicate<T> {
      * @return a composed predicate that represents the short-circuiting logical
      * OR of this predicate and the {@code other} predicate
      * @throws NullPointerException if other is null
+     *
+     * 实现或逻辑的判断
      */
     default Predicate<T> or(Predicate<? super T> other) {
         Objects.requireNonNull(other);
@@ -110,6 +120,8 @@ public interface Predicate<T> {
      *               which may be {@code null}
      * @return a predicate that tests if two arguments are equal according
      * to {@link Objects#equals(Object, Object)}
+     *
+     * 两个对象是否相等的判断
      */
     static <T> Predicate<T> isEqual(Object targetRef) {
         return (null == targetRef)

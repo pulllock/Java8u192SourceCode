@@ -36,6 +36,8 @@ package java.util.function;
  *
  * @see Function
  * @since 1.8
+ *
+ * 功能型接口，接收一个double类型对象用于完成一些操作，并返回结果
  */
 @FunctionalInterface
 public interface DoubleFunction<R> {

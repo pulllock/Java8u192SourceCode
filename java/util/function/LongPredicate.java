@@ -36,6 +36,8 @@ import java.util.Objects;
  *
  * @see Predicate
  * @since 1.8
+ *
+ * 判断型接口，对long类型数据进行判断
  */
 @FunctionalInterface
 public interface LongPredicate {
@@ -46,6 +48,8 @@ public interface LongPredicate {
      * @param value the input argument
      * @return {@code true} if the input argument matches the predicate,
      * otherwise {@code false}
+     *
+     * 接收一个long类型的值进行判断，返回一个boolean类型的值
      */
     boolean test(long value);
 

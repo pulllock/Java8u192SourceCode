@@ -35,6 +35,8 @@ package java.util.function;
  * @see BinaryOperator
  * @see DoubleUnaryOperator
  * @since 1.8
+ *
+ * 功能型接口，接收两个double类型的值用于完成一些操作，并返回double类型的结果
  */
 @FunctionalInterface
 public interface DoubleBinaryOperator {

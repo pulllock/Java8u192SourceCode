@@ -37,6 +37,8 @@ package java.util.function;
  *
  * @see Supplier
  * @since 1.8
+ *
+ * Boolean类型的提供者，供给型接口
  */
 @FunctionalInterface
 public interface BooleanSupplier {
@@ -45,6 +47,8 @@ public interface BooleanSupplier {
      * Gets a result.
      *
      * @return a result
+     *
+     * 返回一个布尔类型的值
      */
     boolean getAsBoolean();
 }

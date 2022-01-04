@@ -41,6 +41,8 @@ import java.util.Comparator;
  * @see BiFunction
  * @see UnaryOperator
  * @since 1.8
+ *
+ * 功能型接口，接收两个相同类型的对象用于完成一些操作，并返回相同类型的结果
  */
 @FunctionalInterface
 public interface BinaryOperator<T> extends BiFunction<T,T,T> {

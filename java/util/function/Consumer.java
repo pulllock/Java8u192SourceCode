@@ -37,6 +37,10 @@ import java.util.Objects;
  * @param <T> the type of the input to the operation
  *
  * @since 1.8
+ *
+ * 消费者
+ *
+ * 消费型接口，消费传入的对象
  */
 @FunctionalInterface
 public interface Consumer<T> {
@@ -45,6 +49,8 @@ public interface Consumer<T> {
      * Performs this operation on the given argument.
      *
      * @param t the input argument
+     *
+     * 消费参数中传入的对象，没有返回值
      */
     void accept(T t);
 

@@ -36,6 +36,8 @@ package java.util.function;
  *
  * @see Supplier
  * @since 1.8
+ *
+ * Double类型的提供者，供给型接口
  */
 @FunctionalInterface
 public interface DoubleSupplier {
@@ -44,6 +46,8 @@ public interface DoubleSupplier {
      * Gets a result.
      *
      * @return a result
+     *
+     * 返回一个double类型的值
      */
     double getAsDouble();
 }

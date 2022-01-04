@@ -38,6 +38,8 @@ import java.util.Objects;
  *
  * @see Predicate
  * @since 1.8
+ *
+ * 判断型接口，对两种类型数据进行判断
  */
 @FunctionalInterface
 public interface BiPredicate<T, U> {
@@ -49,6 +51,8 @@ public interface BiPredicate<T, U> {
      * @param u the second input argument
      * @return {@code true} if the input arguments match the predicate,
      * otherwise {@code false}
+     *
+     * 接收两个对象进行判断，返回一个boolean类型的值
      */
     boolean test(T t, U u);
 

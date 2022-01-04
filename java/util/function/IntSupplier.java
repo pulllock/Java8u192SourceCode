@@ -36,6 +36,8 @@ package java.util.function;
  *
  * @see Supplier
  * @since 1.8
+ *
+ * Int类型的提供者，供给型接口
  */
 @FunctionalInterface
 public interface IntSupplier {
@@ -44,6 +46,8 @@ public interface IntSupplier {
      * Gets a result.
      *
      * @return a result
+     *
+     * 返回一个int类型的值
      */
     int getAsInt();
 }

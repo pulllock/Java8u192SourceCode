@@ -40,6 +40,8 @@ import java.util.Objects;
  *
  * @see Consumer
  * @since 1.8
+ *
+ * 消费型接口，接收两个对象来进行消费
  */
 @FunctionalInterface
 public interface BiConsumer<T, U> {

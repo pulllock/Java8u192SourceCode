@@ -35,6 +35,8 @@ package java.util.function;
  * @see BinaryOperator
  * @see IntUnaryOperator
  * @since 1.8
+ *
+ * 功能型接口，接收两个int类型的值用于完成一些操作，并返回int类型的结果
  */
 @FunctionalInterface
 public interface IntBinaryOperator {

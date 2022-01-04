@@ -39,6 +39,8 @@ import java.util.Objects;
  *
  * @see Function
  * @since 1.8
+ *
+ * 功能型接口，接收两个对象用于完成一些操作，并返回结果
  */
 @FunctionalInterface
 public interface BiFunction<T, U, R> {

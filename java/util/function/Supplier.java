@@ -36,6 +36,10 @@ package java.util.function;
  * @param <T> the type of results supplied by this supplier
  *
  * @since 1.8
+ *
+ * 提供者
+ *
+ * 供给型接口，定义一个用来提供对象的操作，通过Supplier的get方法可以获取想要的对象
  */
 @FunctionalInterface
 public interface Supplier<T> {
@@ -44,6 +48,8 @@ public interface Supplier<T> {
      * Gets a result.
      *
      * @return a result
+     *
+     * 获取一个符合泛型类型的对象
      */
     T get();
 }

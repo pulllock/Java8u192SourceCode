@@ -34,6 +34,8 @@ package java.util.function;
  *
  * @see Function
  * @since 1.8
+ *
+ * 功能型接口，接收long类型的值用于完成一些操作，并返回double类型的结果
  */
 @FunctionalInterface
 public interface LongToDoubleFunction {

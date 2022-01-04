@@ -36,6 +36,8 @@ import java.util.Objects;
  *
  * @see UnaryOperator
  * @since 1.8
+ *
+ * 功能型接口，接收一个double类型的值用于完成一些操作，并返回double类型的结果
  */
 @FunctionalInterface
 public interface DoubleUnaryOperator {

@@ -38,6 +38,8 @@ package java.util.function;
  *
  * @see BiConsumer
  * @since 1.8
+ *
+ * 消费型接口，接收一个对象和一个int型值进行消费
  */
 @FunctionalInterface
 public interface ObjIntConsumer<T> {

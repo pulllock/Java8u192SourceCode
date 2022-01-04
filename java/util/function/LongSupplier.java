@@ -36,6 +36,8 @@ package java.util.function;
  *
  * @see Supplier
  * @since 1.8
+ *
+ * Long类型的提供者，供给型接口
  */
 @FunctionalInterface
 public interface LongSupplier {
@@ -44,6 +46,8 @@ public interface LongSupplier {
      * Gets a result.
      *
      * @return a result
+     *
+     * 返回一个long类型的值
      */
     long getAsLong();
 }
