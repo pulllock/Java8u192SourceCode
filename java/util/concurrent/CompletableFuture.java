@@ -106,6 +106,7 @@ import java.util.concurrent.locks.LockSupport;
  *
  * @author Doug Lea
  * @since 1.8
+ *
  * Future获取结果的时候使用get方法，该方法会阻塞等待执行完成。或者使用isDone
  * 来轮询看是否已经完成，如果完成再使用get方法获取结果。
  *
@@ -222,7 +223,16 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * publication.
      */
 
+    /**
+     * 表示阶段执行的结果（正常结果或者是一个异常AltResult）
+     */
     volatile Object result;       // Either the result or boxed AltResult
+
+    /**
+     * 依赖当前阶段的任务链。
+     *
+     * Completion对象中有next成员变量，构成栈结构。
+     */
     volatile Completion stack;    // Top of Treiber stack of dependent actions
 
     final boolean internalComplete(Object r) { // CAS from null to r
@@ -247,6 +257,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /* ------------- Encoding and decoding outcomes -------------- */
 
+    /**
+     * 异常的包装类
+     */
     static final class AltResult { // See above
         final Throwable ex;        // null only for NIL
         AltResult(Throwable x) { this.ex = x; }

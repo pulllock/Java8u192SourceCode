@@ -53,6 +53,8 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  * @param <V> the result type of method {@code call}
+ *
+ * 表示可被线程执行的接口，和Runnable功能类似
  */
 @FunctionalInterface
 public interface Callable<V> {
@@ -61,6 +63,8 @@ public interface Callable<V> {
      *
      * @return computed result
      * @throws Exception if unable to compute a result
+     *
+     * 线程执行的具体的方法，有返回值，并且能抛出异常
      */
     V call() throws Exception;
 }

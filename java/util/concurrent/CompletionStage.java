@@ -122,6 +122,8 @@ import java.util.concurrent.Executor;
  *
  * @author Doug Lea
  * @since 1.8
+ *
+ * 表示异步计算的阶段
  */
 public interface CompletionStage<T> {
 
@@ -137,6 +139,8 @@ public interface CompletionStage<T> {
      * the returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续同步执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> thenApply(Function<? super T,? extends U> fn);
 
@@ -153,6 +157,8 @@ public interface CompletionStage<T> {
      * the returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> thenApplyAsync
         (Function<? super T,? extends U> fn);
@@ -170,6 +176,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，并使用指定的线程池运行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> thenApplyAsync
         (Function<? super T,? extends U> fn,
@@ -186,6 +194,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续同步执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> thenAccept(Consumer<? super T> action);
 
@@ -201,6 +211,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续异步执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> thenAcceptAsync(Consumer<? super T> action);
 
@@ -216,6 +228,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续同步执行，并使用指定的线程池执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> thenAcceptAsync(Consumer<? super T> action,
                                                  Executor executor);
@@ -229,6 +243,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后同步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> thenRun(Runnable action);
 
@@ -243,6 +259,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后异步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> thenRunAsync(Runnable action);
 
@@ -257,6 +275,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
+     *
+     * 当前阶段正常完成后异步执行指定的Runnable任务，使用指定的线程池执行，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> thenRunAsync(Runnable action,
                                               Executor executor);
@@ -275,6 +295,8 @@ public interface CompletionStage<T> {
      * @param <U> the type of the other CompletionStage's result
      * @param <V> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，将结果作为BiFunction的入参继续同步执行，返回一个新的CompletionStage
      */
     public <U,V> CompletionStage<V> thenCombine
         (CompletionStage<? extends U> other,
@@ -295,6 +317,8 @@ public interface CompletionStage<T> {
      * @param <U> the type of the other CompletionStage's result
      * @param <V> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，将结果作为BiFunction的入参继续异步执行，返回一个新的CompletionStage
      */
     public <U,V> CompletionStage<V> thenCombineAsync
         (CompletionStage<? extends U> other,
@@ -316,6 +340,8 @@ public interface CompletionStage<T> {
      * @param <U> the type of the other CompletionStage's result
      * @param <V> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，将结果作为BiFunction的入参继续异步执行，并使用指定的线程池执行，返回一个新的CompletionStage
      */
     public <U,V> CompletionStage<V> thenCombineAsync
         (CompletionStage<? extends U> other,
@@ -335,6 +361,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param <U> the type of the other CompletionStage's result
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，将结果作为BiConsumer的入参继续同步执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public <U> CompletionStage<Void> thenAcceptBoth
         (CompletionStage<? extends U> other,
@@ -351,6 +379,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param <U> the type of the other CompletionStage's result
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，将结果作为BiConsumer的入参继续异步执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public <U> CompletionStage<Void> thenAcceptBothAsync
         (CompletionStage<? extends U> other,
@@ -368,6 +398,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @param <U> the type of the other CompletionStage's result
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，将结果作为BiConsumer的入参继续异步执行，并使用指定的线程池执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public <U> CompletionStage<Void> thenAcceptBothAsync
         (CompletionStage<? extends U> other,
@@ -385,6 +417,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，同步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> runAfterBoth(CompletionStage<?> other,
                                               Runnable action);
@@ -400,6 +434,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，异步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> runAfterBothAsync(CompletionStage<?> other,
                                                    Runnable action);
@@ -417,6 +453,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage同时正常完成后，异步执行指定的Runnable任务，使用指定的线程池执行，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> runAfterBothAsync(CompletionStage<?> other,
                                                    Runnable action,
@@ -434,6 +472,8 @@ public interface CompletionStage<T> {
      * the returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，使用该结果作为Function的入参同步执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> applyToEither
         (CompletionStage<? extends T> other,
@@ -453,6 +493,8 @@ public interface CompletionStage<T> {
      * the returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，使用该结果作为Function的入参异步执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> applyToEitherAsync
         (CompletionStage<? extends T> other,
@@ -473,6 +515,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，使用该结果作为Function的入参异步执行，使用指定的线程池执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> applyToEitherAsync
         (CompletionStage<? extends T> other,
@@ -491,6 +535,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，使用该结果作为Consumer的入参同步执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> acceptEither
         (CompletionStage<? extends T> other,
@@ -509,6 +555,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，使用该结果作为Consumer的入参异步执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> acceptEitherAsync
         (CompletionStage<? extends T> other,
@@ -528,6 +576,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，使用该结果作为Consumer的入参异步执行，使用指定的线程池执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> acceptEitherAsync
         (CompletionStage<? extends T> other,
@@ -545,6 +595,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，同步执行Runnable任务，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> runAfterEither(CompletionStage<?> other,
                                                 Runnable action);
@@ -561,6 +613,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform before completing the
      * returned CompletionStage
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，异步执行Runnable任务，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> runAfterEitherAsync
         (CompletionStage<?> other,
@@ -579,6 +633,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
+     *
+     * 当前阶段和参数中指定的CompletionStage只要有一个阶段正常完成后，异步执行Runnable任务，使用指定的线程池执行，返回一个新的CompletionStage，但是泛型参数为Void
      */
     public CompletionStage<Void> runAfterEitherAsync
         (CompletionStage<?> other,
@@ -596,6 +652,8 @@ public interface CompletionStage<T> {
      * @param fn the function returning a new CompletionStage
      * @param <U> the type of the returned CompletionStage's result
      * @return the CompletionStage
+     *
+     * 当前阶段正常执行完后，将当前阶段作为Function的参数继续同步执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> thenCompose
         (Function<? super T, ? extends CompletionStage<U>> fn);
@@ -612,6 +670,8 @@ public interface CompletionStage<T> {
      * @param fn the function returning a new CompletionStage
      * @param <U> the type of the returned CompletionStage's result
      * @return the CompletionStage
+     *
+     * 当前阶段正常执行完后，将当前阶段作为Function的参数继续异步执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> thenComposeAsync
         (Function<? super T, ? extends CompletionStage<U>> fn);
@@ -628,6 +688,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @param <U> the type of the returned CompletionStage's result
      * @return the CompletionStage
+     *
+     * 当前阶段正常执行完后，将当前阶段作为Function的参数继续异步执行，使用指定的线程池执行，返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> thenComposeAsync
         (Function<? super T, ? extends CompletionStage<U>> fn,
@@ -644,6 +706,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage if this CompletionStage completed
      * exceptionally
      * @return the new CompletionStage
+     *
+     * 当前阶段发生异常时，异常结果作为Function的入参继续同步执行，并返回一个新的CompletionStage
      */
     public CompletionStage<T> exceptionally
         (Function<Throwable, ? extends T> fn);
@@ -661,6 +725,8 @@ public interface CompletionStage<T> {
      *
      * @param action the action to perform
      * @return the new CompletionStage
+     *
+     * 当前阶段正常或者异常完成时，结果作为BiConsumer的入参同步执行，并返回一个新的CompletionStage
      */
     public CompletionStage<T> whenComplete
         (BiConsumer<? super T, ? super Throwable> action);
@@ -679,6 +745,8 @@ public interface CompletionStage<T> {
      *
      * @param action the action to perform
      * @return the new CompletionStage
+     *
+     * 当前阶段正常或者异常完成时，结果作为BiConsumer的入参异步执行，并返回一个新的CompletionStage
      */
     public CompletionStage<T> whenCompleteAsync
         (BiConsumer<? super T, ? super Throwable> action);
@@ -698,6 +766,8 @@ public interface CompletionStage<T> {
      * @param action the action to perform
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
+     *
+     * 当前阶段正常或者异常完成时，结果作为BiConsumer的入参异步执行，使用指定的线程池执行，并返回一个新的CompletionStage
      */
     public CompletionStage<T> whenCompleteAsync
         (BiConsumer<? super T, ? super Throwable> action,
@@ -717,6 +787,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段正常或者异常完成时，结果作为BiFunction的参数同步执行，并返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> handle
         (BiFunction<? super T, Throwable, ? extends U> fn);
@@ -736,6 +808,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段正常或者异常完成时，结果作为BiFunction的参数异步执行，并返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> handleAsync
         (BiFunction<? super T, Throwable, ? extends U> fn);
@@ -756,6 +830,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @param <U> the function's return type
      * @return the new CompletionStage
+     *
+     * 当前阶段正常或者异常完成时，结果作为BiFunction的参数异步执行，使用指定的线程池执行，并返回一个新的CompletionStage
      */
     public <U> CompletionStage<U> handleAsync
         (BiFunction<? super T, Throwable, ? extends U> fn,
@@ -774,6 +850,8 @@ public interface CompletionStage<T> {
      * @return the CompletableFuture
      * @throws UnsupportedOperationException if this implementation
      * does not interoperate with CompletableFuture
+     *
+     * 将当前CompletionStage转换为CompletableFuture
      */
     public CompletableFuture<T> toCompletableFuture();
 
