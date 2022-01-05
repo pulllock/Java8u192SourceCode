@@ -57,6 +57,12 @@ package java.util.concurrent;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions taken by that task, which in turn <i>happen-before</i>
  * actions following a successful return from the corresponding {@code take()}.
+ *
+ * CompletionService可以集中管理线程池中已经完成的任务。
+ *
+ * 使用Future的get()方法获取任务结果是阻塞的，如果一个任务耗时比较久，即便后面的任务已经完成，
+ * 也会被阻塞，而无法获取到已完成任务的结果，使用CompletionService可以解决这个问题，CompletionService
+ * 的实现是用一个队列来保存已经完成的任务，使用take方法就可以获取到已经完成的任务结果。
  */
 public interface CompletionService<V> {
     /**
@@ -69,6 +75,8 @@ public interface CompletionService<V> {
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      * @throws NullPointerException if the task is null
+     *
+     * 提交任务，有结果返回
      */
     Future<V> submit(Callable<V> task);
 
@@ -85,6 +93,8 @@ public interface CompletionService<V> {
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      * @throws NullPointerException if the task is null
+     *
+     * 提交任务，有结果返回
      */
     Future<V> submit(Runnable task, V result);
 
@@ -94,6 +104,8 @@ public interface CompletionService<V> {
      *
      * @return the Future representing the next completed task
      * @throws InterruptedException if interrupted while waiting
+     *
+     * 获取结果，队列中没有任务就阻塞
      */
     Future<V> take() throws InterruptedException;
 
@@ -103,6 +115,8 @@ public interface CompletionService<V> {
      *
      * @return the Future representing the next completed task, or
      *         {@code null} if none are present
+     *
+     * 获取结果，队列中没有任务则返回null
      */
     Future<V> poll();
 
@@ -119,6 +133,8 @@ public interface CompletionService<V> {
      *         {@code null} if the specified waiting time elapses
      *         before one is present
      * @throws InterruptedException if interrupted while waiting
+     *
+     * 获取结果，带超时时间，如果到了时间还没有任务则返回null
      */
     Future<V> poll(long timeout, TimeUnit unit) throws InterruptedException;
 }

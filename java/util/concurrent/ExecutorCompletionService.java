@@ -103,10 +103,20 @@ package java.util.concurrent;
  *     if (result != null)
  *         use(result);
  * }}</pre>
+ *
+ * CompletionService的默认实现，集中管理线程池中已经完成的任务
  */
 public class ExecutorCompletionService<V> implements CompletionService<V> {
+
+    /**
+     * 执行任务的线程池
+     */
     private final Executor executor;
     private final AbstractExecutorService aes;
+
+    /**
+     * 存放任务执行结果的队列
+     */
     private final BlockingQueue<Future<V>> completionQueue;
 
     /**
