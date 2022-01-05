@@ -472,6 +472,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Pops and tries to trigger all reachable dependents.  Call only
      * when known to be done.
+     *
+     * 任务完成后，触发执行回调方法，执行栈顶方法
      */
     final void postComplete() {
         /*
@@ -479,7 +481,11 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
          * and run.  It is extended along only one path at a time,
          * pushing others to avoid unbounded recursion.
          */
-        CompletableFuture<?> f = this; Completion h;
+        // f是当前的CompletableFuture
+        CompletableFuture<?> f = this;
+
+        // h是当前的CompletableFuture中栈顶的Completion
+        Completion h;
         while ((h = f.stack) != null ||
                (f != this && (h = (f = this).stack) != null)) {
             CompletableFuture<?> d; Completion t;
@@ -583,9 +589,22 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return null;
     }
 
+    /**
+     * 用来包装后续要执行的任务
+     * @param <T>
+     * @param <V>
+     */
     @SuppressWarnings("serial")
     static final class UniApply<T,V> extends UniCompletion<T,V> {
         Function<? super T,? extends V> fn;
+
+        /**
+         *
+         * @param executor 后续要执行任务的线程池
+         * @param dep 后续要执行的任务对应的CompletableFuture
+         * @param src 后需要执行任务的前置任务对应的CompletableFuture
+         * @param fn 后需要执行的任务
+         */
         UniApply(Executor executor, CompletableFuture<V> dep,
                  CompletableFuture<T> src,
                  Function<? super T,? extends V> fn) {
@@ -627,9 +646,17 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return true;
     }
 
+    /**
+     *
+     * @param e 后续要执行任务的线程池
+     * @param f 为后续要执行的任务
+     * @param <V>
+     * @return
+     */
     private <V> CompletableFuture<V> uniApplyStage(
         Executor e, Function<? super T,? extends V> f) {
         if (f == null) throw new NullPointerException();
+        // 创建CompletableFuture对象
         CompletableFuture<V> d =  new CompletableFuture<V>();
         if (e != null || !d.uniApply(this, f, null)) {
             UniApply<T,V> c = new UniApply<T,V>(e, d, this, f);
@@ -1589,10 +1616,23 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /* ------------- Zero-input Async forms -------------- */
 
+    /**
+     * AsyncSupply将CompletableFuture和要执行的Supplier封装成一个任务，可在线程池中执行
+     * @param <T>
+     */
     @SuppressWarnings("serial")
     static final class AsyncSupply<T> extends ForkJoinTask<Void>
             implements Runnable, AsynchronousCompletionTask {
-        CompletableFuture<T> dep; Supplier<T> fn;
+        /**
+         * 当前的CompletableFuture
+         */
+        CompletableFuture<T> dep;
+
+        /**
+         * 要执行的任务
+         */
+        Supplier<T> fn;
+
         AsyncSupply(CompletableFuture<T> dep, Supplier<T> fn) {
             this.dep = dep; this.fn = fn;
         }
@@ -1602,25 +1642,41 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         public final boolean exec() { run(); return true; }
 
         public void run() {
-            CompletableFuture<T> d; Supplier<T> f;
+            // d为当前的CompletableFuture
+            CompletableFuture<T> d;
+
+            // f为要执行的任务
+            Supplier<T> f;
             if ((d = dep) != null && (f = fn) != null) {
                 dep = null; fn = null;
                 if (d.result == null) {
                     try {
+                        // 执行任务，并设置当前CompletableFuture的结果
                         d.completeValue(f.get());
                     } catch (Throwable ex) {
+                        // 任务执行有异常，设置当前CompletableFuture的结果
                         d.completeThrowable(ex);
                     }
                 }
+                // 任务完成后，触发执行回调方法，执行栈顶方法
                 d.postComplete();
             }
         }
     }
 
+    /**
+     * 创建一个异步操作，返回CompletableFuture
+     * @param e
+     * @param f
+     * @param <U>
+     * @return
+     */
     static <U> CompletableFuture<U> asyncSupplyStage(Executor e,
                                                      Supplier<U> f) {
         if (f == null) throw new NullPointerException();
+        // 创建一个CompletableFuture对象
         CompletableFuture<U> d = new CompletableFuture<U>();
+        // 使用AsyncSupply包装后提交到线程池执行，具体的执行在AsyncSupply的run方法中。
         e.execute(new AsyncSupply<U>(d, f));
         return d;
     }
@@ -1829,6 +1885,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * to complete the returned CompletableFuture
      * @param <U> the function's return type
      * @return the new CompletableFuture
+     *
+     * 创建一个异步操作，使用默认的线程池执行，返回CompletableFuture
      */
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         return asyncSupplyStage(asyncPool, supplier);
@@ -1844,6 +1902,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @param <U> the function's return type
      * @return the new CompletableFuture
+     *
+     * 创建一个异步操作，使用指定的线程池执行，返回CompletableFuture
      */
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier,
                                                        Executor executor) {
@@ -1858,6 +1918,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @param runnable the action to run before completing the
      * returned CompletableFuture
      * @return the new CompletableFuture
+     *
+     * 创建一个异步操作，使用默认的线程池执行，返回CompletableFuture的反泛型参数为Void
      */
     public static CompletableFuture<Void> runAsync(Runnable runnable) {
         return asyncRunStage(asyncPool, runnable);
@@ -1872,6 +1934,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * returned CompletableFuture
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletableFuture
+     *
+     * 创建一个异步操作，使用指定的线程池执行，返回CompletableFuture的泛型参数为Void
      */
     public static CompletableFuture<Void> runAsync(Runnable runnable,
                                                    Executor executor) {
@@ -1998,16 +2062,45 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return triggered;
     }
 
+    /**
+     *
+     * @param fn the function to use to compute the value of
+     * the returned CompletionStage
+     * @param <U>
+     * @return
+     *
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续同步执行，返回一个新的CompletionStage
+     */
     public <U> CompletableFuture<U> thenApply(
         Function<? super T,? extends U> fn) {
+        // fn为后续要执行的任务
         return uniApplyStage(null, fn);
     }
 
+    /**
+     *
+     * @param fn the function to use to compute the value of
+     * the returned CompletionStage
+     * @param <U>
+     * @return
+     *
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，返回一个新的CompletionStage
+     */
     public <U> CompletableFuture<U> thenApplyAsync(
         Function<? super T,? extends U> fn) {
         return uniApplyStage(asyncPool, fn);
     }
 
+    /**
+     *
+     * @param fn the function to use to compute the value of
+     * the returned CompletionStage
+     * @param executor the executor to use for asynchronous execution
+     * @param <U>
+     * @return
+     *
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，并使用指定的线程池运行，返回一个新的CompletionStage
+     */
     public <U> CompletableFuture<U> thenApplyAsync(
         Function<? super T,? extends U> fn, Executor executor) {
         return uniApplyStage(screenExecutor(executor), fn);
