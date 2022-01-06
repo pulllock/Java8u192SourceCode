@@ -127,6 +127,10 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
             super(task, null);
             this.task = task;
         }
+
+        /**
+         * 任务完成后将任务放到结果队列中
+         */
         protected void done() { completionQueue.add(task); }
         private final Future<V> task;
     }
@@ -185,6 +189,11 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
         this.completionQueue = completionQueue;
     }
 
+    /**
+     * 将任务提交到线程池执行，任务执行完后会放到结果队列中
+     * @param task the task to submit
+     * @return
+     */
     public Future<V> submit(Callable<V> task) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<V> f = newTaskFor(task);
@@ -192,6 +201,12 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
         return f;
     }
 
+    /**
+     * 将任务提交到线程池执行，任务执行完后会放到结果队列中
+     * @param task the task to submit
+     * @param result the result to return upon successful completion
+     * @return
+     */
     public Future<V> submit(Runnable task, V result) {
         if (task == null) throw new NullPointerException();
         RunnableFuture<V> f = newTaskFor(task, result);
@@ -199,14 +214,32 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
         return f;
     }
 
+    /**
+     * 从结果队列中获取结果，队列中没有任务就阻塞
+     * @return
+     * @throws InterruptedException
+     */
     public Future<V> take() throws InterruptedException {
         return completionQueue.take();
     }
 
+    /**
+     * 从结果队列中获取结果，队列中没有任务就返回null
+     * @return
+     */
     public Future<V> poll() {
         return completionQueue.poll();
     }
 
+    /**
+     * 从结果队列中获取结果，带超时时间，如果到了时间还没有任务则返回null
+     * @param timeout how long to wait before giving up, in units of
+     *        {@code unit}
+     * @param unit a {@code TimeUnit} determining how to interpret the
+     *        {@code timeout} parameter
+     * @return
+     * @throws InterruptedException
+     */
     public Future<V> poll(long timeout, TimeUnit unit)
             throws InterruptedException {
         return completionQueue.poll(timeout, unit);
