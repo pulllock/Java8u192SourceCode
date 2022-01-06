@@ -453,10 +453,13 @@ public class Executors {
      * @param <T> the type of the result
      * @return a callable object
      * @throws NullPointerException if task null
+     *
+     * 将Runnable类型的任务转换成Callable类型
      */
     public static <T> Callable<T> callable(Runnable task, T result) {
         if (task == null)
             throw new NullPointerException();
+        // 使用适配器将Runnable类型任务包装成Callable类型
         return new RunnableAdapter<T>(task, result);
     }
 
@@ -552,14 +555,29 @@ public class Executors {
 
     /**
      * A callable that runs given task and returns given result
+     *
+     * 将Runnable转换为Callable的适配器
      */
     static final class RunnableAdapter<T> implements Callable<T> {
+
+        /**
+         * Runnable类型的任务
+         */
         final Runnable task;
+
+        /**
+         * 用来保存任务执行的结果
+         */
         final T result;
         RunnableAdapter(Runnable task, T result) {
             this.task = task;
             this.result = result;
         }
+
+        /**
+         * 任务的执行逻辑还是Runnable的run
+         * @return
+         */
         public T call() {
             task.run();
             return result;

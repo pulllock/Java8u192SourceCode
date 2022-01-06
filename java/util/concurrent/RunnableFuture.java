@@ -44,6 +44,9 @@ package java.util.concurrent;
  * @since 1.6
  * @author Doug Lea
  * @param <V> The result type returned by this Future's {@code get} method
+ *
+ * Future表示一个异步计算的结果，Runnable表示一个可以执行的任务，两者结合成RunnableFuture后表示一个可以被执行的Future，
+ * 既可以被当做任务执行，也可以作为一个异步计算的结果。
  */
 public interface RunnableFuture<V> extends Runnable, Future<V> {
     /**

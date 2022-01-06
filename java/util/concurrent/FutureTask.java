@@ -59,6 +59,8 @@ import java.util.concurrent.locks.LockSupport;
  * @since 1.5
  * @author Doug Lea
  * @param <V> The result type returned by this FutureTask's {@code get} methods
+ *
+ * FutureTask是RunnableFuture的实现，既可以作为任务被执行，也可以作为一个异步计算的结果
  */
 public class FutureTask<V> implements RunnableFuture<V> {
     /*
@@ -107,40 +109,65 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * 任务执行的状态
      */
     private volatile int state;
-    // 任务初始化状态
+
+    /**
+     * 任务初始化状态
+     */
     private static final int NEW          = 0;
-    // 正在进行结果设置，是个中间状态
+
+    /**
+     * 正在进行结果设置，是个中间状态
+     */
     private static final int COMPLETING   = 1;
-    // 任务正常完成后的状态
+
+    /**
+     * 任务正常完成后的状态
+     */
     private static final int NORMAL       = 2;
-    // 任务异常后的状态
+
+    /**
+     * 任务异常后的状态
+     */
     private static final int EXCEPTIONAL  = 3;
-    // 取消任务后的状态
+
+    /**
+     * 取消任务后的状态
+     */
     private static final int CANCELLED    = 4;
-    // 线程被中断的中间状态
+
+    /**
+     * 线程被中断的中间状态
+     */
     private static final int INTERRUPTING = 5;
-    // 线程被中断后的状态
+
+    /**
+     * 线程被中断后的状态
+     */
     private static final int INTERRUPTED  = 6;
 
     /**
      * The underlying callable; nulled out after running
+     *
      * 当前要执行的任务
      */
     private Callable<V> callable;
+
     /**
      * The result to return or exception to throw from get()
-     * 当前任务执行的结果。
-     * 如果发生异常则是对应的异常信息。
-     * 如果任务被取消，则为null
+     *
+     * 当前任务执行的结果，如果发生异常则是对应的异常信息；如果任务被取消，则为null。
      *
      * 非volatile，由状态state来保证安全
      */
     private Object outcome; // non-volatile, protected by state reads/writes
+
     /**
      * The thread running the callable; CASed during run()
+     *
      * 当前执行任务的线程
      */
     private volatile Thread runner;
+
     /** Treiber stack of waiting threads */
     /*
         Treiber stack
@@ -159,6 +186,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * Returns result or throws exception for completed task.
      *
      * @param s completed state value
+     *
+     * 返回任务执行的结果或者抛异常
      */
     @SuppressWarnings("unchecked")
     private V report(int s) throws ExecutionException {
@@ -201,6 +230,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @throws NullPointerException if the runnable is null
      */
     public FutureTask(Runnable runnable, V result) {
+        // 将Runnable类型任务转换成Callable类型任务
         this.callable = Executors.callable(runnable, result);
         this.state = NEW;       // ensure visibility of callable
     }
@@ -213,6 +243,15 @@ public class FutureTask<V> implements RunnableFuture<V> {
         return state != NEW;
     }
 
+    /**
+     *
+     * @param mayInterruptIfRunning {@code true} if the thread executing this
+     * task should be interrupted; otherwise, in-progress tasks are allowed
+     * to complete
+     * @return
+     *
+     * 尝试取消任务的执行
+     */
     public boolean cancel(boolean mayInterruptIfRunning) {
         // 只有状态为NEW的才有可能会被取消成功
         if (!(state == NEW &&
@@ -237,30 +276,40 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * @throws CancellationException {@inheritDoc}
-     * 会进行自旋等待获取，直到任务执行完成（正常或者异常或者中断）
+     *
+     * 获取任务执行结果，如果任务还没结束，获取结果的线程会阻塞等待
+     *
      * 当一个线程调用get方法，获取任务的结果，如果任务还没有完成（正常、异常、中断），
      * 就会生成一个新的WaitNode，并加入等待队列，当前获取任务结果的线程挂起。
      */
     public V get() throws InterruptedException, ExecutionException {
+        // 当前FutureTask的状态
         int s = state;
         // 状态如果是新建或者是正在完成，则继续等待，否则调用report方法返回结果
         if (s <= COMPLETING)
             s = awaitDone(false, 0L);
-        // 返回结果
+        // 任务执行完成，返回结果
         return report(s);
     }
 
     /**
      * @throws CancellationException {@inheritDoc}
+     *
+     * 获取任务执行结果，可设置超时时间，如果任务还没结束，获取结果的线程会阻塞等待，
+     * 如果等待结果超时则抛异常
      */
     public V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
         if (unit == null)
             throw new NullPointerException();
+        // 当前FutureTask的状态
         int s = state;
+        // 状态必须是NEW或COMPLETING
         if (s <= COMPLETING &&
+                // 等待任务完成
             (s = awaitDone(true, unit.toNanos(timeout))) <= COMPLETING)
             throw new TimeoutException();
+        // 返回任务执行结果
         return report(s);
     }
 
@@ -283,11 +332,17 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * upon successful completion of the computation.
      *
      * @param v the value
+     *
+     * 设置Future的结果信息
      */
     protected void set(V v) {
+        // CAS将状态从NEW设置为中间状态：COMPLETING
         if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
+            // 设置结果
             outcome = v;
+            // 将状态设置为任务正常完成状态：NORMAL
             UNSAFE.putOrderedInt(this, stateOffset, NORMAL); // final state
+            // 任务结束后，需要唤醒栈中等待获取结果的线程
             finishCompletion();
         }
     }
@@ -301,15 +356,24 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * upon failure of the computation.
      *
      * @param t the cause of failure
+     *
+     * 设置任务异常执行的结果
      */
     protected void setException(Throwable t) {
+        // CAS将状态从NEW设置为中间状态：COMPLETING
         if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
+            // 设置结果
             outcome = t;
+            // 将状态设置为任务异常完成状态：NORMAL
             UNSAFE.putOrderedInt(this, stateOffset, EXCEPTIONAL); // final state
+            // 任务结束后，需要唤醒栈中等待获取结果的线程
             finishCompletion();
         }
     }
 
+    /**
+     * 执行任务逻辑的方法
+     */
     public void run() {
         /*
             state状态有如下几种：
@@ -322,8 +386,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
             - INTERRUPTED，
 
             如果state不是NEW状态，说明已经执行了，不需要再次执行，直接返回；
-            如果state是NEW状态，但是cas设置当前线程为执行线程失败了，说明当前线程也已经
-            在执行了，不需要再次执行，直接返回。
+            如果state是NEW状态，但是cas设置当前线程为执行线程失败了，说明任务已经被其他线程
+            执行了，不需要再次执行，直接返回。
          */
         if (state != NEW ||
             !UNSAFE.compareAndSwapObject(this, runnerOffset,
@@ -334,10 +398,12 @@ public class FutureTask<V> implements RunnableFuture<V> {
             Callable<V> c = callable;
             // 再次判断下当前状态是不是NEW
             if (c != null && state == NEW) {
+                // 任务执行的结果
                 V result;
+                // ran为ture表示任务正常运行结束
                 boolean ran;
                 try {
-                    // 执行任务，拿到结果
+                    // 执行任务逻辑，拿到结果
                     result = c.call();
                     ran = true;
                 } catch (Throwable ex) {
@@ -352,6 +418,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                      */
                     setException(ex);
                 }
+                // 任务正常执行结束
                 if (ran)
                     /*
                         设置正常结束信息，包括如下几步：
@@ -439,9 +506,19 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * Simple linked list nodes to record waiting threads in a Treiber
      * stack.  See other classes such as Phaser and SynchronousQueue
      * for more detailed explanation.
+     *
+     * Treiber栈中记录等待结果的线程的节点
      */
     static final class WaitNode {
+
+        /**
+         * 等待结果的线程
+         */
         volatile Thread thread;
+
+        /**
+         * 下一个节点
+         */
         volatile WaitNode next;
         WaitNode() { thread = Thread.currentThread(); }
     }
@@ -449,17 +526,22 @@ public class FutureTask<V> implements RunnableFuture<V> {
     /**
      * Removes and signals all waiting threads, invokes done(), and
      * nulls out callable.
+     *
+     * 任务完成后，唤醒栈中等待获取结果的线程
      */
     private void finishCompletion() {
         // assert state > COMPLETING;
         for (WaitNode q; (q = waiters) != null;) {
             if (UNSAFE.compareAndSwapObject(this, waitersOffset, q, null)) {
                 for (;;) {
+                    // 等待获取结果的线程
                     Thread t = q.thread;
                     if (t != null) {
                         q.thread = null;
+                        // 唤醒线程
                         LockSupport.unpark(t);
                     }
+                    // 继续栈中的下一个线程
                     WaitNode next = q.next;
                     if (next == null)
                         break;
@@ -470,6 +552,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
             }
         }
 
+        // 子类实现
         done();
 
         callable = null;        // to reduce footprint
@@ -481,10 +564,15 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @param timed true if use timed waits
      * @param nanos time to wait, if timed
      * @return state upon completion
+     *
+     * 等待任务执行完成
      */
     private int awaitDone(boolean timed, long nanos)
         throws InterruptedException {
+        // 任务执行的截止时间
         final long deadline = timed ? System.nanoTime() + nanos : 0L;
+
+        // 栈中等待获取结果的线程节点
         WaitNode q = null;
         boolean queued = false;
         for (;;) {
@@ -493,11 +581,14 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 throw new InterruptedException();
             }
 
+            // 当前FutureTask的状态
             int s = state;
             // 已经完成（正常或者异常或者中断），直接返回
             if (s > COMPLETING) {
                 if (q != null)
+                    // 等待节点的线程置为null
                     q.thread = null;
+                // 返回结果
                 return s;
             }
             // 正在完成状态，让出当前线程的时间片
@@ -517,11 +608,13 @@ public class FutureTask<V> implements RunnableFuture<V> {
                                                      q.next = waiters, q);
             else if (timed) {
                 nanos = deadline - System.nanoTime();
-                // 超时，返回
+                // 等待超时，返回
                 if (nanos <= 0L) {
+                    // 将节点从栈中移除
                     removeWaiter(q);
                     return state;
                 }
+                // 阻塞获取结果的线程
                 LockSupport.parkNanos(this, nanos);
             }
             // 挂起当前调用get的线程
