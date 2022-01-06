@@ -124,6 +124,8 @@ package java.util.concurrent;
  *
  * @since 1.5
  * @author Doug Lea
+ *
+ * 线程池的抽象
  */
 public interface Executor {
 
@@ -136,6 +138,7 @@ public interface Executor {
      * @throws RejectedExecutionException if this task cannot be
      * accepted for execution
      * @throws NullPointerException if command is null
+     *
      * 执行给定的Runnable任务，根据具体的实现，任务可能会使用一个新的线程进行执行，
      * 可能会使用线程池中的线程执行，也可能是调用线程执行。
      */

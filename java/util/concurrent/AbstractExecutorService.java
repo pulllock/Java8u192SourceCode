@@ -67,6 +67,8 @@ import java.util.*;
  *
  * @since 1.5
  * @author Doug Lea
+ *
+ * ExecutorService的抽象实现
  */
 public abstract class AbstractExecutorService implements ExecutorService {
 
@@ -82,7 +84,8 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * the given value as its result and provide for cancellation of
      * the underlying task
      * @since 1.6
-     * 将任务包装成FutureTask执行
+     *
+     * 将Runnable任务包装成FutureTask
      */
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
         return new FutureTask<T>(runnable, value);
@@ -98,6 +101,8 @@ public abstract class AbstractExecutorService implements ExecutorService {
      * the callable's result as its result and provide for
      * cancellation of the underlying task
      * @since 1.6
+     *
+     * 将Callable任务包装成FutureTask
      */
     protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
         return new FutureTask<T>(callable);
@@ -106,6 +111,8 @@ public abstract class AbstractExecutorService implements ExecutorService {
     /**
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
+     *
+     * 提交Runnable类型任务到线程池
      */
     public Future<?> submit(Runnable task) {
         if (task == null) throw new NullPointerException();
@@ -119,10 +126,14 @@ public abstract class AbstractExecutorService implements ExecutorService {
     /**
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
+     *
+     * 提交Runnable类型任务到线程池
      */
     public <T> Future<T> submit(Runnable task, T result) {
         if (task == null) throw new NullPointerException();
+        // 将任务包装成FutureTask
         RunnableFuture<T> ftask = newTaskFor(task, result);
+        // 提交执行任务，具体子类实现
         execute(ftask);
         return ftask;
     }
@@ -130,16 +141,22 @@ public abstract class AbstractExecutorService implements ExecutorService {
     /**
      * @throws RejectedExecutionException {@inheritDoc}
      * @throws NullPointerException       {@inheritDoc}
+     *
+     * 提交Callable类型任务到线程池
      */
     public <T> Future<T> submit(Callable<T> task) {
         if (task == null) throw new NullPointerException();
+        // 将任务包装成FutureTask
         RunnableFuture<T> ftask = newTaskFor(task);
+        // 提交执行任务，具体子类实现
         execute(ftask);
         return ftask;
     }
 
     /**
      * the main mechanics of invokeAny.
+     *
+     * 只要有一个任务完成，就可以返回，返回执行完成的任务的结果
      */
     private <T> T doInvokeAny(Collection<? extends Callable<T>> tasks,
                               boolean timed, long nanos)
@@ -150,10 +167,13 @@ public abstract class AbstractExecutorService implements ExecutorService {
         int ntasks = tasks.size();
         if (ntasks == 0)
             throw new IllegalArgumentException();
+
+        // 保存任务执行结果
         ArrayList<Future<T>> futures = new ArrayList<Future<T>>(ntasks);
-        /**
-         * ExecutorCompletionService不是一个真正的执行器，this才是真正的执行器
-         * 他对执行器进行了包装，每个任务结束后，将结果保存到内部的一个completionQueue队列中
+        /*
+            ExecutorCompletionService不是一个真正的执行器，this才是真正的执行器，
+            ExecutorCompletionService集中管理线程池中已经完成的任务，对执行器进行了包装，
+            每个任务结束后，将结果保存到内部的一个completionQueue队列中保存
          */
         ExecutorCompletionService<T> ecs =
             new ExecutorCompletionService<T>(this);
@@ -180,18 +200,13 @@ public abstract class AbstractExecutorService implements ExecutorService {
             int active = 1;
 
             for (;;) {
-                /**
-                 * ecs内部有一个队列，保存执行完成的结果
-                 * poll方法不阻塞，返回null，表示队列为空
-                 */
+                // ecs内部有一个队列，保存执行完成的结果，poll方法不阻塞，如果返回null，表示队列为空
                 Future<T> f = ecs.poll();
-                /**
-                 * 为null，说明刚提交的第一个任务还没有执行完成
-                 */
+                // 为null，说明刚提交的第一个任务还没有执行完成
                 if (f == null) {
                     if (ntasks > 0) {
                         --ntasks;
-                        // 提交一个任务
+                        // 继续再提交一个任务
                         futures.add(ecs.submit(it.next()));
                         ++active;
                     }
@@ -205,10 +220,9 @@ public abstract class AbstractExecutorService implements ExecutorService {
                             throw new TimeoutException();
                         nanos = deadline - System.nanoTime();
                     }
-                    /**
-                     * 走到这里说明没有任务需要提交
-                     * 但是池中任务还没有完成，也没有超时
-                     * take会阻塞，直到有元素返回，说明有任务结束了
+                    /*
+                        走到这里说明没有任务需要提交，但是池中任务还没有完成，也没有超时，
+                        调用take方法会阻塞，直到有元素返回，说明有任务结束了
                      */
                     else
                         f = ecs.take();
@@ -243,12 +257,22 @@ public abstract class AbstractExecutorService implements ExecutorService {
             throw ee;
 
         } finally {
-            // 方法完成之前，需要取消其他的任务
+            // 方法完成返回之前，需要尝试取消其他的任务
             for (int i = 0, size = futures.size(); i < size; i++)
                 futures.get(i).cancel(true);
         }
     }
 
+    /**
+     *
+     * @param tasks the collection of tasks
+     * @param <T>
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     *
+     * 只要有一个任务完成，就可以返回，返回执行完成的任务的结果
+     */
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
         throws InterruptedException, ExecutionException {
         try {
@@ -259,6 +283,19 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     *
+     * @param tasks the collection of tasks
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @param <T>
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     * @throws TimeoutException
+     *
+     * 只要有一个任务完成，就可以返回，返回执行完成的任务的结果
+     */
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                            long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
@@ -276,20 +313,25 @@ public abstract class AbstractExecutorService implements ExecutorService {
         throws InterruptedException {
         if (tasks == null)
             throw new NullPointerException();
+        // 保存任务执行结果
         ArrayList<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
         boolean done = false;
         try {
+            // 遍历所有任务，提交任务执行
             for (Callable<T> t : tasks) {
                 // 包装成FutureTask
                 RunnableFuture<T> f = newTaskFor(t);
+                // 添加到结果列表中
                 futures.add(f);
                 // 提交任务
                 execute(f);
             }
+            // 遍历调用Future的get方法来获取任务执行结果
             for (int i = 0, size = futures.size(); i < size; i++) {
                 Future<T> f = futures.get(i);
                 if (!f.isDone()) {
                     try {
+                        // FutureTask的get方法
                         f.get();
                     } catch (CancellationException ignore) {
                     } catch (ExecutionException ignore) {
@@ -305,16 +347,29 @@ public abstract class AbstractExecutorService implements ExecutorService {
         }
     }
 
+    /**
+     *
+     * @param tasks the collection of tasks
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @param <T>
+     * @return
+     * @throws InterruptedException
+     *
+     * 执行所有任务，返回任务结果
+     */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit)
         throws InterruptedException {
         if (tasks == null)
             throw new NullPointerException();
         long nanos = unit.toNanos(timeout);
+        // 保存任务执行结果
         ArrayList<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
         boolean done = false;
         try {
             for (Callable<T> t : tasks)
+                // // 包装成FutureTask
                 futures.add(newTaskFor(t));
 
             final long deadline = System.nanoTime() + nanos;
@@ -322,13 +377,17 @@ public abstract class AbstractExecutorService implements ExecutorService {
 
             // Interleave time checks and calls to execute in case
             // executor doesn't have any/much parallelism.
+            // 遍历任务执行
             for (int i = 0; i < size; i++) {
+                // 执行任务
                 execute((Runnable)futures.get(i));
                 nanos = deadline - System.nanoTime();
+                // 超时了，返回已经执行的任务
                 if (nanos <= 0L)
                     return futures;
             }
 
+            // 遍历获取任务执行的结果
             for (int i = 0; i < size; i++) {
                 Future<T> f = futures.get(i);
                 if (!f.isDone()) {
