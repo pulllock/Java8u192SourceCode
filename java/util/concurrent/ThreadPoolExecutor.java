@@ -462,6 +462,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * - TERMINATED
      */
     private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
+
     /**
      * 使用32位整数来存放线程池状态和当前池中线程数：
      * 高3位存放线程池状态，
@@ -470,6 +471,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * COUNT_BITS = 32 - 3 = 29
      */
     private static final int COUNT_BITS = Integer.SIZE - 3;
+
     /**
      * 线程池的最大线程数
      */
@@ -481,22 +483,26 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * 运行中，接受新的任务，处理队列中的任务
      */
     private static final int RUNNING    = -1 << COUNT_BITS;
+
     /**
      * 000 00000000000000000000000000000
      * 不在接受新任务，会继续处理等待队列中的任务
      */
     private static final int SHUTDOWN   =  0 << COUNT_BITS;
+
     /**
      * 001 00000000000000000000000000000
      * 不接受新任务，不处理等待队列中的任务，中断正在执行的任务
      */
     private static final int STOP       =  1 << COUNT_BITS;
+
     /**
      * 010 00000000000000000000000000000
      * 所有任务都销毁了，workCount为0
      * 线程池状态转换为TIDYING时，会执行钩子方法terminated()
      */
     private static final int TIDYING    =  2 << COUNT_BITS;
+
     /**
      * 011 00000000000000000000000000000
      * terminated方法执行后，线程池状态会变成这个
@@ -504,9 +510,19 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private static final int TERMINATED =  3 << COUNT_BITS;
 
     // Packing and unpacking ctl
-    // 将c的低29位设为0，就得到了线程池的状态
+
+    /**
+     * 将c的低29位设为0，就得到了线程池的状态
+     * @param c
+     * @return
+     */
     private static int runStateOf(int c)     { return c & ~CAPACITY; }
-    // 将c的高3位设为0，就得到了线程池中的线程数
+
+    /**
+     * 将c的高3位设为0，就得到了线程池中的线程数
+     * @param c
+     * @return
+     */
     private static int workerCountOf(int c)  { return c & CAPACITY; }
     private static int ctlOf(int rs, int wc) { return rs | wc; }
 
@@ -560,7 +576,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * queues such as DelayQueues for which poll() is allowed to
      * return null even if it may later return non-null when delays
      * expire.
-     * 工作队列，存放等待的线程。是阻塞队列。
+     *
+     * 工作队列，存放等待执行的任务。
      */
     private final BlockingQueue<Runnable> workQueue;
 
@@ -576,6 +593,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * also hold mainLock on shutdown and shutdownNow, for the sake of
      * ensuring workers set is stable while separately checking
      * permission to interrupt and actually interrupting.
+     *
      * 互斥锁，可重入
      */
     private final ReentrantLock mainLock = new ReentrantLock();
@@ -583,12 +601,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * Set containing all worker threads in pool. Accessed only when
      * holding mainLock.
+     *
      * 线程集合，保存核心线程和最大线程
      */
     private final HashSet<Worker> workers = new HashSet<Worker>();
 
     /**
      * Wait condition to support awaitTermination
+     *
      * 条件变量
      */
     private final Condition termination = mainLock.newCondition();
@@ -596,6 +616,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * Tracks largest attained pool size. Accessed only under
      * mainLock.
+     *
      * 线程池中线程数量曾达到过的最大值
      */
     private int largestPoolSize;
@@ -603,6 +624,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * Counter for completed tasks. Updated only on termination of
      * worker threads. Accessed only under mainLock.
+     *
      * 已完成任务的数量
      */
     private long completedTaskCount;
@@ -630,12 +652,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * will want to perform clean pool shutdown to clean up.  There
      * will likely be enough memory available for the cleanup code to
      * complete without encountering yet another OutOfMemoryError.
+     *
      * 线程工厂
      */
     private volatile ThreadFactory threadFactory;
 
     /**
      * Handler called when saturated or shutdown in execute.
+     *
      * 拒绝策略
      */
     private volatile RejectedExecutionHandler handler;
@@ -645,6 +669,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * Threads use this timeout when there are more than corePoolSize
      * present or if allowCoreThreadTimeOut. Otherwise they wait
      * forever for new work.
+     *
      * 空闲线程的存活时间
      */
     private volatile long keepAliveTime;
@@ -653,6 +678,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * If false (default), core threads stay alive even when idle.
      * If true, core threads use keepAliveTime to time out waiting
      * for work.
+     *
      * 是否允许核心线程也有超时销毁机制
      */
     private volatile boolean allowCoreThreadTimeOut;
@@ -661,6 +687,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * Core pool size is the minimum number of workers to keep alive
      * (and not allow to time out etc) unless allowCoreThreadTimeOut
      * is set, in which case the minimum is zero.
+     *
      * 核心线程数
      */
     private volatile int corePoolSize;
@@ -668,12 +695,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
      * Maximum pool size. Note that the actual maximum is internally
      * bounded by CAPACITY.
+     *
      * 最大线程数
      */
     private volatile int maximumPoolSize;
 
     /**
      * The default rejected execution handler
+     *
      * 默认拒绝策略：终止并抛出异常
      */
     private static final RejectedExecutionHandler defaultHandler =
@@ -720,9 +749,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * the thread actually starts running tasks, we initialize lock
      * state to a negative value, and clear it upon start (in
      * runWorker).
-     * 线程池中的工作线程
      *
-     * 继承AQS实现加锁机制，独占锁，不可重入
+     * 线程池中的工作线程，继承AQS实现加锁机制，独占锁，不可重入
      */
     private final class Worker
         extends AbstractQueuedSynchronizer
@@ -736,17 +764,22 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
         /**
          * Thread this worker is running in.  Null if factory fails.
+         *
          * 处理任务的线程
          */
         final Thread thread;
+
         /**
          * Initial task to run.  Possibly null.
+         *
          * 创建线程的时候，可以同时指定这个线程启动之后要执行的第一个任务，
          * 如果没有指定，线程启动之后自己会到任务队列中取任务执行
          */
         Runnable firstTask;
+
         /**
          * Per-thread task counter
+         *
          * 此线程完成的任务数
          */
         volatile long completedTasks;
@@ -754,9 +787,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         /**
          * Creates with given first task and thread from ThreadFactory.
          * @param firstTask the first task (null if none)
-         *                  Worker构造方法
-         *                  可以指定第一个运行的任务。使用ThreadFactory创建一个新线程。
-         *                  Worker初始化的时候将state设置为-1，新创建的线程还没有执行任务，不允许被中断。
+         *
+         * 可以指定第一个运行的任务。使用ThreadFactory创建一个新线程。
+         * Worker初始化的时候将state设置为-1，新创建的线程还没有执行任务，不允许被中断。
          */
         Worker(Runnable firstTask) {
             // 设置state为-1
@@ -1631,6 +1664,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      *         {@code RejectedExecutionHandler}, if the task
      *         cannot be accepted for execution
      * @throws NullPointerException if {@code command} is null
+     *
      * 执行指定的任务
      *
      * 执行流程：
@@ -1668,8 +1702,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          */
         int c = ctl.get();
         /*
-           如果当前已有线程数少于核心线程数，直接添加一个worker来执行任务
-           创建一个新线程，把当前任务作为这个线程的第一个任务
+           如果线程池中当前已有的线程数少于核心线程数，也就是核心线程还有空闲的，直接添加一个Worker，
+           使用核心线程来执行任务：创建一个新线程，把当前任务作为这个线程的第一个任务，并执行任务。
          */
         if (workerCountOf(c) < corePoolSize) {
             /*
@@ -1693,8 +1727,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             c = ctl.get();
         }
         /*
-            如果线程池不是处于RUNNING状态，是不需要将新任务入队列的，因为这些任务是不需要
-            执行的。
+            如果线程池不是处于RUNNING状态，是不需要将新任务入队列的，因为这些任务是不需要执行的。
 
             只有线程池是处于RUNNING状态的时候，才需要将不能创建线程执行的新任务加入阻塞队列中去。
          */
