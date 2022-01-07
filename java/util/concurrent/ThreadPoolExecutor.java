@@ -391,7 +391,7 @@ import java.util.*;
  *
  * 如果一个线程没有任务在处理，就会阻塞在获取任务的队列上，如果想要实现线程的超时销毁，可以利用
  * 带有超时机制的poll方法，阻塞在队列上一段时间后，就会返回，此时可以设置超时标志，下次循环看到
- * 当前线程超时了是空闲的，就可以返回回收改线程。
+ * 当前线程超时了是空闲的，就可以返回回收该线程。
  *
  * 缩容就是将空闲线程从线程集合中移除掉。
  */
@@ -795,7 +795,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             // 设置state为-1
             setState(-1); // inhibit interrupts until runWorker
             this.firstTask = firstTask;
-            // 创建新线程
+            // 创建新线程，newThread的时候将Worker实例传了进去，创建完Worker后线程开始执行的是Worker的run方法
             this.thread = getThreadFactory().newThread(this);
         }
 
@@ -1103,17 +1103,15 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         retry:
         for (;;) {
             int c = ctl.get();
+            // 线程池当前状态
             int rs = runStateOf(c);
 
             // Check if queue empty only if necessary.
             /*
-                线程池状态处于STOP、TIDYING、TERMINATED这几种的时候不允许再
-                创建新的线程提交任务。
+                线程池状态处于STOP、TIDYING、TERMINATED这几种的时候不允许再创建新的线程提交任务。
 
-                线程处于SHUTDOWN状态的时候，不允许提交新任务，但是会继续执行
-                已经存在的任务。如果此时还有firstTask提交进来是不被允许的，
-                直接返回false；如果此时没有firstTask提交进来，队列中也没有
-                已经存在的任务，也无需创建新线程，返回false。
+                线程处于SHUTDOWN状态的时候，不允许提交新任务，但是会继续执行已经存在的任务，如果此时还有firstTask提交进来是不被允许的，
+                直接返回false；如果此时没有firstTask提交进来，队列中也没有已经存在的任务，也无需创建新线程，返回false。
              */
             if (rs >= SHUTDOWN &&
                 ! (rs == SHUTDOWN &&
@@ -1132,16 +1130,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 if (wc >= CAPACITY ||
                     wc >= (core ? corePoolSize : maximumPoolSize))
                     return false;
-                /**
-                 * 如果成功，就是所有创建线程的条件校验条件都满足了，可以准备
-                 * 创建线程执行任务了。
-                 * 如果失败，说明有其他线程在尝试往线程池中创建线程
-                 */
+
                 /*
-                    如果满足创建线程的条件，这里会先cas更新workerCount，
-                    cas更新成功后就可以跳出循环，继续创建新线程；如果cas
-                    更新失败，说明有其他线程已经更新了workerCount，继续
-                    循环重试。
+                    如果满足创建线程的条件，这里会先cas更新workerCount，cas更新成功后就可以跳出循环，继续创建新线程；
+                    如果cas更新失败，说明有其他线程已经更新了workerCount，继续循环重试。
                  */
                 if (compareAndIncrementWorkerCount(c))
                     break retry;
@@ -1157,9 +1149,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             }
         }
 
-        /*
-            走到这里，表示可以创建线程来执行任务
-         */
+        // 走到这里，表示可以创建线程来执行任务
         boolean workerStarted = false;
         boolean workerAdded = false;
         Worker w = null;
@@ -1418,24 +1408,20 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * 队列中获取
      */
     final void runWorker(Worker w) {
+        // 执行任务的线程
         Thread wt = Thread.currentThread();
+        // 要执行的任务
         Runnable task = w.firstTask;
         w.firstTask = null;
-        /*
-            当前Worker执行前需要先unlock一下将state设置为0，
-            因为在Worker构造的时候先将state设置为-1，防止被中断。
-         */
+        // 当前Worker执行前需要先unlock一下将state设置为0，因为在Worker构造的时候先将state设置为-1，防止被中断。
         w.unlock(); // allow interrupts
         boolean completedAbruptly = true;
         try {
             /*
-                Worker会一直获取队列中的任务，如果队列中没有任务，
-                就会阻塞等待。
+                Worker会一直获取队列中的任务，如果队列中没有任务，就会阻塞等待。
 
-                如果是非阻塞的返回了null，比如说允许回收核心线程，
-                此时核心线程已经空闲了，就会使用带超时的poll方法，
-                超时后返回null，就会执行Worker的移除，也就是线程
-                销毁。
+                getTask方法获取任务，如果是非阻塞的返回了null，比如说允许回收核心线程，此时核心线程已经空闲了，就会使用带超时的poll方法，
+                超时后返回null，就会执行Worker的移除，也就是线程销毁。
              */
             while (task != null || (task = getTask()) != null) {
                 // 执行一个Worker的时候，会先加锁
@@ -1477,7 +1463,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         } finally {
             /**
              *  到这里，说明需要执行线程关闭
-             *  1. 说明getTask返回null，就是这个woker的使命完成了，执行关闭
+             *  1. 说明getTask返回null，就是这个worker的使命完成了，执行关闭
              *  2. 执行任务过程中发生了异常
              *  第一种情况已经在代码处理了将workCount减一
              *  第二种情况workCount没处理，需要在processWorkerExit中处理
@@ -1711,12 +1697,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 如果创建核心线程并添加任务成功，就结束了，直接返回。
 
                 addWorker返回false可能有以下几种情况：
-                - 线程池状态处于STOP、TIDYING、TERMINATED这几种的时候不允许再
-                创建新的线程提交任务。
-                - 线程处于SHUTDOWN状态的时候，不允许提交新任务，但是会继续执行
-                已经存在的任务。如果此时还有firstTask提交进来是不被允许的，
-                直接返回false；如果此时没有firstTask提交进来，队列中也没有
-                已经存在的任务，也无需创建新线程，返回false。
+                - 线程池状态处于STOP、TIDYING、TERMINATED这几种的时候不允许再创建新的线程提交任务。
+                - 线程处于SHUTDOWN状态的时候，不允许提交新任务，但是会继续执行已经存在的任务，如果此时还有firstTask提交进来是不被允许的，
+                  直接返回false；如果此时没有firstTask提交进来，队列中也没有已经存在的任务，也无需创建新线程，返回false。
                 - 线程池中已有线程数大于允许的总容量，没办法继续创建线程，直接返回false。
                 - 如果需要创建的是核心线程，并且核心线程此时已经被创建完了，直接返回false。
                 - 如果需要创建的是最大线程，并且最大线程此时已经被创建完了，直接返回false。
@@ -1733,27 +1716,19 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          */
         if (isRunning(c) && workQueue.offer(command)) {
             /*
-                加入队列后，重新检查下，防止此时线程池不在运行中了，
-                此时会将刚加入队列的任务移除掉，并执行拒绝策略，这样做
-                可以防止一个任务加入了队列后没有了后续任何响应。
+                加入队列后，重新检查下线程池是不是还是RUNNING状态，如果不是RUNNING状态的话，需要将刚加入队列的任务移除掉，并执行拒绝策略，
+                这样做可以防止一个任务加入了队列后没有了后续任何响应。
              */
             int recheck = ctl.get();
             // 线程池不处于RUNNING，移除已经入队的任务，执行拒绝策略
             if (! isRunning(recheck) && remove(command))
                 reject(command);
-            /*
-                如果线程池还是RUNNING，且线程数为0，就开启新线程执行任务，
-                这里主要是担心：任务刚提交到阻塞队列中，线程池中所有线程都
-                执行完并关闭了。
-             */
+            // 如果线程池还是RUNNING且线程数为0，开启新线程执行任务，这里主要是防止任务刚提交到阻塞队列中，线程池中所有线程都执行完并关闭了。
             else if (workerCountOf(recheck) == 0)
                 addWorker(null, false);
         }
 
-        /*
-            如果阻塞队列满了，会创建最大线程执行任务，
-            如果创建最大线程失败了，就直接执行拒绝策略
-         */
+        // 如果阻塞队列满了，会创建非核心线程（最大线程）执行任务，如果创建最大线程失败了，就直接执行拒绝策略。
         else if (!addWorker(command, false))
             reject(command);
     }
@@ -1928,6 +1903,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @param corePoolSize the new core size
      * @throws IllegalArgumentException if {@code corePoolSize < 0}
      * @see #getCorePoolSize
+     *
      * 可以使用此方法进行动态改变核心线程数
      */
     public void setCorePoolSize(int corePoolSize) {
@@ -1936,16 +1912,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         int delta = corePoolSize - this.corePoolSize;
         // 设置新的核心线程数
         this.corePoolSize = corePoolSize;
-        /*
-            设置完新的核心线程数后，线程池中工作线程比核心线程数多，
-            可以进行终端空闲的线程
-         */
+        // 设置完新的核心线程数后，线程池中工作线程比核心线程数多，可以进行中断空闲的线程
         if (workerCountOf(ctl.get()) > corePoolSize)
             interruptIdleWorkers();
-        /*
-            新的核心线程数比原来的核心线程数大，需要增加线程池中
-            的核心线程
-         */
+        // 新的核心线程数比原来的核心线程数大，需要增加线程池中的核心线程
         else if (delta > 0) {
             // We don't really know how many new threads are "needed".
             // As a heuristic, prestart enough new workers (up to new
