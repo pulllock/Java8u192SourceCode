@@ -45,6 +45,8 @@ package java.util.concurrent;
  *
  * @since 1.5
  * @author Doug Lea
+ *
+ * Delayed接口用来标记一个对象需要在指定的延迟时间之后执行
  */
 public interface Delayed extends Comparable<Delayed> {
 
@@ -55,6 +57,8 @@ public interface Delayed extends Comparable<Delayed> {
      * @param unit the time unit
      * @return the remaining delay; zero or negative values indicate
      * that the delay has already elapsed
+     *
+     * 返回剩余的延迟时间
      */
     long getDelay(TimeUnit unit);
 }

@@ -3250,7 +3250,7 @@ public abstract class AbstractQueuedSynchronizer
 
             /*
                 上面节点入条件队列后挂起，被signal或者signalAll唤醒后，继续执行到这里，
-                这时候节点已经在同步队列了。
+                这时候节点已经在同步队列了（signal或者signalAll方法中会将节点从条件队列转移到同步队列中）。
 
                 acquireQueued方法中会尝试在获取一次锁，如果获取不到就挂起阻塞线程。
              */

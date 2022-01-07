@@ -43,6 +43,8 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  * @param <V> The result type returned by this Future
+ *
+ * 表示一个可延迟的Future
  */
 public interface ScheduledFuture<V> extends Delayed, Future<V> {
 }

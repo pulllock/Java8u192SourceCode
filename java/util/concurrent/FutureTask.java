@@ -449,6 +449,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * than once.
      *
      * @return {@code true} if successfully run and reset
+     *
+     * 执行任务，执行后需要重置当前任务的状态，用于周期性执行的任务
      */
     protected boolean runAndReset() {
         if (state != NEW ||
