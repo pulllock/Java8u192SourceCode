@@ -140,6 +140,8 @@ package java.util;
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
+ *
+ * 队列的抽象
  */
 public interface Queue<E> extends Collection<E> {
     /**
