@@ -60,6 +60,8 @@ import java.util.function.Predicate;
  * @see LongStream
  * @see DoubleStream
  * @see <a href="package-summary.html">java.util.stream</a>
+ *
+ * 定义了流的基本方法
  */
 public interface BaseStream<T, S extends BaseStream<T, S>>
         extends AutoCloseable {
@@ -70,6 +72,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * operation</a>.
      *
      * @return the element iterator for this stream
+     *
+     * 迭代器，是一个终止操作
      */
     Iterator<T> iterator();
 
@@ -80,6 +84,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * operation</a>.
      *
      * @return the element spliterator for this stream
+     *
+     * 分割迭代器，是一个终止操作
      */
     Spliterator<T> spliterator();
 
@@ -89,6 +95,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * terminal stream operation method may yield unpredictable results.
      *
      * @return {@code true} if this stream would execute in parallel if executed
+     *
+     * 是否是并行
      */
     boolean isParallel();
 
@@ -101,6 +109,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * operation</a>.
      *
      * @return a sequential stream
+     *
+     * 返回一个等价的串行流，是一个中间操作
      */
     S sequential();
 
@@ -113,6 +123,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * operation</a>.
      *
      * @return a parallel stream
+     *
+     * 返回一个并行流，是一个中间操作
      */
     S parallel();
 
@@ -126,6 +138,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * operation</a>.
      *
      * @return an unordered stream
+     *
+     * 返回一个无序流，是一个中间操作
      */
     S unordered();
 
@@ -146,6 +160,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      *
      * @param closeHandler A task to execute when the stream is closed
      * @return a stream with a handler that is run if the stream is closed
+     *
+     * 当流close的时候调用，是一个中间操作
      */
     S onClose(Runnable closeHandler);
 
@@ -154,6 +170,8 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * to be called.
      *
      * @see AutoCloseable#close()
+     *
+     * 关闭流
      */
     @Override
     void close();
