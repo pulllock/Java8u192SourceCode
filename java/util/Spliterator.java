@@ -292,6 +292,8 @@ import java.util.function.LongConsumer;
  *
  * @see Collection
  * @since 1.8
+ *
+ * 可分割迭代器，用于遍历元素并将数据进行分割
  */
 public interface Spliterator<T> {
     /**
@@ -305,6 +307,8 @@ public interface Spliterator<T> {
      * @return {@code false} if no remaining elements existed
      * upon entry to this method, else {@code true}.
      * @throws NullPointerException if the specified action is null
+     *
+     * 如果Stream中还有下一个元素，则对该元素执行action操作，并且返回true；如果没有元素了则返回false。
      */
     boolean tryAdvance(Consumer<? super T> action);
 
@@ -321,6 +325,8 @@ public interface Spliterator<T> {
      *
      * @param action The action
      * @throws NullPointerException if the specified action is null
+     *
+     * 遍历Stream中剩余元素，并对每个元素执行action操作
      */
     default void forEachRemaining(Consumer<? super T> action) {
         do { } while (tryAdvance(action));
@@ -366,6 +372,8 @@ public interface Spliterator<T> {
      *
      * @return a {@code Spliterator} covering some portion of the
      * elements, or {@code null} if this spliterator cannot be split
+     *
+     * 可以将Spliterator中的元素拆分处一个新的Spliterator，两者可以并行处理
      */
     Spliterator<T> trySplit();
 
@@ -391,6 +399,8 @@ public interface Spliterator<T> {
      *
      * @return the estimated size, or {@code Long.MAX_VALUE} if infinite,
      *         unknown, or too expensive to compute.
+     *
+     * 估算剩下多少元素要遍历
      */
     long estimateSize();
 
@@ -403,6 +413,8 @@ public interface Spliterator<T> {
      * {@code -1} otherwise.
      *
      * @return the exact size, if known, else {@code -1}.
+     *
+     * 返回确切的元素个数
      */
     default long getExactSizeIfKnown() {
         return (characteristics() & SIZED) == 0 ? -1L : estimateSize();
@@ -428,6 +440,16 @@ public interface Spliterator<T> {
      * and {@link #CONCURRENT}.
      *
      * @return a representation of characteristics
+     *
+     * 返回Spliterator的特征值：
+     * - ORDERED 有序的
+     * - DISTINCT 元素不重复
+     * - SORTED 元素按照一定规则进行排序
+     * - SIZED 大小固定的
+     * - NONNULL 没有null元素
+     * - IMMUTABLE 元素不可变
+     * - CONCURRENT 表示元素可以被多个线程安全并发修改，不需要外部同步
+     * - SUBSIZED 子Spliterators都是固定的
      */
     int characteristics();
 
@@ -442,6 +464,8 @@ public interface Spliterator<T> {
      * @param characteristics the characteristics to check for
      * @return {@code true} if all the specified characteristics are present,
      * else {@code false}
+     *
+     * 检查Spliterator是否具有给定的特征值
      */
     default boolean hasCharacteristics(int characteristics) {
         return (characteristics() & characteristics) == characteristics;
@@ -460,6 +484,8 @@ public interface Spliterator<T> {
      * natural order.
      * @throws IllegalStateException if the spliterator does not report
      *         a characteristic of {@code SORTED}.
+     *
+     * 获取元素的比较器
      */
     default Comparator<? super T> getComparator() {
         throw new IllegalStateException();
@@ -482,6 +508,8 @@ public interface Spliterator<T> {
      * such as {@link HashSet}. Clients of a Spliterator that reports
      * {@code ORDERED} are expected to preserve ordering constraints in
      * non-commutative parallel computations.
+     *
+     * 表示元素是有序的
      */
     public static final int ORDERED    = 0x00000010;
 
@@ -489,6 +517,8 @@ public interface Spliterator<T> {
      * Characteristic value signifying that, for each pair of
      * encountered elements {@code x, y}, {@code !x.equals(y)}. This
      * applies for example, to a Spliterator based on a {@link Set}.
+     *
+     * 表示元素不重复
      */
     public static final int DISTINCT   = 0x00000001;
 
@@ -503,6 +533,8 @@ public interface Spliterator<T> {
      *
      * @apiNote The spliterators for {@code Collection} classes in the JDK that
      * implement {@link NavigableSet} or {@link SortedSet} report {@code SORTED}.
+     *
+     * 表示元素是按照一定规则排序的
      */
     public static final int SORTED     = 0x00000004;
 
@@ -517,6 +549,8 @@ public interface Spliterator<T> {
      * {@code Collection} report this characteristic. Sub-spliterators, such as
      * those for {@link HashSet}, that cover a sub-set of elements and
      * approximate their reported size do not.
+     *
+     * 表示大小是固定的
      */
     public static final int SIZED      = 0x00000040;
 
@@ -524,6 +558,8 @@ public interface Spliterator<T> {
      * Characteristic value signifying that the source guarantees that
      * encountered elements will not be {@code null}. (This applies,
      * for example, to most concurrent collections, queues, and maps.)
+     *
+     * 表示没有null元素
      */
     public static final int NONNULL    = 0x00000100;
 
@@ -535,6 +571,8 @@ public interface Spliterator<T> {
      * to have a documented policy (for example throwing
      * {@link ConcurrentModificationException}) concerning structural
      * interference detected during traversal.
+     *
+     * 表示元素不可变
      */
     public static final int IMMUTABLE  = 0x00000400;
 
@@ -557,6 +595,8 @@ public interface Spliterator<T> {
      * guaranteeing accuracy with respect to elements present at the point of
      * Spliterator construction, but possibly not reflecting subsequent
      * additions or removals.
+     *
+     * 表示元素可以被多个线程安全并发修改，不需要外部同步
      */
     public static final int CONCURRENT = 0x00001000;
 
@@ -574,6 +614,8 @@ public interface Spliterator<T> {
      * approximately balanced binary tree, will report {@code SIZED} but not
      * {@code SUBSIZED}, since it is common to know the size of the entire tree
      * but not the exact sizes of subtrees.
+     *
+     * 子Spliterators都是固定大小的
      */
     public static final int SUBSIZED = 0x00004000;
 
@@ -595,6 +637,8 @@ public interface Spliterator<T> {
      * @see Spliterator.OfLong
      * @see Spliterator.OfDouble
      * @since 1.8
+     *
+     * 原始类型的可分割迭代器
      */
     public interface OfPrimitive<T, T_CONS, T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>>
             extends Spliterator<T> {
@@ -640,6 +684,8 @@ public interface Spliterator<T> {
     /**
      * A Spliterator specialized for {@code int} values.
      * @since 1.8
+     *
+     * Integer类型的可分割迭代器
      */
     public interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
 
@@ -704,6 +750,8 @@ public interface Spliterator<T> {
     /**
      * A Spliterator specialized for {@code long} values.
      * @since 1.8
+     *
+     * Long类型的可分割迭代器
      */
     public interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
 
@@ -768,6 +816,8 @@ public interface Spliterator<T> {
     /**
      * A Spliterator specialized for {@code double} values.
      * @since 1.8
+     *
+     * Double类型的可分割迭代器
      */
     public interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
 

@@ -888,6 +888,8 @@ public final class Spliterators {
     /**
      * A Spliterator designed for use by sources that traverse and split
      * elements maintained in an unmodifiable {@code Object[]} array.
+     *
+     * 数组类型的Spliterator
      */
     static final class ArraySpliterator<T> implements Spliterator<T> {
         /**
@@ -896,10 +898,24 @@ public final class Spliterators {
          * screen arguments to ensure they are exactly of type Object[]
          * so long as no methods write into the array or serialize it,
          * which we ensure here by defining this class as final.
+         *
+         * 存储数据的数组
          */
         private final Object[] array;
+
+        /**
+         * 当前已经遍历到的位置
+         */
         private int index;        // current index, modified on advance/split
+
+        /**
+         * 表示最后元素的位置+1
+         */
         private final int fence;  // one past last index
+
+        /**
+         * 当前ArraySpliterator的特征值
+         */
         private final int characteristics;
 
         /**
@@ -931,6 +947,7 @@ public final class Spliterators {
 
         @Override
         public Spliterator<T> trySplit() {
+            // 从中间将数组切分，左边部分的数据创建一个新的ArraySpliterator
             int lo = index, mid = (lo + fence) >>> 1;
             return (lo >= mid)
                    ? null
@@ -943,6 +960,7 @@ public final class Spliterators {
             Object[] a; int i, hi; // hoist accesses and checks from loop
             if (action == null)
                 throw new NullPointerException();
+            // 遍历index到fence之间的数据，并使用action进行操作
             if ((a = array).length >= (hi = fence) &&
                 (i = index) >= 0 && i < (index = hi)) {
                 do { action.accept((T)a[i]); } while (++i < hi);
@@ -954,7 +972,9 @@ public final class Spliterators {
             if (action == null)
                 throw new NullPointerException();
             if (index >= 0 && index < fence) {
+                // 当前已遍历位置索引+1，获取到元素
                 @SuppressWarnings("unchecked") T e = (T) array[index++];
+                // action处理元素
                 action.accept(e);
                 return true;
             }
@@ -980,6 +1000,8 @@ public final class Spliterators {
     /**
      * A Spliterator.OfInt designed for use by sources that traverse and split
      * elements maintained in an unmodifiable {@code int[]} array.
+     *
+     * int类型数组类型的Spliterator
      */
     static final class IntArraySpliterator implements Spliterator.OfInt {
         private final int[] array;
@@ -1063,6 +1085,8 @@ public final class Spliterators {
     /**
      * A Spliterator.OfLong designed for use by sources that traverse and split
      * elements maintained in an unmodifiable {@code int[]} array.
+     *
+     * long类型数组类型的Spliterator
      */
     static final class LongArraySpliterator implements Spliterator.OfLong {
         private final long[] array;
@@ -1146,6 +1170,8 @@ public final class Spliterators {
     /**
      * A Spliterator.OfDouble designed for use by sources that traverse and split
      * elements maintained in an unmodifiable {@code int[]} array.
+     *
+     * double类型数组类型的Spliterator
      */
     static final class DoubleArraySpliterator implements Spliterator.OfDouble {
         private final double[] array;
