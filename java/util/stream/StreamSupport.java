@@ -63,9 +63,12 @@ public final class StreamSupport {
      *        stream; if {@code false} the returned stream is a sequential
      *        stream.
      * @return a new sequential or parallel {@code Stream}
+     *
+     * 创建Stream
      */
     public static <T> Stream<T> stream(Spliterator<T> spliterator, boolean parallel) {
         Objects.requireNonNull(spliterator);
+        // 创建Stream的Pipeline的Head对象并返回，Head是Pipeline的第一个Stage
         return new ReferencePipeline.Head<>(spliterator,
                                             StreamOpFlag.fromCharacteristics(spliterator),
                                             parallel);

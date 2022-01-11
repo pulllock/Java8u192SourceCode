@@ -577,6 +577,8 @@ public interface Collection<E> extends Iterable<E> {
      *
      * @return a sequential {@code Stream} over the elements in this collection
      * @since 1.8
+     *
+     * 生成Stream
      */
     default Stream<E> stream() {
         return StreamSupport.stream(spliterator(), false);
@@ -598,6 +600,8 @@ public interface Collection<E> extends Iterable<E> {
      * @return a possibly parallel {@code Stream} over the elements in this
      * collection
      * @since 1.8
+     *
+     * 生成并行Stream
      */
     default Stream<E> parallelStream() {
         return StreamSupport.stream(spliterator(), true);

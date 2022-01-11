@@ -168,7 +168,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  should be included
      * @return the new stream
      *
-     * 过滤
+     * 过滤，中间操作，无状态。返回一个只包含满足指定的predicate条件的元素的Stream。
      */
     Stream<T> filter(Predicate<? super T> predicate);
 
@@ -185,7 +185,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element
      * @return the new stream
      *
-     * 映射
+     * 映射，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的Stream。
      */
     <R> Stream<R> map(Function<? super T, ? extends R> mapper);
 
@@ -201,7 +201,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element
      * @return the new stream
      *
-     * 映射成int类型的流
+     * 映射成int类型的流，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的IntStream。
      */
     IntStream mapToInt(ToIntFunction<? super T> mapper);
 
@@ -217,7 +217,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element
      * @return the new stream
      *
-     * 映射成long类型的流
+     * 映射成long类型的流，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的LongStream。
      */
     LongStream mapToLong(ToLongFunction<? super T> mapper);
 
@@ -233,7 +233,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               function to apply to each element
      * @return the new stream
      *
-     * 映射成double类型的流
+     * 映射成double类型的流，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的DoubleStream。
      */
     DoubleStream mapToDouble(ToDoubleFunction<? super T> mapper);
 
@@ -279,7 +279,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               of new values
      * @return the new stream
      *
-     * 展平映射
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
      */
     <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper);
 
@@ -301,7 +301,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      * @see #flatMap(Function)
      *
-     * 展平映射
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
      */
     IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper);
 
@@ -323,7 +323,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      * @see #flatMap(Function)
      *
-     * 展平映射
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
      */
     LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper);
 
@@ -345,7 +345,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      * @see #flatMap(Function)
      *
-     * 展平映射
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
      */
     DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper);
 
@@ -376,7 +376,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *
      * @return the new stream
      *
-     * 去重
+     * 去重，中间操作，有状态
      */
     Stream<T> distinct();
 
@@ -394,7 +394,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *
      * @return the new stream
      *
-     * 排序
+     * 排序，中间操作，有状态
      */
     Stream<T> sorted();
 
@@ -413,7 +413,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                   {@code Comparator} to be used to compare stream elements
      * @return the new stream
      *
-     * 排序
+     * 排序，中间操作，有状态
      */
     Stream<T> sorted(Comparator<? super T> comparator);
 
@@ -446,7 +446,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                 they are consumed from the stream
      * @return the new stream
      *
-     * 和map类似，但是peek只消费流，不做映射
+     * 和map类似，但是peek只消费流，不做映射，中间操作，无状态
      */
     Stream<T> peek(Consumer<? super T> action);
 
@@ -475,7 +475,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      * @throws IllegalArgumentException if {@code maxSize} is negative
      *
-     * 截断
+     * 截断，中间操作，有状态
      */
     Stream<T> limit(long maxSize);
 
@@ -506,7 +506,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return the new stream
      * @throws IllegalArgumentException if {@code n} is negative
      *
-     * 跳过
+     * 跳过，中间操作，有状态
      */
     Stream<T> skip(long n);
 
@@ -527,7 +527,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param action a <a href="package-summary.html#NonInterference">
      *               non-interfering</a> action to perform on the elements
      *
-     * 遍历
+     * 遍历，终止操作，非短路操作。对每个元素执行指定的action操作。
      */
     void forEach(Consumer<? super T> action);
 
@@ -548,7 +548,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *               non-interfering</a> action to perform on the elements
      * @see #forEach(Consumer)
      *
-     * 遍历
+     * 遍历，终止操作，非短路操作。对每个元素执行指定的action操作。
      */
     void forEachOrdered(Consumer<? super T> action);
 
@@ -560,7 +560,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *
      * @return an array containing the elements of this stream
      *
-     * 转成数组
+     * 转成数组，终止操作，非短路操作
      */
     Object[] toArray();
 
@@ -590,6 +590,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @throws ArrayStoreException if the runtime type of the array returned
      * from the array generator is not a supertype of the runtime type of every
      * element in this stream
+     *
+     * 转成数组，终止操作，非短路操作
      */
     <A> A[] toArray(IntFunction<A[]> generator);
 
@@ -642,7 +644,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                    function for combining two values
      * @return the result of the reduction
      *
-     * 汇聚
+     * 汇聚，终止操作，非短路操作。通过连接操作将所有元素汇总成一个结果。
      */
     T reduce(T identity, BinaryOperator<T> accumulator);
 
@@ -684,7 +686,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @see #min(Comparator)
      * @see #max(Comparator)
      *
-     * 汇聚
+     * 汇聚，终止操作，非短路操作。通过连接操作将所有元素汇总成一个结果。
      */
     Optional<T> reduce(BinaryOperator<T> accumulator);
 
@@ -735,7 +737,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @see #reduce(BinaryOperator)
      * @see #reduce(Object, BinaryOperator)
      *
-     * 汇聚
+     * 汇聚，终止操作，非短路操作。通过连接操作将所有元素汇总成一个结果。
      */
     <U> U reduce(U identity,
                  BiFunction<U, ? super T, U> accumulator,
@@ -792,7 +794,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                    compatible with the accumulator function
      * @return the result of the reduction
      *
-     * 收集
+     * 收集，终止操作，非短路操作
      */
     <R> R collect(Supplier<R> supplier,
                   BiConsumer<R, ? super T> accumulator,
@@ -850,7 +852,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
      *
-     * 收集
+     * 收集，终止操作，非短路操作
      */
     <R, A> R collect(Collector<? super T, A, R> collector);
 
@@ -868,7 +870,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the minimum element is null
      *
-     * 返回最小元素
+     * 返回最小元素，终止操作，非短路操作
      */
     Optional<T> min(Comparator<? super T> comparator);
 
@@ -887,7 +889,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the maximum element is null
      *
-     * 返回最大元素
+     * 返回最大元素，终止操作，非短路操作
      */
     Optional<T> max(Comparator<? super T> comparator);
 
@@ -903,7 +905,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *
      * @return the count of elements in this stream
      *
-     * 统计
+     * 统计，终止操作，非短路操作
      */
     long count();
 
@@ -926,7 +928,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      *
-     * 任意一个匹配
+     * 任意一个匹配，终止操作，短路操作
      */
     boolean anyMatch(Predicate<? super T> predicate);
 
@@ -951,7 +953,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      *
-     * 全部匹配
+     * 全部匹配，终止操作，短路操作
      */
     boolean allMatch(Predicate<? super T> predicate);
 
@@ -976,7 +978,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      *
-     * 没有匹配
+     * 没有匹配，终止操作，短路操作
      */
     boolean noneMatch(Predicate<? super T> predicate);
 
@@ -992,7 +994,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the element selected is null
      *
-     * 找到第一个
+     * 找到第一个，终止操作，短路操作
      */
     Optional<T> findFirst();
 
@@ -1014,7 +1016,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @throws NullPointerException if the element selected is null
      * @see #findFirst()
      *
-     * 找到任意一个
+     * 找到任意一个，终止操作，短路操作
      */
     Optional<T> findAny();
 
@@ -1046,6 +1048,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param t the single element
      * @param <T> the type of stream elements
      * @return a singleton sequential stream
+     *
+     * 创建Stream
      */
     public static<T> Stream<T> of(T t) {
         return StreamSupport.stream(new Streams.StreamBuilderImpl<>(t), false);
@@ -1057,6 +1061,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param <T> the type of stream elements
      * @param values the elements of the new stream
      * @return the new stream
+     *
+     * 创建Stream
      */
     @SafeVarargs
     @SuppressWarnings("varargs") // Creating a stream from an array is safe
@@ -1080,6 +1086,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param f a function to be applied to to the previous element to produce
      *          a new element
      * @return a new sequential {@code Stream}
+     *
+     * 生成Stream，无限长度
      */
     public static<T> Stream<T> iterate(final T seed, final UnaryOperator<T> f) {
         Objects.requireNonNull(f);
@@ -1110,6 +1118,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param <T> the type of stream elements
      * @param s the {@code Supplier} of generated elements
      * @return a new infinite sequential unordered {@code Stream}
+     *
+     * 创建Stream，无限长度
      */
     public static<T> Stream<T> generate(Supplier<T> s) {
         Objects.requireNonNull(s);

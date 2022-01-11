@@ -113,6 +113,8 @@ import java.util.function.LongConsumer;
  *
  * @param <T> type of elements for value streams
  * @since 1.8
+ *
+ * 定义了Stream的Pipeline的Stage之间的操作
  */
 interface Sink<T> extends Consumer<T> {
     /**
@@ -124,6 +126,8 @@ interface Sink<T> extends Consumer<T> {
      *
      * <p>Prior to this call, the sink must be in the initial state, and after
      * this call it is in the active state.
+     *
+     * 开始操作，需要在数据进入到Sink前调用
      */
     default void begin(long size) {}
 
@@ -134,6 +138,8 @@ interface Sink<T> extends Consumer<T> {
      *
      * <p>Prior to this call, the sink must be in the active state, and after
      * this call it is returned to the initial state.
+     *
+     * 结束操作，所有元素都处理完后调用
      */
     default void end() {}
 
@@ -143,6 +149,8 @@ interface Sink<T> extends Consumer<T> {
      * @implSpec The default implementation always returns false.
      *
      * @return true if cancellation is requested
+     *
+     * 是否可结束操作，短路操作可以提前结束
      */
     default boolean cancellationRequested() {
         return false;
@@ -154,6 +162,8 @@ interface Sink<T> extends Consumer<T> {
      * @implSpec The default implementation throws IllegalStateException.
      *
      * @throws IllegalStateException if this sink does not accept int values
+     *
+     * 接收并处理元素
      */
     default void accept(int value) {
         throw new IllegalStateException("called wrong accept method");
@@ -165,6 +175,8 @@ interface Sink<T> extends Consumer<T> {
      * @implSpec The default implementation throws IllegalStateException.
      *
      * @throws IllegalStateException if this sink does not accept long values
+     *
+     * 接收并处理元素
      */
     default void accept(long value) {
         throw new IllegalStateException("called wrong accept method");
@@ -176,6 +188,8 @@ interface Sink<T> extends Consumer<T> {
      * @implSpec The default implementation throws IllegalStateException.
      *
      * @throws IllegalStateException if this sink does not accept double values
+     *
+     * 接收并处理元素
      */
     default void accept(double value) {
         throw new IllegalStateException("called wrong accept method");
@@ -185,6 +199,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} that implements {@code Sink<Integer>}, re-abstracts
      * {@code accept(int)}, and wires {@code accept(Integer)} to bridge to
      * {@code accept(int)}.
+     *
+     * int类型的Sink
      */
     interface OfInt extends Sink<Integer>, IntConsumer {
         @Override
@@ -202,6 +218,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} that implements {@code Sink<Long>}, re-abstracts
      * {@code accept(long)}, and wires {@code accept(Long)} to bridge to
      * {@code accept(long)}.
+     *
+     * long类型的Sink
      */
     interface OfLong extends Sink<Long>, LongConsumer {
         @Override
@@ -219,6 +237,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} that implements {@code Sink<Double>}, re-abstracts
      * {@code accept(double)}, and wires {@code accept(Double)} to bridge to
      * {@code accept(double)}.
+     *
+     * double类型的Sink
      */
     interface OfDouble extends Sink<Double>, DoubleConsumer {
         @Override
@@ -240,6 +260,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} of unknown input shape and produces a {@code Sink<T>}.  The
      * implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
+     *
+     * 创建Sink链，持有下一个Sink的引用
      */
     static abstract class ChainedReference<T, E_OUT> implements Sink<T> {
         protected final Sink<? super E_OUT> downstream;
@@ -272,6 +294,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} of unknown input shape and produces a {@code Sink.OfInt}.
      * The implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
+     *
+     * 创建int类型的Sink链
      */
     static abstract class ChainedInt<E_OUT> implements Sink.OfInt {
         protected final Sink<? super E_OUT> downstream;
@@ -304,6 +328,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} of unknown input shape and produces a {@code Sink.OfLong}.
      * The implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
+     *
+     * 创建long类型的Sink链
      */
     static abstract class ChainedLong<E_OUT> implements Sink.OfLong {
         protected final Sink<? super E_OUT> downstream;
@@ -336,6 +362,8 @@ interface Sink<T> extends Consumer<T> {
      * {@code Sink} of unknown input shape and produces a {@code Sink.OfDouble}.
      * The implementation of the {@code accept()} method must call the correct
      * {@code accept()} method on the downstream {@code Sink}.
+     *
+     * 创建double类型的Sink链
      */
     static abstract class ChainedDouble<E_OUT> implements Sink.OfDouble {
         protected final Sink<? super E_OUT> downstream;

@@ -53,6 +53,8 @@ import java.util.function.ToLongFunction;
  * @param <P_OUT> type of elements in produced by this stage
  *
  * @since 1.8
+ *
+ * ReferencePipeline是对Stream的实现，底层是一个双向链表
  */
 abstract class ReferencePipeline<P_IN, P_OUT>
         extends AbstractPipeline<P_IN, P_OUT, Stream<P_OUT>>
@@ -65,6 +67,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param sourceFlags the source flags for the stream source, described in
      *        {@link StreamOpFlag}
      * @param parallel {@code true} if the pipeline is parallel
+     *
+     * 生成Stream的Pipeline的头
      */
     ReferencePipeline(Supplier<? extends Spliterator<?>> source,
                       int sourceFlags, boolean parallel) {
@@ -78,6 +82,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param sourceFlags The source flags for the stream source, described in
      *        {@link StreamOpFlag}
      * @param parallel {@code true} if the pipeline is parallel
+     *
+     * 生成Stream的Pipeline的头
      */
     ReferencePipeline(Spliterator<?> source,
                       int sourceFlags, boolean parallel) {
@@ -89,6 +95,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * pipeline.
      *
      * @param upstream the upstream element source.
+     *
+     * 将中间操作的阶段附加到现有管道
      */
     ReferencePipeline(AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
         super(upstream, opFlags);
@@ -179,17 +187,38 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element
+     * @param <R>
+     * @return
+     *
+     * 映射，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的Stream。
+     */
     @Override
     @SuppressWarnings("unchecked")
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
+        // 映射的逻辑不能为空
         Objects.requireNonNull(mapper);
+        /*
+            使用StatelessOp无状态的阶段对象来包装映射逻辑。
+            new StateLessOp是新的阶段，this是当前阶段，所以新阶段的上一个阶段是当前阶段。
+         */
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+            // 包装Sink
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
+                // 返回一个ChainedReference对象
                 return new Sink.ChainedReference<P_OUT, R>(sink) {
                     @Override
                     public void accept(P_OUT u) {
+                        /*
+                            mapper.apply(u)，是新阶段使用mapper来处理映射的逻辑。
+                            downstream.accept是将新阶段处理的结果传给下一个阶段
+                         */
                         downstream.accept(mapper.apply(u));
                     }
                 };
@@ -535,6 +564,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param <E_IN> type of elements in the upstream source
      * @param <E_OUT> type of elements in produced by this stage
      * @since 1.8
+     *
+     * ReferencePipeline的源阶段，也就是第一个阶段
      */
     static class Head<E_IN, E_OUT> extends ReferencePipeline<E_IN, E_OUT> {
         /**
@@ -544,6 +575,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          *               source
          * @param sourceFlags the source flags for the stream source, described
          *                    in {@link StreamOpFlag}
+         *
+         * 生成Stream的源阶段
          */
         Head(Supplier<? extends Spliterator<?>> source,
              int sourceFlags, boolean parallel) {
@@ -556,6 +589,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          * @param source {@code Spliterator} describing the stream source
          * @param sourceFlags the source flags for the stream source, described
          *                    in {@link StreamOpFlag}
+         *
+         * 生成Stream的源阶段
          */
         Head(Spliterator<?> source,
              int sourceFlags, boolean parallel) {
@@ -601,6 +636,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param <E_IN> type of elements in the upstream source
      * @param <E_OUT> type of elements in produced by this stage
      * @since 1.8
+     *
+     * 无状态的阶段
      */
     abstract static class StatelessOp<E_IN, E_OUT>
             extends ReferencePipeline<E_IN, E_OUT> {
@@ -631,6 +668,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param <E_IN> type of elements in the upstream source
      * @param <E_OUT> type of elements in produced by this stage
      * @since 1.8
+     *
+     * 有状态的阶段
      */
     abstract static class StatefulOp<E_IN, E_OUT>
             extends ReferencePipeline<E_IN, E_OUT> {

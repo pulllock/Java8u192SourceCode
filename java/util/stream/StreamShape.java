@@ -45,26 +45,36 @@ package java.util.stream;
  * primitive type.
  *
  * @since 1.8
+ *
+ * Stream类型
  */
 enum StreamShape {
     /**
      * The shape specialization corresponding to {@code Stream} and elements
      * that are object references.
+     *
+     * 引用类型，对应Stream
      */
     REFERENCE,
     /**
      * The shape specialization corresponding to {@code IntStream} and elements
      * that are {@code int} values.
+     *
+     * int类型，对应IntStream
      */
     INT_VALUE,
     /**
      * The shape specialization corresponding to {@code LongStream} and elements
      * that are {@code long} values.
+     *
+     * long类型，对象LongStream
      */
     LONG_VALUE,
     /**
      * The shape specialization corresponding to {@code DoubleStream} and
      * elements that are {@code double} values.
+     *
+     * double类型，对象DoubleStream
      */
     DOUBLE_VALUE
 }

@@ -77,12 +77,16 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     /**
      * Backlink to the head of the pipeline chain (self if this is the source
      * stage).
+     *
+     * 源阶段
      */
     @SuppressWarnings("rawtypes")
     private final AbstractPipeline sourceStage;
 
     /**
      * The "upstream" pipeline, or null if this is the source stage.
+     *
+     * 前一个阶段
      */
     @SuppressWarnings("rawtypes")
     private final AbstractPipeline previousStage;
@@ -96,6 +100,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     /**
      * The next stage in the pipeline, or null if this is the last stage.
      * Effectively final at the point of linking to the next pipeline.
+     *
+     * 下一个阶段
      */
     @SuppressWarnings("rawtypes")
     private AbstractPipeline nextStage;
@@ -131,6 +137,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
 
     /**
      * True if this pipeline has been linked or consumed
+     *
+     * Pipeline是否已经被添加过或者消费过
      */
     private boolean linkedOrConsumed;
 
@@ -145,6 +153,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     /**
      * True if pipeline is parallel, otherwise the pipeline is sequential; only
      * valid for the source stage.
+     *
+     * 是否并行
      */
     private boolean parallel;
 
@@ -155,17 +165,22 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param sourceFlags The source flags for the stream source, described in
      * {@link StreamOpFlag}
      * @param parallel True if the pipeline is parallel
+     *
+     * 生成Stream的Pipeline的头
      */
     AbstractPipeline(Supplier<? extends Spliterator<?>> source,
                      int sourceFlags, boolean parallel) {
+        // Head的前一个阶段为null
         this.previousStage = null;
         this.sourceSupplier = source;
+        // 源阶段
         this.sourceStage = this;
         this.sourceOrOpFlags = sourceFlags & StreamOpFlag.STREAM_MASK;
         // The following is an optimization of:
         // StreamOpFlag.combineOpFlags(sourceOrOpFlags, StreamOpFlag.INITIAL_OPS_VALUE);
         this.combinedFlags = (~(sourceOrOpFlags << 1)) & StreamOpFlag.INITIAL_OPS_VALUE;
         this.depth = 0;
+        // 是否并行
         this.parallel = parallel;
     }
 
@@ -176,17 +191,22 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param sourceFlags the source flags for the stream source, described in
      * {@link StreamOpFlag}
      * @param parallel {@code true} if the pipeline is parallel
+     *
+     * 生成Stream的Pipeline的头
      */
     AbstractPipeline(Spliterator<?> source,
                      int sourceFlags, boolean parallel) {
+        // Head的前一个阶段为null
         this.previousStage = null;
         this.sourceSpliterator = source;
+        // 源阶段
         this.sourceStage = this;
         this.sourceOrOpFlags = sourceFlags & StreamOpFlag.STREAM_MASK;
         // The following is an optimization of:
         // StreamOpFlag.combineOpFlags(sourceOrOpFlags, StreamOpFlag.INITIAL_OPS_VALUE);
         this.combinedFlags = (~(sourceOrOpFlags << 1)) & StreamOpFlag.INITIAL_OPS_VALUE;
         this.depth = 0;
+        // 是否并行
         this.parallel = parallel;
     }
 
@@ -197,17 +217,23 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @param previousStage the upstream pipeline stage
      * @param opFlags the operation flags for the new stage, described in
      * {@link StreamOpFlag}
+     *
+     * 将中间操作的阶段附加到现有管道
      */
     AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
         if (previousStage.linkedOrConsumed)
             throw new IllegalStateException(MSG_STREAM_LINKED);
         previousStage.linkedOrConsumed = true;
+        // 上一个阶段的nextStage设置为当前Pipeline
         previousStage.nextStage = this;
 
+        // 上一个阶段
         this.previousStage = previousStage;
         this.sourceOrOpFlags = opFlags & StreamOpFlag.OP_MASK;
         this.combinedFlags = StreamOpFlag.combineOpFlags(opFlags, previousStage.combinedFlags);
+        // 源阶段
         this.sourceStage = previousStage.sourceStage;
+        // 是否是有状态的阶段
         if (opIsStateful())
             sourceStage.sourceAnyStateful = true;
         this.depth = previousStage.depth + 1;
