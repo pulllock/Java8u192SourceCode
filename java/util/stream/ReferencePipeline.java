@@ -164,9 +164,20 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param predicate a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                  <a href="package-summary.html#Statelessness">stateless</a>
+     *                  predicate to apply to each element to determine if it
+     *                  should be included
+     * @return
+     *
+     * 过滤，中间操作，无状态。返回一个只包含满足指定的predicate条件的元素的Stream。
+     */
     @Override
     public final Stream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
         Objects.requireNonNull(predicate);
+        // 使用StatelessOp无状态的阶段对象来包装过滤逻辑。
         return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SIZED) {
             @Override
@@ -226,9 +237,19 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element
+     * @return
+     *
+     * 映射成int类型的流，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的IntStream。
+     */
     @Override
     public final IntStream mapToInt(ToIntFunction<? super P_OUT> mapper) {
         Objects.requireNonNull(mapper);
+        // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new IntPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                               StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
@@ -243,9 +264,19 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element
+     * @return
+     *
+     * 映射成long类型的流，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的LongStream。
+     */
     @Override
     public final LongStream mapToLong(ToLongFunction<? super P_OUT> mapper) {
         Objects.requireNonNull(mapper);
+        // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new LongPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                       StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
@@ -260,9 +291,19 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element
+     * @return
+     *
+     * 映射成double类型的流，中间操作，无状态。返回一个对所有元素执行指定mapper进行转换之后的结果组成的DoubleStream。
+     */
     @Override
     public final DoubleStream mapToDouble(ToDoubleFunction<? super P_OUT> mapper) {
         Objects.requireNonNull(mapper);
+        // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new DoublePipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                         StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
@@ -277,10 +318,22 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element which produces a stream
+     *               of new values
+     * @param <R>
+     * @return
+     *
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
+     */
     @Override
     public final <R> Stream<R> flatMap(Function<? super P_OUT, ? extends Stream<? extends R>> mapper) {
         Objects.requireNonNull(mapper);
         // We can do better than this, by polling cancellationRequested when stream is infinite
+        // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
@@ -304,10 +357,21 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element which produces a stream
+     *               of new values
+     * @return
+     *
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
+     */
     @Override
     public final IntStream flatMapToInt(Function<? super P_OUT, ? extends IntStream> mapper) {
         Objects.requireNonNull(mapper);
         // We can do better than this, by polling cancellationRequested when stream is infinite
+        // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new IntPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                               StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
@@ -332,10 +396,21 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element which produces a stream
+     *               of new values
+     * @return
+     *
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
+     */
     @Override
     public final DoubleStream flatMapToDouble(Function<? super P_OUT, ? extends DoubleStream> mapper) {
         Objects.requireNonNull(mapper);
         // We can do better than this, by polling cancellationRequested when stream is infinite
+        // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new DoublePipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
@@ -360,10 +435,21 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param mapper a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *               <a href="package-summary.html#Statelessness">stateless</a>
+     *               function to apply to each element which produces a stream
+     *               of new values
+     * @return
+     *
+     * 展平映射，中间操作，无状态。对每个元素执行指定的mapper操作，将mapper返回的Stream中的元素组成一个新的Stream返回。
+     */
     @Override
     public final LongStream flatMapToLong(Function<? super P_OUT, ? extends LongStream> mapper) {
         Objects.requireNonNull(mapper);
         // We can do better than this, by polling cancellationRequested when stream is infinite
+        // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new LongPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                                    StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
@@ -388,9 +474,19 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         };
     }
 
+    /**
+     *
+     * @param action a <a href="package-summary.html#NonInterference">
+     *                 non-interfering</a> action to perform on the elements as
+     *                 they are consumed from the stream
+     * @return
+     *
+     * 和map类似，但是peek只消费流，不做映射，中间操作，无状态
+     */
     @Override
     public final Stream<P_OUT> peek(Consumer<? super P_OUT> action) {
         Objects.requireNonNull(action);
+        // 使用StatelessOp无状态的阶段对象来包装peek逻辑。
         return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
                                      0) {
             @Override
@@ -408,28 +504,67 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     // Stateful intermediate operations from Stream
 
+    /**
+     *
+     * @return
+     *
+     * 去重，中间操作，有状态
+     */
     @Override
     public final Stream<P_OUT> distinct() {
+        // 使用StatefulOp有状态的阶段对象来包装去重逻辑。
         return DistinctOps.makeRef(this);
     }
 
+    /**
+     *
+     * @return
+     *
+     * 排序，中间操作，有状态
+     */
     @Override
     public final Stream<P_OUT> sorted() {
+        // 使用StatefulOp有状态的阶段对象来包装排序逻辑。
         return SortedOps.makeRef(this);
     }
 
+    /**
+     *
+     * @param comparator a <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                   <a href="package-summary.html#Statelessness">stateless</a>
+     *                   {@code Comparator} to be used to compare stream elements
+     * @return
+     *
+     * 排序，中间操作，有状态
+     */
     @Override
     public final Stream<P_OUT> sorted(Comparator<? super P_OUT> comparator) {
+        // 使用StatefulOp有状态的阶段对象来包装排序逻辑。
         return SortedOps.makeRef(this, comparator);
     }
 
+    /**
+     *
+     * @param maxSize the number of elements the stream should be limited to
+     * @return
+     *
+     * 截断，中间操作，有状态
+     */
     @Override
     public final Stream<P_OUT> limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
+        // 使用StatefulOp有状态的阶段对象来包装截断逻辑。
         return SliceOps.makeRef(this, 0, maxSize);
     }
 
+    /**
+     *
+     * @param n the number of leading elements to skip
+     * @return
+     *
+     * 跳过，中间操作，有状态
+     */
     @Override
     public final Stream<P_OUT> skip(long n) {
         if (n < 0)
@@ -437,18 +572,36 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         if (n == 0)
             return this;
         else
+            // 使用StatefulOp有状态的阶段对象来包装跳过逻辑。
             return SliceOps.makeRef(this, n, -1);
     }
 
     // Terminal operations from Stream
 
+    /**
+     *
+     * @param action a <a href="package-summary.html#NonInterference">
+     *               non-interfering</a> action to perform on the elements
+     *
+     *
+     * 遍历，终止操作，非短路操作。对每个元素执行指定的action操作。
+     */
     @Override
     public void forEach(Consumer<? super P_OUT> action) {
+        // 使用ForEachOp终止操作的阶段对象来包装遍历逻辑。
         evaluate(ForEachOps.makeRef(action, false));
     }
 
+    /**
+     *
+     * @param action a <a href="package-summary.html#NonInterference">
+     *               non-interfering</a> action to perform on the elements
+     *
+     * 遍历，终止操作，非短路操作。对每个元素执行指定的action操作。
+     */
     @Override
     public void forEachOrdered(Consumer<? super P_OUT> action) {
+        // 使用ForEachOp终止操作的阶段对象来包装遍历逻辑。
         evaluate(ForEachOps.makeRef(action, true));
     }
 

@@ -49,6 +49,8 @@ import java.util.function.Supplier;
  *
  * @param <E_IN> type of elements in the upstream source
  * @since 1.8
+ *
+ * int类型的Pipeline
  */
 abstract class IntPipeline<E_IN>
         extends AbstractPipeline<E_IN, Integer, IntStream>
@@ -510,6 +512,8 @@ abstract class IntPipeline<E_IN>
      *
      * @param <E_IN> type of elements in the upstream source
      * @since 1.8
+     *
+     * IntPipeline的源阶段，也就是第一个阶段
      */
     static class Head<E_IN> extends IntPipeline<E_IN> {
         /**
@@ -577,6 +581,8 @@ abstract class IntPipeline<E_IN>
      *
      * @param <E_IN> type of elements in the upstream source
      * @since 1.8
+     *
+     * 无状态的阶段
      */
     abstract static class StatelessOp<E_IN> extends IntPipeline<E_IN> {
         /**
@@ -604,6 +610,8 @@ abstract class IntPipeline<E_IN>
      *
      * @param <E_IN> type of elements in the upstream source
      * @since 1.8
+     *
+     * 有状态的阶段
      */
     abstract static class StatefulOp<E_IN> extends IntPipeline<E_IN> {
         /**

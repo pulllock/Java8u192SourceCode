@@ -50,6 +50,8 @@ import java.util.function.Supplier;
  *
  * @param <E_IN> type of elements in the upstream source
  * @since 1.8
+ *
+ * long类型的Pipeline
  */
 abstract class LongPipeline<E_IN>
         extends AbstractPipeline<E_IN, Long, LongStream>
@@ -493,6 +495,8 @@ abstract class LongPipeline<E_IN>
      *
      * @param <E_IN> type of elements in the upstream source
      * @since 1.8
+     *
+     * LongPipeline的源阶段，也就是第一个阶段
      */
     static class Head<E_IN> extends LongPipeline<E_IN> {
         /**
@@ -557,6 +561,8 @@ abstract class LongPipeline<E_IN>
      *
      * @param <E_IN> type of elements in the upstream source
      * @since 1.8
+     *
+     * 无状态的阶段
      */
     abstract static class StatelessOp<E_IN> extends LongPipeline<E_IN> {
         /**
@@ -584,6 +590,8 @@ abstract class LongPipeline<E_IN>
      *
      * @param <E_IN> type of elements in the upstream source
      * @since 1.8
+     *
+     * 有状态的阶段
      */
     abstract static class StatefulOp<E_IN> extends LongPipeline<E_IN> {
         /**
