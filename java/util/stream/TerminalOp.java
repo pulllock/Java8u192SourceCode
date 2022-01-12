@@ -41,6 +41,8 @@ import java.util.Spliterator;
  * @param <E_IN> the type of input elements
  * @param <R>    the type of the result
  * @since 1.8
+ *
+ * 终止操作的抽象
  */
 interface TerminalOp<E_IN, R> {
     /**
@@ -49,6 +51,8 @@ interface TerminalOp<E_IN, R> {
      * @implSpec The default returns {@code StreamShape.REFERENCE}.
      *
      * @return StreamShape of the input type of this operation
+     *
+     * Stream类型
      */
     default StreamShape inputShape() { return StreamShape.REFERENCE; }
 
@@ -76,6 +80,8 @@ interface TerminalOp<E_IN, R> {
      * @param helper the pipeline helper
      * @param spliterator the source spliterator
      * @return the result of the evaluation
+     *
+     * 并行流的处理
      */
     default <P_IN> R evaluateParallel(PipelineHelper<E_IN> helper,
                                       Spliterator<P_IN> spliterator) {
@@ -92,6 +98,8 @@ interface TerminalOp<E_IN, R> {
      * @param helper the pipeline helper
      * @param spliterator the source spliterator
      * @return the result of the evaluation
+     *
+     * 串行流的处理
      */
     <P_IN> R evaluateSequential(PipelineHelper<E_IN> helper,
                                 Spliterator<P_IN> spliterator);

@@ -219,10 +219,18 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          */
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
-            // 包装Sink
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
-                // 返回一个ChainedReference对象
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, R>(sink) {
                     @Override
                     public void accept(P_OUT u) {
@@ -588,7 +596,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      */
     @Override
     public void forEach(Consumer<? super P_OUT> action) {
-        // 使用ForEachOp终止操作的阶段对象来包装遍历逻辑。
+        // 创建ForEachOp终止操作对象来包装遍历逻辑。
+        // evaluate来计算最终结果
         evaluate(ForEachOps.makeRef(action, false));
     }
 

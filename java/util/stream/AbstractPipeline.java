@@ -246,8 +246,10 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * Evaluate the pipeline with a terminal operation to produce a result.
      *
      * @param <R> the type of result
-     * @param terminalOp the terminal operation to be applied to the pipeline.
+     * @param terminalOp the terminal operation to be applied to the pipeline. 终止操作
      * @return the result
+     *
+     * 使用终止操作来计算结果
      */
     final <R> R evaluate(TerminalOp<E_OUT, R> terminalOp) {
         assert getOutputShape() == terminalOp.inputShape();
@@ -256,7 +258,9 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         linkedOrConsumed = true;
 
         return isParallel()
+                // 并行流的处理，terminalOp是终止操作
                ? terminalOp.evaluateParallel(this, sourceSpliterator(terminalOp.getOpFlags()))
+                // 串行流的处理，terminalOp是终止操作
                : terminalOp.evaluateSequential(this, sourceSpliterator(terminalOp.getOpFlags()));
     }
 
@@ -494,10 +498,19 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
 
     @Override
     final <P_IN, S extends Sink<E_OUT>> S wrapAndCopyInto(S sink, Spliterator<P_IN> spliterator) {
+        // sink是当前的Sink，wrapSink返回的是Pipeline的第一个Sink，第一个Sink持有第二个Sink，第二个Sink持有第三个Sink，以此类推
         copyInto(wrapSink(Objects.requireNonNull(sink)), spliterator);
         return sink;
     }
 
+    /**
+     *
+     * @param wrappedSink the destination {@code Sink}
+     * @param spliterator the source {@code Spliterator}
+     * @param <P_IN>
+     *
+     *
+     */
     @Override
     final <P_IN> void copyInto(Sink<P_IN> wrappedSink, Spliterator<P_IN> spliterator) {
         Objects.requireNonNull(wrappedSink);
@@ -534,14 +547,25 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         return StreamOpFlag.ORDERED.isKnown(combinedFlags);
     }
 
+    /**
+     *
+     * @param sink the {@code Sink} to receive the results 当前的Sink
+     * @param <P_IN>
+     * @return
+     *
+     * 包装Sink，也就是从最后一个Sink开始，依次将后一个Sink设置给前一个Sink，这样前一个Sink处理完就可以继续调用下一个Sink继续处理
+     */
     @Override
     @SuppressWarnings("unchecked")
     final <P_IN> Sink<P_IN> wrapSink(Sink<E_OUT> sink) {
         Objects.requireNonNull(sink);
 
+        // sink是当前终止操作的Sink
+        // AbstractPipeline.this是终止操作前一个Sink
         for ( @SuppressWarnings("rawtypes") AbstractPipeline p=AbstractPipeline.this; p.depth > 0; p=p.previousStage) {
             sink = p.opWrapSink(p.previousStage.combinedFlags, sink);
         }
+        // 返回的是第一个Sink，第一个Sink持有第二个Sink，第二个Sink持有第三个Sink，以此类推
         return (Sink<P_IN>) sink;
     }
 
@@ -680,6 +704,8 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * @return a sink which accepts elements, perform the operation upon
      *         each element, and passes the results (if any) to the provided
      *         {@code Sink}.
+     *
+     * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
      */
     abstract Sink<E_IN> opWrapSink(int flags, Sink<E_OUT> sink);
 

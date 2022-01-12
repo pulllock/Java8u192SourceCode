@@ -264,6 +264,10 @@ interface Sink<T> extends Consumer<T> {
      * 创建Sink链，持有下一个Sink的引用
      */
     static abstract class ChainedReference<T, E_OUT> implements Sink<T> {
+
+        /**
+         * 当前Sink持有的下一个Sink
+         */
         protected final Sink<? super E_OUT> downstream;
 
         public ChainedReference(Sink<? super E_OUT> downstream) {

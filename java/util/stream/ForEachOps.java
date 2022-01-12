@@ -52,6 +52,8 @@ import java.util.function.LongConsumer;
  * prematurely terminated.
  *
  * @since 1.8
+ *
+ * 创建ForEachOp实例的工厂类
  */
 final class ForEachOps {
 
@@ -66,6 +68,8 @@ final class ForEachOps {
      * @param ordered whether an ordered traversal is requested
      * @param <T> the type of the stream elements
      * @return the {@code TerminalOp} instance
+     *
+     * 创建ForEachOp实例，ForEachOp是一个终止操作
      */
     public static <T> TerminalOp<T, Void> makeRef(Consumer<? super T> action,
                                                   boolean ordered) {
@@ -129,6 +133,8 @@ final class ForEachOps {
      * {@code TerminalSink} reference that is an instance of this class.
      *
      * @param <T> the output type of the stream pipeline
+     *
+     * for each操作
      */
     static abstract class ForEachOp<T>
             implements TerminalOp<T, Void>, TerminalSink<T, Void> {
@@ -145,12 +151,30 @@ final class ForEachOps {
             return ordered ? 0 : StreamOpFlag.NOT_ORDERED;
         }
 
+        /**
+         *
+         * @param helper the pipeline helper 调用ForEach这个Sink的Pipeline实例
+         * @param spliterator the source spliterator
+         * @param <S>
+         * @return
+         *
+         * 串行流的处理
+         */
         @Override
         public <S> Void evaluateSequential(PipelineHelper<T> helper,
                                            Spliterator<S> spliterator) {
             return helper.wrapAndCopyInto(this, spliterator).get();
         }
 
+        /**
+         *
+         * @param helper the pipeline helper
+         * @param spliterator the source spliterator
+         * @param <S>
+         * @return
+         *
+         * 并行流的处理
+         */
         @Override
         public <S> Void evaluateParallel(PipelineHelper<T> helper,
                                          Spliterator<S> spliterator) {
@@ -172,6 +196,7 @@ final class ForEachOps {
 
         /** Implementation class for reference streams */
         static final class OfRef<T> extends ForEachOp<T> {
+            // foreach的逻辑
             final Consumer<? super T> consumer;
 
             OfRef(Consumer<? super T> consumer, boolean ordered) {
@@ -185,7 +210,11 @@ final class ForEachOps {
             }
         }
 
-        /** Implementation class for {@code IntStream} */
+        /**
+         * Implementation class for {@code IntStream}
+         *
+         * 处理IntStream的ForEachOp
+         */
         static final class OfInt extends ForEachOp<Integer>
                 implements Sink.OfInt {
             final IntConsumer consumer;
@@ -206,7 +235,11 @@ final class ForEachOps {
             }
         }
 
-        /** Implementation class for {@code LongStream} */
+        /**
+         * Implementation class for {@code LongStream}
+         *
+         * 处理LongStream的ForEach
+         */
         static final class OfLong extends ForEachOp<Long>
                 implements Sink.OfLong {
             final LongConsumer consumer;
@@ -227,7 +260,11 @@ final class ForEachOps {
             }
         }
 
-        /** Implementation class for {@code DoubleStream} */
+        /**
+         * Implementation class for {@code DoubleStream}
+         *
+         * 处理DoubleStream的ForEach
+         */
         static final class OfDouble extends ForEachOp<Double>
                 implements Sink.OfDouble {
             final DoubleConsumer consumer;

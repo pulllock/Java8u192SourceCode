@@ -34,5 +34,7 @@ import java.util.function.Supplier;
  * @param <R> the type of the result
  *
  * @since 1.8
+ *
+ * 终止操作的Sink
  */
 interface TerminalSink<T, R> extends Sink<T>, Supplier<R> { }
