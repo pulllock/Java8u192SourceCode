@@ -367,6 +367,8 @@ final class SortedOps {
 
     /**
      * {@link Sink} for implementing sort on reference streams.
+     *
+     * 排序用的Sink
      */
     private static final class RefSortingSink<T> extends AbstractRefSortingSink<T> {
         private ArrayList<T> list;
@@ -375,32 +377,56 @@ final class SortedOps {
             super(sink, comparator);
         }
 
+        /**
+         *
+         * @param size
+         *
+         * 开始操作，需要在数据进入到Sink前调用，这里初始化一个ArrayList用来存放排序的元素
+         */
         @Override
         public void begin(long size) {
             if (size >= Nodes.MAX_ARRAY_SIZE)
                 throw new IllegalArgumentException(Nodes.BAD_SIZE);
+            // 初始化一个ArrayList用来存放排序的元素
             list = (size >= 0) ? new ArrayList<T>((int) size) : new ArrayList<T>();
         }
 
+        /**
+         * 结束操作，所有元素都处理完后调用，这里对元素进行排序
+         */
         @Override
         public void end() {
+            // 元素全部处理完后，开始排序
             list.sort(comparator);
+            // 调用下游Sink的begin方法
             downstream.begin(list.size());
+            // 下游Sink不包含短路操作，就将元素传递给下游的Sink的accept方法进行处理
             if (!cancellationWasRequested) {
                 list.forEach(downstream::accept);
             }
+            // 下游Sink包含短路操作
             else {
+                // 下游Sink每处理一个元素就判断下是否可以结束操作
                 for (T t : list) {
                     if (downstream.cancellationRequested()) break;
+                    // 下游Sink处理元素
                     downstream.accept(t);
                 }
             }
+            // 调用下游Sink的end方法
             downstream.end();
             list = null;
         }
 
+        /**
+         *
+         * @param t the input argument
+         *
+         * 接收并处理元素，这里将元素放到列表中
+         */
         @Override
         public void accept(T t) {
+            // 将元素放到列表中
             list.add(t);
         }
     }

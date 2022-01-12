@@ -641,6 +641,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         return evaluate(MatchOps.makeRef(predicate, MatchOps.MatchKind.NONE));
     }
 
+    /**
+     *
+     * @return
+     *
+     * 找到第一个，终止操作，短路操作
+     */
     @Override
     public final Optional<P_OUT> findFirst() {
         return evaluate(FindOps.makeRef(true));
@@ -666,6 +672,15 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         return evaluate(ReduceOps.makeRef(identity, accumulator, combiner));
     }
 
+    /**
+     *
+     * @param collector the {@code Collector} describing the reduction
+     * @param <R>
+     * @param <A>
+     * @return
+     *
+     * 收集，终止操作，非短路操作
+     */
     @Override
     @SuppressWarnings("unchecked")
     public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
@@ -685,6 +700,25 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                : collector.finisher().apply(container);
     }
 
+    /**
+     *
+     * @param supplier a function that creates a new result container. For a
+     *                 parallel execution, this function may be called
+     *                 multiple times and must return a fresh value each time.
+     * @param accumulator an <a href="package-summary.html#Associativity">associative</a>,
+     *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                    <a href="package-summary.html#Statelessness">stateless</a>
+     *                    function for incorporating an additional element into a result
+     * @param combiner an <a href="package-summary.html#Associativity">associative</a>,
+     *                    <a href="package-summary.html#NonInterference">non-interfering</a>,
+     *                    <a href="package-summary.html#Statelessness">stateless</a>
+     *                    function for combining two values, which must be
+     *                    compatible with the accumulator function
+     * @param <R>
+     * @return
+     *
+     * 收集，终止操作，非短路操作
+     */
     @Override
     public final <R> R collect(Supplier<R> supplier,
                                BiConsumer<R, ? super P_OUT> accumulator,
