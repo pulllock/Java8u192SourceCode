@@ -146,6 +146,15 @@ final class FindOps {
             return shape;
         }
 
+        /**
+         *
+         * @param helper the pipeline helper 调用FindOp这个Sink的Pipeline实例
+         * @param spliterator the source spliterator
+         * @param <S>
+         * @return
+         *
+         * 串行流的处理
+         */
         @Override
         public <S> O evaluateSequential(PipelineHelper<T> helper,
                                         Spliterator<S> spliterator) {
@@ -166,6 +175,8 @@ final class FindOps {
      *
      * @param <T> The type of input element
      * @param <O> The result type, typically an optional type
+     *
+     * find操作的Sink
      */
     private static abstract class FindSink<T, O> implements TerminalSink<T, O> {
         boolean hasValue;

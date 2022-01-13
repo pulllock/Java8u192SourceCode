@@ -50,6 +50,8 @@ final class DistinctOps {
      * @param <T> the type of both input and output elements
      * @param upstream a reference stream with element type T
      * @return the new stream
+     *
+     * 使用StatefulOp有状态的阶段对象来包装去重逻辑。
      */
     static <T> ReferencePipeline<T, T> makeRef(AbstractPipeline<?, T, ?> upstream) {
         return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
@@ -64,6 +66,14 @@ final class DistinctOps {
                 return Nodes.node(reduceOp.evaluateParallel(helper, spliterator));
             }
 
+            /**
+             * 并行计算，去除重复元素
+             * @param helper
+             * @param spliterator
+             * @param generator
+             * @param <P_IN>
+             * @return
+             */
             @Override
             <P_IN> Node<T> opEvaluateParallel(PipelineHelper<T> helper,
                                               Spliterator<P_IN> spliterator,
@@ -115,6 +125,15 @@ final class DistinctOps {
                 }
             }
 
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<T> opWrapSink(int flags, Sink<T> sink) {
                 Objects.requireNonNull(sink);
@@ -122,6 +141,7 @@ final class DistinctOps {
                 if (StreamOpFlag.DISTINCT.isKnown(flags)) {
                     return sink;
                 } else if (StreamOpFlag.SORTED.isKnown(flags)) {
+                    // 返回一个ChainedReference对象，持有下一个Sink
                     return new Sink.ChainedReference<T, T>(sink) {
                         boolean seenNull;
                         T lastSeen;
@@ -153,11 +173,16 @@ final class DistinctOps {
                         }
                     };
                 } else {
+                    // 返回一个ChainedReference对象，持有下一个Sink
                     return new Sink.ChainedReference<T, T>(sink) {
+                        /**
+                         * 存储去重后的元素的Set
+                         */
                         Set<T> seen;
 
                         @Override
                         public void begin(long size) {
+                            // 创建一个存储去重后的元素的Set
                             seen = new HashSet<>();
                             downstream.begin(-1);
                         }
@@ -170,8 +195,11 @@ final class DistinctOps {
 
                         @Override
                         public void accept(T t) {
+                            // 元素不在Set中
                             if (!seen.contains(t)) {
+                                // 元素加到Set中去
                                 seen.add(t);
+                                // 调用下一个Sink
                                 downstream.accept(t);
                             }
                         }

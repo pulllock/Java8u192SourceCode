@@ -110,6 +110,8 @@ final class SliceOps {
      * @param skip the number of elements to skip.  Must be >= 0.
      * @param limit the maximum size of the resulting stream, or -1 if no limit
      *        is to be imposed
+     *
+     * 使用StatefulOp有状态的阶段对象来包装截断逻辑。
      */
     public static <T> Stream<T> makeRef(AbstractPipeline<?, T, ?> upstream,
                                         long skip, long limit) {
@@ -185,10 +187,26 @@ final class SliceOps {
                 }
             }
 
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<T> opWrapSink(int flags, Sink<T> sink) {
                 return new Sink.ChainedReference<T, T>(sink) {
+                    /**
+                     * 要跳过的个数
+                     */
                     long n = skip;
+
+                    /**
+                     * 要保留的个数
+                     */
                     long m = limit >= 0 ? limit : Long.MAX_VALUE;
 
                     @Override

@@ -46,6 +46,8 @@ final class SortedOps {
      *
      * @param <T> the type of both input and output elements
      * @param upstream a reference stream with element type T
+     *
+     * 使用SortedOps.ofRef有状态的阶段对象来包装排序逻辑。
      */
     static <T> Stream<T> makeRef(AbstractPipeline<?, T, ?> upstream) {
         return new OfRef<>(upstream);
@@ -129,6 +131,15 @@ final class SortedOps {
             this.comparator = Objects.requireNonNull(comparator);
         }
 
+        /**
+         *
+         * @param flags The combined stream and operation flags up to, but not
+         *        including, this operation
+         * @param sink sink to which elements should be sent after processing
+         * @return
+         *
+         * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+         */
         @Override
         public Sink<T> opWrapSink(int flags, Sink<T> sink) {
             Objects.requireNonNull(sink);
@@ -371,6 +382,10 @@ final class SortedOps {
      * 排序用的Sink
      */
     private static final class RefSortingSink<T> extends AbstractRefSortingSink<T> {
+
+        /**
+         * 存放排序的元素
+         */
         private ArrayList<T> list;
 
         RefSortingSink(Sink<? super T> sink, Comparator<? super T> comparator) {

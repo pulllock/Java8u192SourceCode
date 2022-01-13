@@ -51,6 +51,8 @@ import java.util.function.IntFunction;
  *
  * @param <P_OUT> type of output elements from the pipeline
  * @since 1.8
+ *
+ * 主要定义操作管道的方法
  */
 abstract class PipelineHelper<P_OUT> {
 
@@ -58,6 +60,8 @@ abstract class PipelineHelper<P_OUT> {
      * Gets the stream shape for the source of the pipeline segment.
      *
      * @return the stream shape for the source of the pipeline segment.
+     *
+     * 获取流的类型
      */
     abstract StreamShape getSourceShape();
 

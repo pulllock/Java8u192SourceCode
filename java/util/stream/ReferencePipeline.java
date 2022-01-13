@@ -180,8 +180,18 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装过滤逻辑。
         return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SIZED) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
                     @Override
                     public void begin(long size) {
@@ -190,7 +200,9 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
                     @Override
                     public void accept(P_OUT u) {
+                        // 过滤逻辑
                         if (predicate.test(u))
+                            // 将filter逻辑过滤后的元素传给下一个Sink
                             downstream.accept(u);
                     }
                 };
@@ -213,10 +225,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
         // 映射的逻辑不能为空
         Objects.requireNonNull(mapper);
-        /*
-            使用StatelessOp无状态的阶段对象来包装映射逻辑。
-            new StateLessOp是新的阶段，this是当前阶段，所以新阶段的上一个阶段是当前阶段。
-         */
+        // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             /**
@@ -235,8 +244,8 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     @Override
                     public void accept(P_OUT u) {
                         /*
-                            mapper.apply(u)，是新阶段使用mapper来处理映射的逻辑。
-                            downstream.accept是将新阶段处理的结果传给下一个阶段
+                            mapper.apply(u)，是当前Sink使用mapper来处理映射的逻辑。
+                            downstream.accept是将当前Sink处理的结果传给下一个Sink
                          */
                         downstream.accept(mapper.apply(u));
                     }
@@ -260,11 +269,25 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new IntPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                               StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, Integer>(sink) {
                     @Override
                     public void accept(P_OUT u) {
+                         /*
+                            mapper.applyAsInt(u)，是当前Sink使用mapper来处理映射的逻辑。
+                            downstream.accept是将当前Sink处理的结果传给下一个Sink
+                         */
                         downstream.accept(mapper.applyAsInt(u));
                     }
                 };
@@ -287,11 +310,25 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new LongPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                       StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, Long>(sink) {
                     @Override
                     public void accept(P_OUT u) {
+                        /*
+                            mapper.applyAsLong(u)，是当前Sink使用mapper来处理映射的逻辑。
+                            downstream.accept是将当前Sink处理的结果传给下一个Sink
+                         */
                         downstream.accept(mapper.applyAsLong(u));
                     }
                 };
@@ -314,11 +351,25 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装映射逻辑。
         return new DoublePipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                         StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, Double>(sink) {
                     @Override
                     public void accept(P_OUT u) {
+                        /*
+                            mapper.applyAsDouble(u)，是当前Sink使用mapper来处理映射的逻辑。
+                            downstream.accept是将当前Sink处理的结果传给下一个Sink
+                         */
                         downstream.accept(mapper.applyAsDouble(u));
                     }
                 };
@@ -344,8 +395,18 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, R>(sink) {
                     @Override
                     public void begin(long size) {
@@ -382,8 +443,18 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new IntPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                               StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Integer> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, Integer>(sink) {
                     IntConsumer downstreamAsInt = downstream::accept;
                     @Override
@@ -421,8 +492,18 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new DoublePipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                                      StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Double> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, Double>(sink) {
                     DoubleConsumer downstreamAsDouble = downstream::accept;
                     @Override
@@ -460,8 +541,18 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装展平逻辑。
         return new LongPipeline.StatelessOp<P_OUT>(this, StreamShape.REFERENCE,
                                                    StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<Long> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, Long>(sink) {
                     LongConsumer downstreamAsLong = downstream::accept;
                     @Override
@@ -497,12 +588,24 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         // 使用StatelessOp无状态的阶段对象来包装peek逻辑。
         return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
                                      0) {
+            /**
+             *
+             * @param flags The combined stream and operation flags up to, but not
+             *        including, this operation
+             * @param sink sink to which elements should be sent after processing
+             * @return
+             *
+             * sink是下一个要执行的Sink，该方法是将下一个Sink放到当前Sink中，当前Sink处理完数据后，就可以调用下一个Sink继续处理
+             */
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
+                // 返回一个ChainedReference对象，持有下一个Sink
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
                     @Override
                     public void accept(P_OUT u) {
+                        // peek消费流
                         action.accept(u);
+                        // 调用下一个Sink
                         downstream.accept(u);
                     }
                 };
@@ -532,7 +635,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      */
     @Override
     public final Stream<P_OUT> sorted() {
-        // 使用StatefulOp有状态的阶段对象来包装排序逻辑。
+        // 使用SortedOps.ofRef有状态的阶段对象来包装排序逻辑。
         return SortedOps.makeRef(this);
     }
 
@@ -547,7 +650,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      */
     @Override
     public final Stream<P_OUT> sorted(Comparator<? super P_OUT> comparator) {
-        // 使用StatefulOp有状态的阶段对象来包装排序逻辑。
+        // 使用SortedOps.ofRef有状态的阶段对象来包装排序逻辑。
         return SortedOps.makeRef(this, comparator);
     }
 
