@@ -108,6 +108,8 @@ public abstract class SocketImpl implements SocketOptions {
      * @exception  IOException  if an I/O error occurs when attempting a
      *               connection.
      * @since 1.4
+     *
+     * 连接到指定的主机的端口上
      */
     protected abstract void connect(SocketAddress address, int timeout) throws IOException;
 

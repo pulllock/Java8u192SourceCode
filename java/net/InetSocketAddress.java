@@ -48,6 +48,8 @@ import java.io.ObjectStreamField;
  * @see java.net.Socket
  * @see java.net.ServerSocket
  * @since 1.4
+ *
+ * ip套接字地址
  */
 public class InetSocketAddress
     extends SocketAddress

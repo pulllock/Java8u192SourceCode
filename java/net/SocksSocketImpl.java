@@ -38,6 +38,8 @@ import sun.net.www.ParseUtil;
  * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
  * This is a subclass of PlainSocketImpl.
  * Note this class should <b>NOT</b> be public.
+ *
+ * socks协议的套接字实现
  */
 
 class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {

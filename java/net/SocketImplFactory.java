@@ -35,6 +35,8 @@ package java.net;
  * @see     java.net.Socket
  * @see     java.net.ServerSocket
  * @since   JDK1.0
+ *
+ * 套接字工厂
  */
 public
 interface SocketImplFactory {
@@ -43,6 +45,8 @@ interface SocketImplFactory {
      *
      * @return  a new instance of {@code SocketImpl}.
      * @see     java.net.SocketImpl
+     *
+     * 创建套接字实现
      */
     SocketImpl createSocketImpl();
 }

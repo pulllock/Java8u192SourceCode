@@ -49,27 +49,63 @@ import java.security.PrivilegedAction;
  * @see     java.net.SocketImpl
  * @see     java.nio.channels.SocketChannel
  * @since   JDK1.0
+ *
+ * 套接字
  */
 public
 class Socket implements java.io.Closeable {
     /**
      * Various states of this socket.
+     *
+     * 套接字的状态
+     */
+
+    /**
+     * 已创建
      */
     private boolean created = false;
+
+    /**
+     * 已绑定
+     */
     private boolean bound = false;
+
+    /**
+     * 已连接
+     */
     private boolean connected = false;
+
+    /**
+     * 已关闭
+     */
     private boolean closed = false;
+
+    /**
+     * 关闭锁
+     */
     private Object closeLock = new Object();
+
+    /**
+     * 读是否关闭
+     */
     private boolean shutIn = false;
+
+    /**
+     * 写是否关闭
+     */
     private boolean shutOut = false;
 
     /**
      * The implementation of this Socket.
+     *
+     * 套接字实现
      */
     SocketImpl impl;
 
     /**
      * Are we using an older SocketImpl?
+     *
+     * 是不是使用旧的版本
      */
     private boolean oldImpl = false;
 
@@ -111,6 +147,8 @@ class Socket implements java.io.Closeable {
      * @see java.net.Proxy
      *
      * @since   1.5
+     *
+     * 创建套接字，指定代理
      */
     public Socket(Proxy proxy) {
         // Create a copy of Proxy as a security measure
@@ -119,9 +157,12 @@ class Socket implements java.io.Closeable {
         }
         Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY
                                           : sun.net.ApplicationProxy.create(proxy);
+        // 代理类型
         Proxy.Type type = p.type();
+        // sockes代理或者http代理
         if (type == Proxy.Type.SOCKS || type == Proxy.Type.HTTP) {
             SecurityManager security = System.getSecurityManager();
+            // 套接字地址
             InetSocketAddress epoint = (InetSocketAddress) p.address();
             if (epoint.getAddress() != null) {
                 checkAddress (epoint.getAddress(), "Socket");
@@ -135,12 +176,15 @@ class Socket implements java.io.Closeable {
                     security.checkConnect(epoint.getAddress().getHostAddress(),
                                   epoint.getPort());
             }
+            // 根据类型创建代理实现
             impl = type == Proxy.Type.SOCKS ? new SocksSocketImpl(p)
                                             : new HttpConnectSocketImpl(p);
             impl.setSocket(this);
         } else {
+            // 直连
             if (p == Proxy.NO_PROXY) {
                 if (factory == null) {
+                    // 普通套接字实现
                     impl = new PlainSocketImpl();
                     impl.setSocket(this);
                 } else
@@ -204,6 +248,8 @@ class Socket implements java.io.Closeable {
      * @see        java.net.SocketImpl
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        SecurityManager#checkConnect
+     *
+     * 创建套接字实例，指定主机地址和端口号
      */
     public Socket(String host, int port)
         throws UnknownHostException, IOException
@@ -419,6 +465,13 @@ class Socket implements java.io.Closeable {
              new InetSocketAddress(0), stream);
     }
 
+    /**
+     *
+     * @param address
+     * @param localAddr
+     * @param stream 为true表示流套接字，使用TCP协议；为false表示使用数据报套接字，使用UDP协议
+     * @throws IOException
+     */
     private Socket(SocketAddress address, SocketAddress localAddr,
                    boolean stream) throws IOException {
         setImpl();
@@ -428,9 +481,13 @@ class Socket implements java.io.Closeable {
             throw new NullPointerException();
 
         try {
+            // 创建套接字
             createImpl(stream);
+            // 本地地址不为空
             if (localAddr != null)
+                // 绑定本地地址
                 bind(localAddr);
+            // 连接
             connect(address);
         } catch (IOException | IllegalArgumentException | SecurityException e) {
             try {
@@ -533,6 +590,8 @@ class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
      * @spec JSR-51
+     *
+     * 连接到服务端
      */
     public void connect(SocketAddress endpoint) throws IOException {
         connect(endpoint, 0);
@@ -554,6 +613,8 @@ class Socket implements java.io.Closeable {
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
      * @spec JSR-51
+     *
+     * 连接到服务端
      */
     public void connect(SocketAddress endpoint, int timeout) throws IOException {
         if (endpoint == null)
@@ -571,8 +632,11 @@ class Socket implements java.io.Closeable {
         if (!(endpoint instanceof InetSocketAddress))
             throw new IllegalArgumentException("Unsupported address type");
 
+        // ip套接字地址
         InetSocketAddress epoint = (InetSocketAddress) endpoint;
+        // ip地址
         InetAddress addr = epoint.getAddress ();
+        // 端口
         int port = epoint.getPort();
         checkAddress(addr, "connect");
 
@@ -583,9 +647,12 @@ class Socket implements java.io.Closeable {
             else
                 security.checkConnect(addr.getHostAddress(), port);
         }
+        // 套接字未创建
         if (!created)
+            // 创建套接字实现
             createImpl(true);
         if (!oldImpl)
+            // 连接到指定的主机的端口上
             impl.connect(epoint, timeout);
         else if (timeout == 0) {
             if (epoint.isUnresolved())
@@ -594,10 +661,13 @@ class Socket implements java.io.Closeable {
                 impl.connect(addr, port);
         } else
             throw new UnsupportedOperationException("SocketImpl.connect(addr, timeout)");
+        // 设置已连接状态
         connected = true;
         /*
          * If the socket was not bound before the connect, it is now because
          * the kernel will have picked an ephemeral port & a local address
+         *
+         * 设置已绑定状态
          */
         bound = true;
     }
@@ -619,6 +689,8 @@ class Socket implements java.io.Closeable {
      *
      * @since   1.4
      * @see #isBound
+     *
+     * 将套接字绑定到指定的地址的端口上
      */
     public void bind(SocketAddress bindpoint) throws IOException {
         if (isClosed())
@@ -628,20 +700,25 @@ class Socket implements java.io.Closeable {
 
         if (bindpoint != null && (!(bindpoint instanceof InetSocketAddress)))
             throw new IllegalArgumentException("Unsupported address type");
+        // ip套接字地址
         InetSocketAddress epoint = (InetSocketAddress) bindpoint;
         if (epoint != null && epoint.isUnresolved())
             throw new SocketException("Unresolved address");
         if (epoint == null) {
             epoint = new InetSocketAddress(0);
         }
+        // ip地址
         InetAddress addr = epoint.getAddress();
+        // 端口号
         int port = epoint.getPort();
         checkAddress (addr, "bind");
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkListen(port);
         }
+        // 将套接字绑定到指定的地址的端口上
         getImpl().bind (addr, port);
+        // 设置已绑定状态
         bound = true;
     }
 
@@ -684,6 +761,8 @@ class Socket implements java.io.Closeable {
      *
      * @return  the remote IP address to which this socket is connected,
      *          or {@code null} if the socket is not connected.
+     *
+     * 获取ip地址
      */
     public InetAddress getInetAddress() {
         if (!isConnected())
@@ -709,6 +788,8 @@ class Socket implements java.io.Closeable {
      * @since   JDK1.1
      *
      * @see SecurityManager#checkConnect
+     *
+     * 获取本地地址
      */
     public InetAddress getLocalAddress() {
         // This is for backward compatibility
@@ -716,14 +797,17 @@ class Socket implements java.io.Closeable {
             return InetAddress.anyLocalAddress();
         InetAddress in = null;
         try {
+            // 获取套接字本地绑定地址
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
             SecurityManager sm = System.getSecurityManager();
             if (sm != null)
                 sm.checkConnect(in.getHostAddress(), -1);
             if (in.isAnyLocalAddress()) {
+                // 本地地址
                 in = InetAddress.anyLocalAddress();
             }
         } catch (SecurityException e) {
+            // 回环地址
             in = InetAddress.getLoopbackAddress();
         } catch (Exception e) {
             in = InetAddress.anyLocalAddress(); // "0.0.0.0"
@@ -740,6 +824,8 @@ class Socket implements java.io.Closeable {
      *
      * @return  the remote port number to which this socket is connected, or
      *          0 if the socket is not connected yet.
+     *
+     * 获取端口号
      */
     public int getPort() {
         if (!isConnected())
@@ -761,6 +847,8 @@ class Socket implements java.io.Closeable {
      *
      * @return  the local port number to which this socket is bound or -1
      *          if the socket is not bound yet.
+     *
+     * 获取本地端口号
      */
     public int getLocalPort() {
         if (!isBound())
@@ -789,6 +877,8 @@ class Socket implements java.io.Closeable {
      * @see #connect(SocketAddress, int)
      * @see #connect(SocketAddress)
      * @since 1.4
+     *
+     * 获取远程的套接字地址
      */
     public SocketAddress getRemoteSocketAddress() {
         if (!isConnected())
@@ -824,6 +914,8 @@ class Socket implements java.io.Closeable {
      * @see #bind(SocketAddress)
      * @see SecurityManager#checkConnect
      * @since 1.4
+     *
+     * 获取本地的套接字地址
      */
 
     public SocketAddress getLocalSocketAddress() {
@@ -848,6 +940,8 @@ class Socket implements java.io.Closeable {
      *
      * @since 1.4
      * @spec JSR-51
+     *
+     * 获取套接字通道
      */
     public SocketChannel getChannel() {
         return null;
@@ -897,6 +991,8 @@ class Socket implements java.io.Closeable {
      *
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 获取套接字的输入流
      */
     public InputStream getInputStream() throws IOException {
         if (isClosed())
@@ -937,6 +1033,8 @@ class Socket implements java.io.Closeable {
      *               output stream or if the socket is not connected.
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 获取套接字的输出流
      */
     public OutputStream getOutputStream() throws IOException {
         if (isClosed())
@@ -973,6 +1071,8 @@ class Socket implements java.io.Closeable {
      * @since   JDK1.1
      *
      * @see #getTcpNoDelay()
+     *
+     * 设置TCP_NODELAY属性，true表示禁止使用Nagle算法，false表示使用Nagle算法
      */
     public void setTcpNoDelay(boolean on) throws SocketException {
         if (isClosed())
@@ -989,6 +1089,8 @@ class Socket implements java.io.Closeable {
      * in the underlying protocol, such as a TCP error.
      * @since   JDK1.1
      * @see #setTcpNoDelay(boolean)
+     *
+     * 后去TCP_NODELAY属性
      */
     public boolean getTcpNoDelay() throws SocketException {
         if (isClosed())
@@ -1010,10 +1112,14 @@ class Socket implements java.io.Closeable {
      * @exception IllegalArgumentException if the linger value is negative.
      * @since JDK1.1
      * @see #getSoLinger()
+     *
+     * 设置SO_LINGER属性，用来设置延迟关闭的时间，等待套接字发送缓冲区中的数据发送完成。
+     * on为true表示启用延时关闭，on为false表示不启用延时关闭
      */
     public void setSoLinger(boolean on, int linger) throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
+        // 不启用延时关闭
         if (!on) {
             getImpl().setOption(SocketOptions.SO_LINGER, new Boolean(on));
         } else {
@@ -1022,6 +1128,7 @@ class Socket implements java.io.Closeable {
             }
             if (linger > 65535)
                 linger = 65535;
+            // 设置延迟关闭时间
             getImpl().setOption(SocketOptions.SO_LINGER, new Integer(linger));
         }
     }
@@ -1038,6 +1145,8 @@ class Socket implements java.io.Closeable {
      * in the underlying protocol, such as a TCP error.
      * @since   JDK1.1
      * @see #setSoLinger(boolean, int)
+     *
+     * 获取SO_LINGER属性
      */
     public int getSoLinger() throws SocketException {
         if (isClosed())

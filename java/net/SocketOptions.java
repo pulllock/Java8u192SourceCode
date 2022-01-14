@@ -158,6 +158,8 @@ public interface SocketOptions {
      *
      * @see Socket#getLocalAddress
      * @see DatagramSocket#getLocalAddress
+     *
+     * 获取套接字的本地地址绑定，这个选项不能主动设置，只能获取，套接字创建的时候就已经绑定
      */
 
     @Native public final static int SO_BINDADDR = 0x000F;
@@ -236,6 +238,8 @@ public interface SocketOptions {
      *
      * @see Socket#setSoLinger
      * @see Socket#getSoLinger
+     *
+     * 设置延迟关闭时间，等待套接字发送缓冲区中的数据发送完成
      */
     @Native public final static int SO_LINGER = 0x0080;
 

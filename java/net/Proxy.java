@@ -34,6 +34,8 @@ package java.net;
  * @author Yingxian Wang
  * @author Jean-Christophe Collet
  * @since   1.5
+ *
+ * 代理
  */
 public class Proxy {
 
@@ -41,23 +43,38 @@ public class Proxy {
      * Represents the proxy type.
      *
      * @since 1.5
+     *
+     * 代理的类型
      */
     public enum Type {
         /**
          * Represents a direct connection, or the absence of a proxy.
+         *
+         * 直连
          */
         DIRECT,
         /**
          * Represents proxy for high level protocols such as HTTP or FTP.
+         *
+         * http代理
          */
         HTTP,
         /**
          * Represents a SOCKS (V4 or V5) proxy.
+         *
+         * sockes代理
          */
         SOCKS
     };
 
+    /**
+     * 代理类型
+     */
     private Type type;
+
+    /**
+     * 套接字地址
+     */
     private SocketAddress sa;
 
     /**
@@ -68,11 +85,13 @@ public class Proxy {
      * <P>
      * {@code Socket s = new Socket(Proxy.NO_PROXY);}
      *
+     * 无代理，直连
      */
     public final static Proxy NO_PROXY = new Proxy();
 
     // Creates the proxy that represents a {@code DIRECT} connection.
     private Proxy() {
+        // 直连
         type = Type.DIRECT;
         sa = null;
     }

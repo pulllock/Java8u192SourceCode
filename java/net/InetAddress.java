@@ -185,6 +185,8 @@ import sun.net.spi.nameservice.*;
  * @see     java.net.InetAddress#getByName(java.lang.String)
  * @see     java.net.InetAddress#getLocalHost()
  * @since JDK1.0
+ *
+ * ip地址
  */
 public
 class InetAddress implements java.io.Serializable {

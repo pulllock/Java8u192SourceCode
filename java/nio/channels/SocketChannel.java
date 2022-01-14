@@ -111,6 +111,8 @@ import java.nio.channels.spi.SelectorProvider;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 套接字通道
  */
 
 public abstract class SocketChannel

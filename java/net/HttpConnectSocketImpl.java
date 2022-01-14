@@ -39,6 +39,8 @@ import java.util.Set;
  * handler after the tunnel is successfully setup.
  *
  * @since 1.8
+ *
+ * 使用Http协议进行处理的套接字实现
  */
 
 /*package*/ class HttpConnectSocketImpl extends PlainSocketImpl {

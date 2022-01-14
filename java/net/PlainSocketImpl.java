@@ -39,6 +39,9 @@ import static sun.net.ExtendedOptionsImpl.*;
  * @author Chris Hegarty
  */
 
+/**
+ * 普通套接字实现
+ */
 class PlainSocketImpl extends AbstractPlainSocketImpl
 {
     static {
@@ -94,9 +97,22 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     native void socketCreate(boolean isServer) throws IOException;
 
+    /**
+     * 连接到指定地址的端口上
+     * @param address
+     * @param port
+     * @param timeout
+     * @throws IOException
+     */
     native void socketConnect(InetAddress address, int port, int timeout)
         throws IOException;
 
+    /**
+     * 将套接字绑定到指定的地址的端口上
+     * @param address
+     * @param port
+     * @throws IOException
+     */
     native void socketBind(InetAddress address, int port)
         throws IOException;
 

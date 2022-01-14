@@ -37,6 +37,8 @@ package java.net;
  * @see java.net.Socket
  * @see java.net.ServerSocket
  * @since 1.4
+ *
+ * 套接字地址，没有协议
  */
 public abstract class SocketAddress implements java.io.Serializable {
 

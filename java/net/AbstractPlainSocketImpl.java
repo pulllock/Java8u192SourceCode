@@ -172,6 +172,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * @throws  IllegalArgumentException if address is null or is a
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
+     *
+     * 连接到指定的主机的端口上
      */
     protected void connect(SocketAddress address, int timeout)
             throws IOException {
@@ -179,12 +181,16 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         try {
             if (address == null || !(address instanceof InetSocketAddress))
                 throw new IllegalArgumentException("unsupported address type");
+            // ip套接字地址
             InetSocketAddress addr = (InetSocketAddress) address;
             if (addr.isUnresolved())
                 throw new UnknownHostException(addr.getHostName());
+            // 端口
             this.port = addr.getPort();
+            // ip地址
             this.address = addr.getAddress();
 
+            // 连接到指定地址的端口上
             connectToAddress(this.address, port, timeout);
             connected = true;
         } finally {
@@ -199,10 +205,18 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         }
     }
 
+    /**
+     * 连接到指定地址的端口上
+     * @param address
+     * @param port
+     * @param timeout
+     * @throws IOException
+     */
     private void connectToAddress(InetAddress address, int port, int timeout) throws IOException {
         if (address.isAnyLocalAddress()) {
             doConnect(InetAddress.getLocalHost(), port, timeout);
         } else {
+            // 连接到指定地址的端口上
             doConnect(address, port, timeout);
         }
     }
@@ -336,6 +350,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * The workhorse of the connection operation.  Tries several times to
      * establish a connection to the given <host, port>.  If unsuccessful,
      * throws an IOException indicating what went wrong.
+     *
+     * 连接到指定地址的端口上
      */
 
     synchronized void doConnect(InetAddress address, int port, int timeout) throws IOException {
@@ -345,8 +361,10 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             }
         }
         try {
+            // 获取文件描述符
             acquireFD();
             try {
+                // 连接到指定地址的端口上，本地方法
                 socketConnect(address, port, timeout);
                 /* socket may have been closed during poll/select */
                 synchronized (fdLock) {
@@ -359,10 +377,13 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
                 // This is normally done in Socket.connect() but some
                 // subclasses of Socket may call impl.connect() directly!
                 if (socket != null) {
+                    // 设置绑定状态
                     socket.setBound();
+                    // 设置连接状态
                     socket.setConnected();
                 }
             } finally {
+                // 释放文件描述符
                 releaseFD();
             }
         } catch (IOException e) {
@@ -375,6 +396,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      * Binds the socket to the specified address of the specified local port.
      * @param address the address
      * @param lport the port
+     *
+     * 将套接字绑定到指定的地址的端口上
      */
     protected synchronized void bind(InetAddress address, int lport)
         throws IOException
@@ -384,10 +407,13 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
                 NetHooks.beforeTcpBind(fd, address, lport);
             }
         }
+        // 将套接字绑定到指定的地址的端口上
         socketBind(address, lport);
         if (socket != null)
+            // 设置套接字的已绑定状态
             socket.setBound();
         if (serverSocket != null)
+            // 设置服务端套接字已绑定状态
             serverSocket.setBound();
     }
 
