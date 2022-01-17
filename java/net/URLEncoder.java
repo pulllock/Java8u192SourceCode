@@ -78,8 +78,13 @@ import sun.security.action.GetPropertyAction;
  *
  * @author  Herb Jellinek
  * @since   JDK1.0
+ *
+ * URL编码器
  */
 public class URLEncoder {
+    /**
+     * 不需要进行编码的字符
+     */
     static BitSet dontNeedEncoding;
     static final int caseDiff = ('a' - 'A');
     static String dfltEncName = null;
@@ -124,15 +129,19 @@ public class URLEncoder {
 
         dontNeedEncoding = new BitSet(256);
         int i;
+        // a~z不需要编码
         for (i = 'a'; i <= 'z'; i++) {
             dontNeedEncoding.set(i);
         }
+        // A~Z不需要编码
         for (i = 'A'; i <= 'Z'; i++) {
             dontNeedEncoding.set(i);
         }
+        // 0~9不需要编码
         for (i = '0'; i <= '9'; i++) {
             dontNeedEncoding.set(i);
         }
+        // 空格不需要编码？
         dontNeedEncoding.set(' '); /* encoding a space to a + is done
                                     * in the encode() method */
         dontNeedEncoding.set('-');
@@ -196,11 +205,18 @@ public class URLEncoder {
      *             If the named encoding is not supported
      * @see URLDecoder#decode(java.lang.String, java.lang.String)
      * @since 1.4
+     *
+     * 编码
+     *
+     * a~z、A~Z、0~9、.、-、_、*都保持不变
+     * 空格转化为+
+     * 其他的字符需要转换为字节，然后每个字节使用%xy的形式表示，xy为字节的十六进制表示形式
      */
     public static String encode(String s, String enc)
         throws UnsupportedEncodingException {
 
         boolean needToChange = false;
+        // 存储编码后的url
         StringBuffer out = new StringBuffer(s.length());
         Charset charset;
         CharArrayWriter charArrayWriter = new CharArrayWriter();
@@ -220,11 +236,13 @@ public class URLEncoder {
             int c = (int) s.charAt(i);
             //System.out.println("Examining character: " + c);
             if (dontNeedEncoding.get(c)) {
+                // 空格转成+
                 if (c == ' ') {
                     c = '+';
                     needToChange = true;
                 }
                 //System.out.println("Storing: " + c);
+                // 不需要编码的字符直接拼接到out上
                 out.append((char)c);
                 i++;
             } else {

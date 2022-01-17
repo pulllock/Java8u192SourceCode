@@ -428,12 +428,17 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
     /**
      * Accepts connections.
      * @param s the connection
+     *
+     * 接收连接
      */
     protected void accept(SocketImpl s) throws IOException {
+        // 获取文件描述符
         acquireFD();
         try {
+            // 接收连接
             socketAccept(s);
         } finally {
+            // 释放文件描述符
             releaseFD();
         }
     }
@@ -490,6 +495,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
 
     /**
      * Returns the number of bytes that can be read without blocking.
+     *
+     * 返回剩余可读字节数
      */
     protected synchronized int available() throws IOException {
         if (isClosedOrPending()) {
@@ -631,6 +638,8 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      *
      * A corresponding releaseFD is required to "release" the
      * FileDescriptor.
+     *
+     * 获取文件描述符
      */
     FileDescriptor acquireFD() {
         synchronized (fdLock) {
@@ -733,6 +742,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         throws IOException;
     abstract void socketListen(int count)
         throws IOException;
+
+    /**
+     * 接收连接
+     * @param s
+     * @throws IOException
+     */
     abstract void socketAccept(SocketImpl s)
         throws IOException;
     abstract int socketAvailable()

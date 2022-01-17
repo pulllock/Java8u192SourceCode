@@ -136,6 +136,8 @@ import sun.security.util.SecurityConstants;
  *
  * @author  James Gosling
  * @since JDK1.0
+ *
+ * 统一资源定位符
  */
 public final class URL implements java.io.Serializable {
 
@@ -159,18 +161,24 @@ public final class URL implements java.io.Serializable {
     /**
      * The protocol to use (ftp, http, nntp, ... etc.) .
      * @serial
+     *
+     * 协议
      */
     private String protocol;
 
     /**
      * The host name to connect to.
      * @serial
+     *
+     * 主机名
      */
     private String host;
 
     /**
      * The protocol port to connect to.
      * @serial
+     *
+     * 端口
      */
     private int port = -1;
 
@@ -178,44 +186,60 @@ public final class URL implements java.io.Serializable {
      * The specified file name on that host. {@code file} is
      * defined as {@code path[?query]}
      * @serial
+     *
+     * 文件路径
      */
     private String file;
 
     /**
      * The query part of this URL.
+     *
+     * 查询串
      */
     private transient String query;
 
     /**
      * The authority part of this URL.
      * @serial
+     *
+     * 登录信息
      */
     private String authority;
 
     /**
      * The path part of this URL.
+     *
+     * 路径
      */
     private transient String path;
 
     /**
      * The userinfo part of this URL.
+     *
+     * 用户信息
      */
     private transient String userInfo;
 
     /**
      * # reference.
      * @serial
+     *
+     * 锚点
      */
     private String ref;
 
     /**
      * The host's IP address, used in equals and hashCode.
      * Computed on demand. An uninitialized or unknown hostAddress is null.
+     *
+     * 主机的ip地址
      */
     transient InetAddress hostAddress;
 
     /**
      * The URLStreamHandler for this URL.
+     *
+     * 流处理器
      */
     transient URLStreamHandler handler;
 
@@ -224,6 +248,9 @@ public final class URL implements java.io.Serializable {
      */
     private int hashCode = -1;
 
+    /**
+     * 存储反序列化对象
+     */
     private transient UrlDeserializedState tempState;
 
     /**
@@ -382,6 +409,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
+        // 协议名，转成小写的
         protocol = protocol.toLowerCase();
         this.protocol = protocol;
         if (host != null) {
@@ -403,8 +431,11 @@ public final class URL implements java.io.Serializable {
             authority = (port == -1) ? host : host + ":" + port;
         }
 
+        // URL的一部分，包含：路径、查询串、锚点
         Parts parts = new Parts(file);
+        // 路径
         path = parts.getPath();
+        // 查询串
         query = parts.getQuery();
 
         if (query != null) {
@@ -417,6 +448,7 @@ public final class URL implements java.io.Serializable {
         // Note: we don't do validation of the URL here. Too risky to change
         // right now, but worth considering for future reference. -br
         if (handler == null &&
+                // 根据协议获取流处理器
             (handler = getURLStreamHandler(protocol)) == null) {
             throw new MalformedURLException("unknown protocol: " + protocol);
         }
@@ -974,6 +1006,8 @@ public final class URL implements java.io.Serializable {
      * @exception  IOException  if an I/O exception occurs.
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *             int, java.lang.String)
+     *
+     * 打开URL资源连接
      */
     public URLConnection openConnection() throws java.io.IOException {
         return handler.openConnection(this);
@@ -1007,6 +1041,8 @@ public final class URL implements java.io.Serializable {
      * @see        java.net.URLStreamHandler#openConnection(java.net.URL,
      *             java.net.Proxy)
      * @since      1.5
+     *
+     * 打开URL资源连接，使用指定的代理
      */
     public URLConnection openConnection(Proxy proxy)
         throws java.io.IOException {
@@ -1040,6 +1076,8 @@ public final class URL implements java.io.Serializable {
      * @exception  IOException  if an I/O exception occurs.
      * @see        java.net.URL#openConnection()
      * @see        java.net.URLConnection#getInputStream()
+     *
+     * 打开一个URL连接，返回输入流
      */
     public final InputStream openStream() throws java.io.IOException {
         return openConnection().getInputStream();
@@ -1054,6 +1092,8 @@ public final class URL implements java.io.Serializable {
      * @return     the contents of this URL.
      * @exception  IOException  if an I/O exception occurs.
      * @see        java.net.URLConnection#getContent()
+     *
+     * 打开一个URL连接，返回内容
      */
     public final Object getContent() throws java.io.IOException {
         return openConnection().getContent();
@@ -1072,6 +1112,8 @@ public final class URL implements java.io.Serializable {
      * @exception  IOException  if an I/O exception occurs.
      * @see        java.net.URLConnection#getContent(Class[])
      * @since 1.3
+     *
+     * 打开一个URL连接，返回内容
      */
     public final Object getContent(Class[] classes)
     throws java.io.IOException {
@@ -1080,6 +1122,8 @@ public final class URL implements java.io.Serializable {
 
     /**
      * The URLStreamHandler factory.
+     *
+     * 流处理器工厂
      */
     static URLStreamHandlerFactory factory;
 
@@ -1122,16 +1166,25 @@ public final class URL implements java.io.Serializable {
 
     /**
      * A table of protocol handlers.
+     *
+     * 缓存协议和流处理器关系
      */
     static Hashtable<String,URLStreamHandler> handlers = new Hashtable<>();
+
+    /**
+     * 流处理器锁
+     */
     private static Object streamHandlerLock = new Object();
 
     /**
      * Returns the Stream Handler.
      * @param protocol the protocol to use
+     *
+     * 获取协议对应的流处理器
      */
     static URLStreamHandler getURLStreamHandler(String protocol) {
 
+        // 缓存中获取
         URLStreamHandler handler = handlers.get(protocol);
         if (handler == null) {
 
@@ -1424,16 +1477,23 @@ public final class URL implements java.io.Serializable {
     }
 }
 
+/**
+ * URL的一部分，包含：路径、查询串、锚点
+ */
 class Parts {
     String path, query, ref;
 
     Parts(String file) {
         int ind = file.indexOf('#');
+        // #后面是锚点
         ref = ind < 0 ? null: file.substring(ind + 1);
+        // #前面是查询串和路径
         file = ind < 0 ? file: file.substring(0, ind);
         int q = file.lastIndexOf('?');
         if (q != -1) {
+            // ?后面是查询串
             query = file.substring(q+1);
+            // ?前面是路径
             path = file.substring(0, q);
         } else {
             path = file;

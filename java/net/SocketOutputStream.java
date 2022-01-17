@@ -37,6 +37,8 @@ import java.nio.channels.FileChannel;
  *
  * @author      Jonathan Payne
  * @author      Arthur van Hoff
+ *
+ * 套接字输出流
  */
 class SocketOutputStream extends FileOutputStream
 {
@@ -44,6 +46,9 @@ class SocketOutputStream extends FileOutputStream
         init();
     }
 
+    /**
+     * 套接字实现
+     */
     private AbstractPlainSocketImpl impl = null;
     private byte temp[] = new byte[1];
     private Socket socket = null;

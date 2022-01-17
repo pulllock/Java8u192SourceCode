@@ -62,24 +62,48 @@ import java.security.PrivilegedExceptionAction;
  * @see     java.net.DatagramPacket
  * @see     java.nio.channels.DatagramChannel
  * @since JDK1.0
+ *
+ * 数据报套接字
  */
 public
 class DatagramSocket implements java.io.Closeable {
     /**
      * Various states of this socket.
+     *
+     * 套接字状态
+     */
+
+    /**
+     * 已创建
      */
     private boolean created = false;
+
+    /**
+     * 已绑定
+     */
     private boolean bound = false;
+
+    /**
+     * 已关闭
+     */
     private boolean closed = false;
+
+    /**
+     * 关闭锁
+     */
     private Object closeLock = new Object();
 
     /*
      * The implementation of this DatagramSocket.
+     *
+     * 数据报套接字实现
      */
     DatagramSocketImpl impl;
 
     /**
      * Are we using an older DatagramSocketImpl?
+     *
+     * 是否使用旧的实现
      */
     boolean oldImpl = false;
 
@@ -91,8 +115,14 @@ class DatagramSocket implements java.io.Closeable {
      * address of all packets received to be sure they are from
      * the connected destination. Other packets are read but
      * silently dropped.
+     *
+     * 是否需要显式校验过滤数据
      */
     private boolean explicitFilter = false;
+
+    /**
+     * 需要校验过滤的字节数
+     */
     private int bytesLeftToFilter;
     /*
      * Connection state:
@@ -100,16 +130,38 @@ class DatagramSocket implements java.io.Closeable {
      * ST_CONNECTED = socket connected
      * ST_CONNECTED_NO_IMPL = socket connected but not at impl level
      */
+
+    /**
+     * 未连接
+     */
     static final int ST_NOT_CONNECTED = 0;
+
+    /**
+     * 已连接
+     */
     static final int ST_CONNECTED = 1;
+
+    /**
+     * 模拟已连接，通常是发起了连接操作，但是连接失败了，或者是本地禁止了连接
+     */
     static final int ST_CONNECTED_NO_IMPL = 2;
 
+    /**
+     * UDP套接字初始化为未连接
+     */
     int connectState = ST_NOT_CONNECTED;
 
     /*
      * Connected address & port
      */
+    /**
+     * 远端连接的IP
+     */
     InetAddress connectedAddress = null;
+
+    /**
+     * 远端连接的端口
+     */
     int connectedPort = -1;
 
     /**
@@ -119,6 +171,8 @@ class DatagramSocket implements java.io.Closeable {
      * @param   address The remote address.
      * @param   port    The remote port
      * @throws  SocketException if binding the socket fails.
+     *
+     * 连接到远端套接字地址上
      */
     private synchronized void connectInternal(InetAddress address, int port) throws SocketException {
         if (port < 0 || port > 0xFFFF) {
@@ -140,6 +194,7 @@ class DatagramSocket implements java.io.Closeable {
             }
         }
 
+        // 绑定操作
         if (!isBound())
           bind(new InetSocketAddress(0));
 
@@ -149,6 +204,7 @@ class DatagramSocket implements java.io.Closeable {
             connectState = ST_CONNECTED_NO_IMPL;
         } else {
             try {
+                // 连接操作
                 getImpl().connect(address, port);
 
                 // socket is now connected by the impl
@@ -239,6 +295,7 @@ class DatagramSocket implements java.io.Closeable {
         createImpl();
         if (bindaddr != null) {
             try {
+                // 绑定到指定的本地地址上
                 bind(bindaddr);
             } finally {
                 if (!isBound())
@@ -368,6 +425,8 @@ class DatagramSocket implements java.io.Closeable {
      * @throws IllegalArgumentException if addr is a SocketAddress subclass
      *         not supported by this socket.
      * @since 1.4
+     *
+     * 绑定操作
      */
     public synchronized void bind(SocketAddress addr) throws SocketException {
         if (isClosed())
@@ -381,7 +440,9 @@ class DatagramSocket implements java.io.Closeable {
         InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
+        // 地址
         InetAddress iaddr = epoint.getAddress();
+        // 端口号
         int port = epoint.getPort();
         checkAddress(iaddr, "bind");
         SecurityManager sec = System.getSecurityManager();
@@ -389,6 +450,7 @@ class DatagramSocket implements java.io.Closeable {
             sec.checkListen(port);
         }
         try {
+            // 绑定到指定的ip的端口上
             getImpl().bind(port, iaddr);
         } catch (SocketException e) {
             getImpl().close();
@@ -452,6 +514,8 @@ class DatagramSocket implements java.io.Closeable {
      *         not permit access to the given remote address
      *
      * @see #disconnect
+     *
+     * 连接操作
      */
     public void connect(InetAddress address, int port) {
         try {
@@ -482,6 +546,8 @@ class DatagramSocket implements java.io.Closeable {
      *         not permit access to the given remote address
      *
      * @since 1.4
+     *
+     * 连接操作
      */
     public void connect(SocketAddress addr) throws SocketException {
         if (addr == null)
@@ -499,6 +565,8 @@ class DatagramSocket implements java.io.Closeable {
      * then this method has no effect.
      *
      * @see #connect
+     *
+     * 断开连接操作
      */
     public void disconnect() {
         synchronized (this) {
@@ -650,6 +718,8 @@ class DatagramSocket implements java.io.Closeable {
      * @see        SecurityManager#checkConnect
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 向远端发送UDP数据包
      */
     public void send(DatagramPacket p) throws IOException  {
         InetAddress packetAddress = null;
@@ -690,6 +760,7 @@ class DatagramSocket implements java.io.Closeable {
             if (!isBound())
                 bind(new InetSocketAddress(0));
             // call the  method to send
+            // 发送
             getImpl().send(p);
         }
     }
@@ -724,6 +795,8 @@ class DatagramSocket implements java.io.Closeable {
      * @see        java.net.DatagramSocket
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 从远端接收UDP数据包
      */
     public synchronized void receive(DatagramPacket p) throws IOException {
         synchronized (p) {
@@ -809,6 +882,7 @@ class DatagramSocket implements java.io.Closeable {
             }
             // If the security check succeeds, or the datagram is
             // connected then receive the packet
+            // 接收数据包
             getImpl().receive(p);
             if (explicitFilter && tmp == null) {
                 // packet was not filtered, account for it here
@@ -1225,6 +1299,8 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 关闭
      */
     public void close() {
         synchronized(closeLock) {

@@ -73,6 +73,8 @@ import java.io.*;
  * @author  Mark Chamness
  * @author  Michael McCloskey
  * @since   1.2
+ *
+ * URL解码器
  */
 
 public class URLDecoder {
@@ -128,6 +130,15 @@ public class URLDecoder {
      *             named character encoding is not supported
      * @see URLEncoder#encode(java.lang.String, java.lang.String)
      * @since 1.4
+     *
+     * 解码
+     *
+     * 编码的时候如下规则：
+     * a~z、A~Z、0~9、.、-、_、*都保持不变
+     * 空格转化为+
+     * 其他的字符需要转换为字节，然后每个字节使用%xy的形式表示，xy为字节的十六进制表示形式
+     *
+     * 解码需要将+变为空格，将%xy十六进制表示的形式转换为原来字符
      */
     public static String decode(String s, String enc)
         throws UnsupportedEncodingException{

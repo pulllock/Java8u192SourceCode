@@ -459,6 +459,8 @@ import java.lang.NullPointerException;  // for javadoc
  * href="http://www.ietf.org/rfc/rfc2732.txt"><i>RFC&nbsp;2732: Format for
  * Literal IPv6 Addresses in URLs</i></a>, <br><a
  * href="URISyntaxException.html">URISyntaxException</a>
+ *
+ * 统一资源标志符
  */
 
 public final class URI

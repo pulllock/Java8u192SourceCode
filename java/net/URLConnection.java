@@ -156,6 +156,8 @@ import sun.net.www.MessageHeader;
  * @see     java.net.URLConnection#setRequestProperty(java.lang.String, java.lang.String)
  * @see     java.net.URLConnection#setUseCaches(boolean)
  * @since   JDK1.0
+ *
+ * URL连接
  */
 public abstract class URLConnection {
 
@@ -171,6 +173,8 @@ public abstract class URLConnection {
      *
      * @see     java.net.URLConnection#getURL()
      * @see     java.net.URLConnection#url
+    *
+    * URL
      */
     protected URL url;
 
@@ -186,6 +190,8 @@ public abstract class URLConnection {
      *
      * @see     java.net.URLConnection#getDoInput()
      * @see     java.net.URLConnection#setDoInput(boolean)
+    *
+    * 是否允许从当前URL资源连接读取数据
      */
     protected boolean doInput = true;
 
@@ -201,6 +207,8 @@ public abstract class URLConnection {
      *
      * @see     java.net.URLConnection#getDoOutput()
      * @see     java.net.URLConnection#setDoOutput(boolean)
+    *
+    * 是否允许向当前URL资源连接写入数据
      */
     protected boolean doOutput = false;
 
@@ -268,22 +276,34 @@ public abstract class URLConnection {
      * If {@code false}, this connection object has not created a
      * communications link to the specified URL. If {@code true},
      * the communications link has been established.
+    *
+    * 是否已建立连接
      */
     protected boolean connected = false;
 
     /**
      * @since 1.5
+     *
+     * 连接超时时间
      */
     private int connectTimeout;
+
+    /**
+     * 读超时时间
+     */
     private int readTimeout;
 
     /**
      * @since 1.6
+     *
+     * 请求信息
      */
     private MessageHeader requests;
 
    /**
     * @since   JDK1.1
+    *
+    * 文件名到MIME类型的映射
     */
     private static FileNameMap fileNameMap;
 
@@ -360,6 +380,8 @@ public abstract class URLConnection {
      * @see java.net.URLConnection#connected
      * @see #getConnectTimeout()
      * @see #setConnectTimeout(int)
+     *
+     * 连接
      */
     abstract public void connect() throws IOException;
 
@@ -1193,6 +1215,8 @@ public abstract class URLConnection {
 
     /**
      * The ContentHandler factory.
+     *
+     * 内容处理器工厂
      */
     static ContentHandlerFactory factory;
 
@@ -1227,6 +1251,9 @@ public abstract class URLConnection {
         factory = fac;
     }
 
+    /**
+     * MIME类型到内容处理器的映射
+     */
     private static Hashtable<String, ContentHandler> handlers = new Hashtable<>();
 
     /**

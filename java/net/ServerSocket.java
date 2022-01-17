@@ -47,24 +47,48 @@ import java.security.PrivilegedExceptionAction;
  * @see     java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
  * @see     java.nio.channels.ServerSocketChannel
  * @since   JDK1.0
+ *
+ * 服务端套接字
  */
 public
 class ServerSocket implements java.io.Closeable {
     /**
      * Various states of this socket.
+     *
+     * 套接字的状态
+     */
+
+    /**
+     * 已创建
      */
     private boolean created = false;
+
+    /**
+     * 已绑定
+     */
     private boolean bound = false;
+
+    /**
+     * 已关闭
+     */
     private boolean closed = false;
+
+    /**
+     * 关闭锁
+     */
     private Object closeLock = new Object();
 
     /**
      * The implementation of this Socket.
+     *
+     * 套接字的实现
      */
     private SocketImpl impl;
 
     /**
      * Are we using an older SocketImpl?
+     *
+     * 是不是使用旧的实现
      */
     private boolean oldImpl = false;
 
@@ -82,6 +106,8 @@ class ServerSocket implements java.io.Closeable {
      *
      * @exception IOException IO error when opening the socket.
      * @revised 1.4
+     *
+     * 创建一个未绑定的服务端套接字
      */
     public ServerSocket() throws IOException {
         setImpl();
@@ -123,6 +149,8 @@ class ServerSocket implements java.io.Closeable {
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
      * @see        SecurityManager#checkListen
+     *
+     * 创建服务端套接字，指定端口号，默认的backlog为50
      */
     public ServerSocket(int port) throws IOException {
         this(port, 50, null);
@@ -176,6 +204,8 @@ class ServerSocket implements java.io.Closeable {
      * @see        java.net.SocketImplFactory#createSocketImpl()
      * @see        java.net.ServerSocket#setSocketFactory(java.net.SocketImplFactory)
      * @see        SecurityManager#checkListen
+     *
+     * 创建服务端套接字，指定端口和backlog（请求连接队列的最大长度）
      */
     public ServerSocket(int port, int backlog) throws IOException {
         this(port, backlog, null);
@@ -225,6 +255,8 @@ class ServerSocket implements java.io.Closeable {
      * @see SocketImpl
      * @see SecurityManager#checkListen
      * @since   JDK1.1
+     *
+     * 创建服务端套接字，指定端口、backlog、绑定的本地ip地址
      */
     public ServerSocket(int port, int backlog, InetAddress bindAddr) throws IOException {
         setImpl();
@@ -234,6 +266,7 @@ class ServerSocket implements java.io.Closeable {
         if (backlog < 1)
           backlog = 50;
         try {
+            // 绑定到指定地址的端口上
             bind(new InetSocketAddress(bindAddr, port), backlog);
         } catch(SecurityException e) {
             close();
@@ -353,6 +386,8 @@ class ServerSocket implements java.io.Closeable {
      * @throws  IllegalArgumentException if endpoint is a
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
+     *
+     * 绑定到指定地址的端口上
      */
     public void bind(SocketAddress endpoint, int backlog) throws IOException {
         if (isClosed())
@@ -372,8 +407,11 @@ class ServerSocket implements java.io.Closeable {
             SecurityManager security = System.getSecurityManager();
             if (security != null)
                 security.checkListen(epoint.getPort());
+            // 绑定
             getImpl().bind(epoint.getAddress(), epoint.getPort());
+            // 监听，并指定请求连接队列的最大长度
             getImpl().listen(backlog);
+            // 设置已绑定状态
             bound = true;
         } catch(SecurityException e) {
             bound = false;
@@ -503,13 +541,17 @@ class ServerSocket implements java.io.Closeable {
      * @see SecurityManager#checkAccept
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 接收客户端连接
      */
     public Socket accept() throws IOException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         if (!isBound())
             throw new SocketException("Socket is not bound yet");
+        // 创建一个套接字
         Socket s = new Socket((SocketImpl) null);
+        // 接收客户端连接
         implAccept(s);
         return s;
     }
@@ -529,6 +571,8 @@ class ServerSocket implements java.io.Closeable {
      * @since   JDK1.1
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 接收客户端连接
      */
     protected final void implAccept(Socket s) throws IOException {
         SocketImpl si = null;
@@ -538,10 +582,12 @@ class ServerSocket implements java.io.Closeable {
             else {
                 s.impl.reset();
             }
+            // 套接字实现
             si = s.impl;
             s.impl = null;
             si.address = new InetAddress();
             si.fd = new FileDescriptor();
+            // 接收客户端连接
             getImpl().accept(si);
 
             SecurityManager security = System.getSecurityManager();
@@ -561,6 +607,7 @@ class ServerSocket implements java.io.Closeable {
             throw e;
         }
         s.impl = si;
+        // 更新已连接、已绑定、已创建状态
         s.postAccept();
     }
 
@@ -645,6 +692,8 @@ class ServerSocket implements java.io.Closeable {
      * the underlying protocol, such as a TCP error.
      * @since   JDK1.1
      * @see #getSoTimeout()
+     *
+     * 设置超时时间
      */
     public synchronized void setSoTimeout(int timeout) throws SocketException {
         if (isClosed())
@@ -659,6 +708,8 @@ class ServerSocket implements java.io.Closeable {
      * @exception IOException if an I/O error occurs
      * @since   JDK1.1
      * @see #setSoTimeout(int)
+     *
+     * 获取超时时间
      */
     public synchronized int getSoTimeout() throws IOException {
         if (isClosed())
@@ -765,6 +816,8 @@ class ServerSocket implements java.io.Closeable {
 
     /**
      * The factory for all server sockets.
+     *
+     * 服务端套接字实现工厂
      */
     private static SocketImplFactory factory = null;
 

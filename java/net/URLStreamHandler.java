@@ -48,6 +48,8 @@ import sun.net.www.ParseUtil;
  * @author  James Gosling
  * @see     java.net.URL#URL(java.lang.String, java.lang.String, int, java.lang.String)
  * @since   JDK1.0
+ *
+ * URL流处理器
  */
 public abstract class URLStreamHandler {
     /**
@@ -67,6 +69,8 @@ public abstract class URLStreamHandler {
      * @return     a {@code URLConnection} object for the {@code URL}.
      * @exception  IOException  if an I/O error occurs while opening the
      *               connection.
+     *
+     * 打开URL资源连接
      */
     abstract protected URLConnection openConnection(URL u) throws IOException;
 
@@ -91,6 +95,8 @@ public abstract class URLStreamHandler {
      * @exception  UnsupportedOperationException if the subclass that
      *               implements the protocol doesn't support this method.
      * @since      1.5
+     *
+     * 打开URL资源连接
      */
     protected URLConnection openConnection(URL u, Proxy p) throws IOException {
         throw new UnsupportedOperationException("Method not implemented.");
@@ -120,6 +126,8 @@ public abstract class URLStreamHandler {
      *                  end of the string or the position of the
      *                  "{@code #}" character, if present. All information
      *                  after the sharp sign indicates an anchor.
+     *
+     * 解析URL
      */
     protected void parseURL(URL u, String spec, int start, int limit) {
         // These fields may receive context content if this was relative URL

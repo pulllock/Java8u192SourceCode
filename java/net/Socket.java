@@ -1240,6 +1240,8 @@ class Socket implements java.io.Closeable {
      * in the underlying protocol, such as a TCP error.
      * @since   JDK 1.1
      * @see #getSoTimeout()
+     *
+     * 设置超时时间
      */
     public synchronized void setSoTimeout(int timeout) throws SocketException {
         if (isClosed())
@@ -1260,6 +1262,8 @@ class Socket implements java.io.Closeable {
      *
      * @since   JDK1.1
      * @see #setSoTimeout(int)
+     *
+     * 获取超时时间
      */
     public synchronized int getSoTimeout() throws SocketException {
         if (isClosed())
@@ -1295,6 +1299,8 @@ class Socket implements java.io.Closeable {
      *
      * @see #getSendBufferSize()
      * @since 1.2
+     *
+     * 设置SO_SNDBUF选项，设置发送缓冲区大小
      */
     public synchronized void setSendBufferSize(int size)
     throws SocketException{
@@ -1318,6 +1324,8 @@ class Socket implements java.io.Closeable {
      *
      * @see #setSendBufferSize(int)
      * @since 1.2
+     *
+     * 获取发送缓冲区大小
      */
     public synchronized int getSendBufferSize() throws SocketException {
         if (isClosed())
@@ -1369,6 +1377,8 @@ class Socket implements java.io.Closeable {
      * @see #getReceiveBufferSize()
      * @see ServerSocket#setReceiveBufferSize(int)
      * @since 1.2
+     *
+     * 设置SO_RCVBUF选项，设置接收缓冲区大小
      */
     public synchronized void setReceiveBufferSize(int size)
     throws SocketException{
@@ -1391,6 +1401,8 @@ class Socket implements java.io.Closeable {
      * in the underlying protocol, such as a TCP error.
      * @see #setReceiveBufferSize(int)
      * @since 1.2
+     *
+     * 获取接收缓冲区大小
      */
     public synchronized int getReceiveBufferSize()
     throws SocketException{
@@ -1412,6 +1424,8 @@ class Socket implements java.io.Closeable {
      * in the underlying protocol, such as a TCP error.
      * @since 1.3
      * @see #getKeepAlive()
+     *
+     * 设置keep-alive属性，套接字设置了保持存活的选项后，2小时内在该套接字的任一方都没有数据交换，TCP会自动给对端发送一个保持存活的信号
      */
     public void setKeepAlive(boolean on) throws SocketException {
         if (isClosed())
@@ -1428,6 +1442,8 @@ class Socket implements java.io.Closeable {
      * in the underlying protocol, such as a TCP error.
      * @since   1.3
      * @see #setKeepAlive(boolean)
+     *
+     * 获取keep-alive属性
      */
     public boolean getKeepAlive() throws SocketException {
         if (isClosed())

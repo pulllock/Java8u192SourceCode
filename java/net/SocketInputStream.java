@@ -39,6 +39,8 @@ import sun.net.ConnectionResetException;
  *
  * @author      Jonathan Payne
  * @author      Arthur van Hoff
+ *
+ * 套接字输入流
  */
 class SocketInputStream extends FileInputStream
 {
@@ -46,9 +48,20 @@ class SocketInputStream extends FileInputStream
         init();
     }
 
+    /**
+     * 输入流是否关闭
+     */
     private boolean eof;
+
+    /**
+     * 套接字实现
+     */
     private AbstractPlainSocketImpl impl = null;
     private byte temp[];
+
+    /**
+     * 套接字
+     */
     private Socket socket = null;
 
     /**
@@ -108,6 +121,8 @@ class SocketInputStream extends FileInputStream
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
      * @exception IOException If an I/O error has occurred.
+     *
+     * 从文件描述符代表的输入流读取数据到指定的数组中
      */
     private int socketRead(FileDescriptor fd,
                            byte b[], int off, int len,
@@ -122,6 +137,8 @@ class SocketInputStream extends FileInputStream
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
      * @exception IOException If an I/O error has occurred.
+     *
+     * 从套接字的输入流中读取数据到指定的数组中
      */
     public int read(byte b[]) throws IOException {
         return read(b, 0, b.length);
@@ -136,11 +153,22 @@ class SocketInputStream extends FileInputStream
      * @return the actual number of bytes read, -1 is
      *          returned when the end of the stream is reached.
      * @exception IOException If an I/O error has occurred.
+     *
+     * 从套接字输入流中读取数据到指定数组中
      */
     public int read(byte b[], int off, int length) throws IOException {
         return read(b, off, length, impl.getTimeout());
     }
 
+    /**
+     * 从套接字输入流中读取数据到指定数组中
+     * @param b
+     * @param off
+     * @param length
+     * @param timeout
+     * @return
+     * @throws IOException
+     */
     int read(byte b[], int off, int length, int timeout) throws IOException {
         int n;
 
@@ -166,8 +194,10 @@ class SocketInputStream extends FileInputStream
         boolean gotReset = false;
 
         // acquire file descriptor and do the read
+        // 获取套接字的文件描述符
         FileDescriptor fd = impl.acquireFD();
         try {
+            // 从套接字中读取
             n = socketRead(fd, b, off, length, timeout);
             if (n > 0) {
                 return n;
@@ -175,6 +205,7 @@ class SocketInputStream extends FileInputStream
         } catch (ConnectionResetException rstExc) {
             gotReset = true;
         } finally {
+            // 释放套接字的文件描述符
             impl.releaseFD();
         }
 
@@ -215,12 +246,16 @@ class SocketInputStream extends FileInputStream
 
     /**
      * Reads a single byte from the socket.
+     *
+     * 从套接字输入流中读取一个字节，返回-1表示没有可读内容
      */
     public int read() throws IOException {
+        // 已经到流的结束位置，直接返回-1
         if (eof) {
             return -1;
         }
         temp = new byte[1];
+        // 读取一个字节
         int n = read(temp, 0, 1);
         if (n <= 0) {
             return -1;
@@ -233,6 +268,8 @@ class SocketInputStream extends FileInputStream
      * @param numbytes the number of bytes to skip
      * @return  the actual number of bytes skipped.
      * @exception IOException If an I/O error has occurred.
+     *
+     * 跳过指定的字节
      */
     public long skip(long numbytes) throws IOException {
         if (numbytes <= 0) {
@@ -254,6 +291,8 @@ class SocketInputStream extends FileInputStream
     /**
      * Returns the number of bytes that can be read without blocking.
      * @return the number of immediately available bytes
+     *
+     * 返回剩余的可读字节数
      */
     public int available() throws IOException {
         return impl.available();

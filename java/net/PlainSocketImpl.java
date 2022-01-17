@@ -118,6 +118,11 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     native void socketListen(int count) throws IOException;
 
+    /**
+     * 接收连接
+     * @param s
+     * @throws IOException
+     */
     native void socketAccept(SocketImpl s) throws IOException;
 
     native int socketAvailable() throws IOException;

@@ -261,6 +261,8 @@ public interface SocketOptions {
      * @see Socket#setSoTimeout
      * @see ServerSocket#setSoTimeout
      * @see DatagramSocket#setSoTimeout
+     *
+     * 超时时间
      */
     @Native public final static int SO_TIMEOUT = 0x1006;
 
@@ -278,6 +280,8 @@ public interface SocketOptions {
      * @see Socket#getSendBufferSize
      * @see DatagramSocket#setSendBufferSize
      * @see DatagramSocket#getSendBufferSize
+     *
+     * 发送缓冲区大小
      */
     @Native public final static int SO_SNDBUF = 0x1001;
 
@@ -296,6 +300,8 @@ public interface SocketOptions {
      * @see Socket#getReceiveBufferSize
      * @see DatagramSocket#setReceiveBufferSize
      * @see DatagramSocket#getReceiveBufferSize
+     *
+     * 接收缓冲区大小
      */
     @Native public final static int SO_RCVBUF = 0x1002;
 
@@ -319,6 +325,8 @@ public interface SocketOptions {
      *
      * @see Socket#setKeepAlive
      * @see Socket#getKeepAlive
+     *
+     * 套接字设置了保持存活的选项后，2小时内在该套接字的任一方都没有数据交换，TCP会自动给对端发送一个保持存活的信号
      */
     @Native public final static int SO_KEEPALIVE = 0x0008;
 

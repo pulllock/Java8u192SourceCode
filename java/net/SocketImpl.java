@@ -50,6 +50,8 @@ public abstract class SocketImpl implements SocketOptions {
 
     /**
      * The file descriptor object for this socket.
+     *
+     * 套接字的文件描述符
      */
     protected FileDescriptor fd;
 
@@ -119,6 +121,8 @@ public abstract class SocketImpl implements SocketOptions {
      * @param      host   an IP address that belongs to a local interface.
      * @param      port   the port number.
      * @exception  IOException  if an I/O error occurs when binding this socket.
+     *
+     * 将Socket绑定到指定ip的端口上
      */
     protected abstract void bind(InetAddress host, int port) throws IOException;
 
@@ -130,6 +134,8 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @param      backlog   the maximum length of the queue.
      * @exception  IOException  if an I/O error occurs when creating the queue.
+     *
+     * 监听，并指定请求连接队列的最大长度
      */
     protected abstract void listen(int backlog) throws IOException;
 
@@ -139,6 +145,8 @@ public abstract class SocketImpl implements SocketOptions {
      * @param      s   the accepted connection.
      * @exception  IOException  if an I/O error occurs when accepting the
      *               connection.
+     *
+     * 接收连接
      */
     protected abstract void accept(SocketImpl s) throws IOException;
 
