@@ -33,11 +33,15 @@ package java.io;
  *
  * @author  Arthur van Hoff
  * @since   JDK1.0
+ *
+ * 带缓冲的字节输出流
  */
 public
 class BufferedOutputStream extends FilterOutputStream {
     /**
      * The internal buffer where data is stored.
+     *
+     * 存储数据的字节数组
      */
     protected byte buf[];
 
@@ -46,6 +50,8 @@ class BufferedOutputStream extends FilterOutputStream {
      * in the range <tt>0</tt> through <tt>buf.length</tt>; elements
      * <tt>buf[0]</tt> through <tt>buf[count-1]</tt> contain valid
      * byte data.
+     *
+     * 字节数组中的字节数
      */
     protected int count;
 
@@ -76,10 +82,16 @@ class BufferedOutputStream extends FilterOutputStream {
         buf = new byte[size];
     }
 
-    /** Flush the internal buffer */
+    /**
+     * Flush the internal buffer
+     *
+     * 将缓冲字节数组的数据写出到输出流中，然后清空
+     */
     private void flushBuffer() throws IOException {
         if (count > 0) {
+            // 缓冲字节数组的数据写出到输出流中
             out.write(buf, 0, count);
+            // 清空，就是将count重置为0
             count = 0;
         }
     }
@@ -89,11 +101,16 @@ class BufferedOutputStream extends FilterOutputStream {
      *
      * @param      b   the byte to be written.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 向缓冲输出流中写入一个字节
      */
     public synchronized void write(int b) throws IOException {
+        // 字节数组已满，需要将缓冲字节数组的数据写出到输出流中，然后清空
         if (count >= buf.length) {
             flushBuffer();
         }
+
+        // 向字节数组中写入一个字节，count加1
         buf[count++] = (byte)b;
     }
 
@@ -112,6 +129,8 @@ class BufferedOutputStream extends FilterOutputStream {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 将指定的字节数组中的数据写入到缓冲输出流中
      */
     public synchronized void write(byte b[], int off, int len) throws IOException {
         if (len >= buf.length) {
@@ -135,6 +154,8 @@ class BufferedOutputStream extends FilterOutputStream {
      *
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 将缓冲输出流中的数据写到输出流中，然后将输出流执行刷新操作
      */
     public synchronized void flush() throws IOException {
         flushBuffer();

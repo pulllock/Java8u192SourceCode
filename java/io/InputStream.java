@@ -41,6 +41,8 @@ package java.io;
  * @see     java.io.OutputStream
  * @see     java.io.PushbackInputStream
  * @since   JDK1.0
+ *
+ * 字节输入流
  */
 public abstract class InputStream implements Closeable {
 
@@ -61,6 +63,8 @@ public abstract class InputStream implements Closeable {
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             stream is reached.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 从输入流中读取一个字节
      */
     public abstract int read() throws IOException;
 
@@ -96,6 +100,8 @@ public abstract class InputStream implements Closeable {
      * if some other I/O error occurs.
      * @exception  NullPointerException  if <code>b</code> is <code>null</code>.
      * @see        java.io.InputStream#read(byte[], int, int)
+     *
+     * 从输入流中读取数据到指定的数组中
      */
     public int read(byte b[]) throws IOException {
         return read(b, 0, b.length);
@@ -157,6 +163,8 @@ public abstract class InputStream implements Closeable {
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
      * @see        java.io.InputStream#read()
+     *
+     * 从输入流中读取数据到指定的数组中
      */
     public int read(byte b[], int off, int len) throws IOException {
         if (b == null) {
@@ -167,14 +175,18 @@ public abstract class InputStream implements Closeable {
             return 0;
         }
 
+        // 先尝试读取一个字节
         int c = read();
+        // 输入流中无数据，直接返回-1
         if (c == -1) {
             return -1;
         }
+        // 输入流中有数据，将第一个字节存放到目标数组的第一个索引处
         b[off] = (byte)c;
 
         int i = 1;
         try {
+            // 从输入流中读取字节数据，往目标数组中写入
             for (; i < len ; i++) {
                 c = read();
                 if (c == -1) {
@@ -208,6 +220,8 @@ public abstract class InputStream implements Closeable {
      * @return     the actual number of bytes skipped.
      * @exception  IOException  if the stream does not support seek,
      *                          or if some other I/O error occurs.
+     *
+     * 跳过n个字节
      */
     public long skip(long n) throws IOException {
 
@@ -221,6 +235,7 @@ public abstract class InputStream implements Closeable {
         int size = (int)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
         byte[] skipBuffer = new byte[size];
         while (remaining > 0) {
+            // 从输入流中读取数据
             nr = read(skipBuffer, 0, (int)Math.min(size, remaining));
             if (nr < 0) {
                 break;
@@ -256,6 +271,8 @@ public abstract class InputStream implements Closeable {
      *             over) from this input stream without blocking or {@code 0} when
      *             it reaches the end of the input stream.
      * @exception  IOException if an I/O error occurs.
+     *
+     * 返回输入流剩余可用字节数
      */
     public int available() throws IOException {
         return 0;
@@ -297,6 +314,8 @@ public abstract class InputStream implements Closeable {
      * @param   readlimit   the maximum limit of bytes that can be read before
      *                      the mark position becomes invalid.
      * @see     java.io.InputStream#reset()
+     *
+     * 标记
      */
     public synchronized void mark(int readlimit) {}
 
@@ -343,6 +362,8 @@ public abstract class InputStream implements Closeable {
      *               mark has been invalidated.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.IOException
+     *
+     * 重置
      */
     public synchronized void reset() throws IOException {
         throw new IOException("mark/reset not supported");
@@ -359,6 +380,8 @@ public abstract class InputStream implements Closeable {
      *          and reset methods; <code>false</code> otherwise.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
+     *
+     * 是否支持mark/reset功能
      */
     public boolean markSupported() {
         return false;

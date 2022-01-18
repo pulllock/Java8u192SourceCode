@@ -41,11 +41,16 @@ package java.io;
  *
  * @author  Jonathan Payne
  * @since   JDK1.0
+ *
+ * 包装输入流，装饰者模式，FilterInputStream中引用了其他的InputStream，可以用来提供额外的功能，
+ * FilterInputStream本身没有处理引用的InputStream，其子类实现会有很多额外的功能
  */
 public
 class FilterInputStream extends InputStream {
     /**
      * The input stream to be filtered.
+     *
+     * 被包装的输入流
      */
     protected volatile InputStream in;
 

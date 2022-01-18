@@ -33,17 +33,23 @@ package java.io;
  * @author  unascribed
  * @see     java.io.DataInputStream
  * @since   JDK1.0
+ *
+ * 数据输出流，允许应用程序以可移植的方式将原始Java数据类型写入输出流
  */
 public
 class DataOutputStream extends FilterOutputStream implements DataOutput {
     /**
      * The number of bytes written to the data output stream so far.
      * If this counter overflows, it will be wrapped to Integer.MAX_VALUE.
+     *
+     * 已写入的字节数量
      */
     protected int written;
 
     /**
      * bytearr is initialized on demand by writeUTF
+     *
+     * 存放utf8编码后的String
      */
     private byte[] bytearr = null;
 
@@ -83,6 +89,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      b   the <code>byte</code> to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入一个int类型数据
      */
     public synchronized void write(int b) throws IOException {
         out.write(b);
@@ -100,6 +108,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 将指定的字节数组中的数据写到输出流中
      */
     public synchronized void write(byte b[], int off, int len)
         throws IOException
@@ -134,6 +144,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      v   a <code>boolean</code> value to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入boolean类型的值
      */
     public final void writeBoolean(boolean v) throws IOException {
         out.write(v ? 1 : 0);
@@ -148,6 +160,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      v   a <code>byte</code> value to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入byte类型的值
      */
     public final void writeByte(int v) throws IOException {
         out.write(v);
@@ -162,6 +176,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      v   a <code>short</code> to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入short类型的值
      */
     public final void writeShort(int v) throws IOException {
         out.write((v >>> 8) & 0xFF);
@@ -177,6 +193,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      v   a <code>char</code> value to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入char类型的值
      */
     public final void writeChar(int v) throws IOException {
         out.write((v >>> 8) & 0xFF);
@@ -192,6 +210,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      v   an <code>int</code> to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入int类型的值
      */
     public final void writeInt(int v) throws IOException {
         out.write((v >>> 24) & 0xFF);
@@ -211,6 +231,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      v   a <code>long</code> to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 向输出流中写入long类型的值
      */
     public final void writeLong(long v) throws IOException {
         writeBuffer[0] = (byte)(v >>> 56);
@@ -237,6 +259,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
      * @see        java.lang.Float#floatToIntBits(float)
+     *
+     * 向输出流中写入float类型的值
      */
     public final void writeFloat(float v) throws IOException {
         writeInt(Float.floatToIntBits(v));
@@ -254,6 +278,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
      * @see        java.lang.Double#doubleToLongBits(double)
+     *
+     * 向输出流中写入double类型的值
      */
     public final void writeDouble(double v) throws IOException {
         writeLong(Double.doubleToLongBits(v));
@@ -269,6 +295,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      s   a string of bytes to be written.
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.FilterOutputStream#out
+     *
+     * 将String类型的值写入到输出流
      */
     public final void writeBytes(String s) throws IOException {
         int len = s.length();
@@ -289,6 +317,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.DataOutputStream#writeChar(int)
      * @see        java.io.FilterOutputStream#out
+     *
+     * 将String类型的值的每个字符转换成char类型后写入到输出流
      */
     public final void writeChars(String s) throws IOException {
         int len = s.length();
@@ -318,6 +348,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      *
      * @param      str   a string to be written.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 将utf8类型的字符串写入到输出流中
      */
     public final void writeUTF(String str) throws IOException {
         writeUTF(str, this);
@@ -342,6 +374,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @param      out   destination to write to
      * @return     The number of bytes written out.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 将utf8类型的字符串写入到输出流中
      */
     static int writeUTF(String str, DataOutput out) throws IOException {
         int strlen = str.length();

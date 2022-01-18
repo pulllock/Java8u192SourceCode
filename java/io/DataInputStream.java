@@ -38,6 +38,8 @@ package java.io;
  * @author  Arthur van Hoff
  * @see     java.io.DataOutputStream
  * @since   JDK1.0
+ *
+ * 数据输入流，允许应用程序以与机器无关的方式从底层输入流中读取原始Java数据类型
  */
 public
 class DataInputStream extends FilterInputStream implements DataInput {
@@ -47,6 +49,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      * underlying InputStream.
      *
      * @param  in   the specified input stream
+     *
+     * 使用指定的底层输入流创建DataInputStream
      */
     public DataInputStream(InputStream in) {
         super(in);
@@ -95,6 +99,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      * error occurs.
      * @see        java.io.FilterInputStream#in
      * @see        java.io.InputStream#read(byte[], int, int)
+     *
+     * 从输入流中读取数据到指定的字节数组中
      */
     public final int read(byte b[]) throws IOException {
         return in.read(b, 0, b.length);
@@ -144,6 +150,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      * error occurs.
      * @see        java.io.FilterInputStream#in
      * @see        java.io.InputStream#read(byte[], int, int)
+     *
+     * 从输入流中读取数据到指定的字节数组中
      */
     public final int read(byte b[], int off, int len) throws IOException {
         return in.read(b, off, len);
@@ -164,6 +172,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取数据到指定的字节数组中，直到字节数组被填满
      */
     public final void readFully(byte b[]) throws IOException {
         readFully(b, 0, b.length);
@@ -186,6 +196,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取数据到指定的字节数组中，直到字节数组被填满
      */
     public final void readFully(byte b[], int off, int len) throws IOException {
         if (len < 0)
@@ -212,6 +224,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             seek, or the stream has been closed and
      *             the contained input stream does not support
      *             reading after close, or another I/O error occurs.
+     *
+     * 跳过指定字节数
      */
     public final int skipBytes(int n) throws IOException {
         int total = 0;
@@ -237,8 +251,11 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取一个字节，如果为0则返回false，如果不为0则返回true
      */
     public final boolean readBoolean() throws IOException {
+        // 从输入流中读取一个字节
         int ch = in.read();
         if (ch < 0)
             throw new EOFException();
@@ -260,8 +277,11 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取一个字节
      */
     public final byte readByte() throws IOException {
+        // 从输入流中读取一个字节
         int ch = in.read();
         if (ch < 0)
             throw new EOFException();
@@ -283,6 +303,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see         java.io.FilterInputStream#in
+     *
+     * 从输入流中读取一个无符号的字节，返回int
      */
     public final int readUnsignedByte() throws IOException {
         int ch = in.read();
@@ -307,6 +329,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取两个字节，返回short类型数据
      */
     public final short readShort() throws IOException {
         int ch1 = in.read();
@@ -332,6 +356,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取两个字节，返回无符号short类型数据
      */
     public final int readUnsignedShort() throws IOException {
         int ch1 = in.read();
@@ -357,6 +383,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取两个字节，返回char类型数据
      */
     public final char readChar() throws IOException {
         int ch1 = in.read();
@@ -382,6 +410,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取4个字节，返回int类型数据
      */
     public final int readInt() throws IOException {
         int ch1 = in.read();
@@ -411,6 +441,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             input stream does not support reading after close, or
      *             another I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取8个字节，返回long类型数据
      */
     public final long readLong() throws IOException {
         readFully(readBuffer, 0, 8);
@@ -441,8 +473,11 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             another I/O error occurs.
      * @see        java.io.DataInputStream#readInt()
      * @see        java.lang.Float#intBitsToFloat(int)
+     *
+     * 从输入流中读取4个字节，返回float数据
      */
     public final float readFloat() throws IOException {
+        // 读取4个字节int类型数据，然后转成float
         return Float.intBitsToFloat(readInt());
     }
 
@@ -463,8 +498,11 @@ class DataInputStream extends FilterInputStream implements DataInput {
      *             another I/O error occurs.
      * @see        java.io.DataInputStream#readLong()
      * @see        java.lang.Double#longBitsToDouble(long)
+     *
+     * 从输入流中读取8个字节，返回double数据
      */
     public final double readDouble() throws IOException {
+        // 读取8字节long类型数据，然后转成double
         return Double.longBitsToDouble(readLong());
     }
 
@@ -496,6 +534,8 @@ class DataInputStream extends FilterInputStream implements DataInput {
      * @exception  IOException  if an I/O error occurs.
      * @see        java.io.BufferedReader#readLine()
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取一行数据
      */
     @Deprecated
     public final String readLine() throws IOException {
@@ -559,6 +599,8 @@ loop:   while (true) {
      * @exception  UTFDataFormatException if the bytes do not represent a valid
      *             modified UTF-8 encoding of a string.
      * @see        java.io.DataInputStream#readUTF(java.io.DataInput)
+     *
+     * 从输入流中读取UTF8格式的字节，并转成String
      */
     public final String readUTF() throws IOException {
         return readUTF(this);
@@ -584,6 +626,8 @@ loop:   while (true) {
      * @exception  UTFDataFormatException  if the bytes do not represent a
      *               valid modified UTF-8 encoding of a Unicode string.
      * @see        java.io.DataInputStream#readUnsignedShort()
+     *
+     * 从输入流中读取UTF8格式的字节，并转成String
      */
     public final static String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();

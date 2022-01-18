@@ -45,6 +45,8 @@ package java.io;
  * @see     java.io.DataInput
  * @see     java.io.DataOutputStream
  * @since   JDK1.0
+ *
+ * java原始数据类型转换为字节，并写入二进制流中
  */
 public
 interface DataOutput {
@@ -56,6 +58,8 @@ interface DataOutput {
      *
      * @param      b   the byte to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入一个int类型数据
      */
     void write(int b) throws IOException;
 
@@ -71,6 +75,8 @@ interface DataOutput {
      *
      * @param      b   the data.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 将指定的字节数组中的数据写到输出流中
      */
     void write(byte b[]) throws IOException;
 
@@ -93,6 +99,8 @@ interface DataOutput {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 将指定的字节数组中的数据写到输出流中
      */
     void write(byte b[], int off, int len) throws IOException;
 
@@ -110,6 +118,8 @@ interface DataOutput {
      *
      * @param      v   the boolean to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入boolean类型的值
      */
     void writeBoolean(boolean v) throws IOException;
 
@@ -127,6 +137,8 @@ interface DataOutput {
      *
      * @param      v   the byte value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入byte类型的值
      */
     void writeByte(int v) throws IOException;
 
@@ -147,6 +159,8 @@ interface DataOutput {
      *
      * @param      v   the <code>short</code> value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入short类型的值
      */
     void writeShort(int v) throws IOException;
 
@@ -168,6 +182,8 @@ interface DataOutput {
      *
      * @param      v   the <code>char</code> value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入char类型的值
      */
     void writeChar(int v) throws IOException;
 
@@ -189,6 +205,8 @@ interface DataOutput {
      *
      * @param      v   the <code>int</code> value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入int类型的值
      */
     void writeInt(int v) throws IOException;
 
@@ -215,6 +233,8 @@ interface DataOutput {
      *
      * @param      v   the <code>long</code> value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入long类型的值
      */
     void writeLong(long v) throws IOException;
 
@@ -234,6 +254,8 @@ interface DataOutput {
      *
      * @param      v   the <code>float</code> value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入float类型的值
      */
     void writeFloat(float v) throws IOException;
 
@@ -253,6 +275,8 @@ interface DataOutput {
      *
      * @param      v   the <code>double</code> value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 向输出流中写入double类型的值
      */
     void writeDouble(double v) throws IOException;
 
@@ -275,6 +299,8 @@ interface DataOutput {
      *
      * @param      s   the string of bytes to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 将String类型的值写入到输出流
      */
     void writeBytes(String s) throws IOException;
 
@@ -295,6 +321,8 @@ interface DataOutput {
      *
      * @param      s   the string value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 将String类型的值的每个字符转换成char类型后写入到输出流
      */
     void writeChars(String s) throws IOException;
 
@@ -349,6 +377,8 @@ interface DataOutput {
      *
      * @param      s   the string value to be written.
      * @throws     IOException  if an I/O error occurs.
+     *
+     * 将utf8类型的字符串写入到输出流中
      */
     void writeUTF(String s) throws IOException;
 }

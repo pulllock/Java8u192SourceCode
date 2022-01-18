@@ -40,11 +40,16 @@ package java.io;
  *
  * @author  Jonathan Payne
  * @since   JDK1.0
+ *
+ * 包装输出流，装饰者模式，FilterOutputStream中引用了其他的OutputStream，可以用来提供额外的功能，
+ * FilterOutputStream本身没有处理引用的OutputStream，其子类实现会有很多额外的功能
  */
 public
 class FilterOutputStream extends OutputStream {
     /**
      * The underlying output stream to be filtered.
+     *
+     * 被包装的输出流
      */
     protected OutputStream out;
 

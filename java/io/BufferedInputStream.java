@@ -46,10 +46,15 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  *
  * @author  Arthur van Hoff
  * @since   JDK1.0
+ *
+ * 带缓冲的字节输入流
  */
 public
 class BufferedInputStream extends FilterInputStream {
 
+    /**
+     * 默认缓冲大小8192
+     */
     private static int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
@@ -57,6 +62,8 @@ class BufferedInputStream extends FilterInputStream {
      * Some VMs reserve some header words in an array.
      * Attempts to allocate larger arrays may result in
      * OutOfMemoryError: Requested array size exceeds VM limit
+     *
+     * 最大缓冲大小
      */
     private static int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
 
@@ -64,6 +71,8 @@ class BufferedInputStream extends FilterInputStream {
      * The internal buffer array where the data is stored. When necessary,
      * it may be replaced by another array of
      * a different size.
+     *
+     * 缓存数据的字节数组
      */
     protected volatile byte buf[];
 
@@ -86,6 +95,8 @@ class BufferedInputStream extends FilterInputStream {
      * elements <code>buf[0]</code>  through <code>buf[count-1]
      * </code>contain buffered input data obtained
      * from the underlying  input stream.
+     *
+     * 记录字节数组中的字节数
      */
     protected int count;
 
@@ -103,6 +114,8 @@ class BufferedInputStream extends FilterInputStream {
      * read from the contained  input stream.
      *
      * @see     java.io.BufferedInputStream#buf
+     *
+     * 读索引
      */
     protected int pos;
 
@@ -132,6 +145,8 @@ class BufferedInputStream extends FilterInputStream {
      *
      * @see     java.io.BufferedInputStream#mark(int)
      * @see     java.io.BufferedInputStream#pos
+     *
+     * 标记索引
      */
     protected int markpos = -1;
 
@@ -146,6 +161,8 @@ class BufferedInputStream extends FilterInputStream {
      *
      * @see     java.io.BufferedInputStream#mark(int)
      * @see     java.io.BufferedInputStream#reset()
+     *
+     * 标记索引最大值
      */
     protected int marklimit;
 
@@ -209,6 +226,8 @@ class BufferedInputStream extends FilterInputStream {
      * Assumes that it is being called by a synchronized method.
      * This method also assumes that all data has already been read in,
      * hence pos > count.
+     *
+     * 将包装的InputStream中的数据读取到缓冲字节数组中
      */
     private void fill() throws IOException {
         byte[] buffer = getBufIfOpen();
@@ -259,19 +278,26 @@ class BufferedInputStream extends FilterInputStream {
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
      * @see        java.io.FilterInputStream#in
+     *
+     * 从输入流中读取一个字节数据
      */
     public synchronized int read() throws IOException {
+        // 说明缓冲字节数组还是空的，需要将包装的InputStream中的数据读取到缓冲字节数组中
         if (pos >= count) {
+            // 将包装的InputStream中的数据读取到缓冲字节数组中
             fill();
             if (pos >= count)
                 return -1;
         }
+        // 从缓冲字节数组中读取一个字节数组，读索引加1
         return getBufIfOpen()[pos++] & 0xff;
     }
 
     /**
      * Read characters into a portion of an array, reading from the underlying
      * stream at most once if necessary.
+     *
+     * 从缓冲数组中读取数据到指定的字节数组中
      */
     private int read1(byte[] b, int off, int len) throws IOException {
         int avail = count - pos;
@@ -329,6 +355,8 @@ class BufferedInputStream extends FilterInputStream {
      * @exception  IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
+     *
+     * 从缓冲数组中读取数据到指定的字节数组中
      */
     public synchronized int read(byte b[], int off, int len)
         throws IOException
@@ -363,6 +391,8 @@ class BufferedInputStream extends FilterInputStream {
      *                          or if this input stream has been closed by
      *                          invoking its {@link #close()} method, or an
      *                          I/O error occurs.
+     *
+     * 跳过n个字节
      */
     public synchronized long skip(long n) throws IOException {
         getBufIfOpen(); // Check for closed stream
@@ -404,6 +434,8 @@ class BufferedInputStream extends FilterInputStream {
      * @exception  IOException  if this input stream has been closed by
      *                          invoking its {@link #close()} method,
      *                          or an I/O error occurs.
+     *
+     * 返回剩余可读字节数
      */
     public synchronized int available() throws IOException {
         int n = count - pos;
@@ -420,6 +452,8 @@ class BufferedInputStream extends FilterInputStream {
      * @param   readlimit   the maximum limit of bytes that can be read before
      *                      the mark position becomes invalid.
      * @see     java.io.BufferedInputStream#reset()
+     *
+     * 标记
      */
     public synchronized void mark(int readlimit) {
         marklimit = readlimit;
@@ -441,6 +475,8 @@ class BufferedInputStream extends FilterInputStream {
      *                  has been closed by invoking its {@link #close()}
      *                  method, or an I/O error occurs.
      * @see        java.io.BufferedInputStream#mark(int)
+     *
+     * 重置
      */
     public synchronized void reset() throws IOException {
         getBufIfOpen(); // Cause exception if closed
@@ -459,6 +495,8 @@ class BufferedInputStream extends FilterInputStream {
      *          the <code>mark</code> and <code>reset</code> methods.
      * @see     java.io.InputStream#mark(int)
      * @see     java.io.InputStream#reset()
+     *
+     * 支持mark/reset操作
      */
     public boolean markSupported() {
         return true;
@@ -472,14 +510,19 @@ class BufferedInputStream extends FilterInputStream {
      * Closing a previously closed stream has no effect.
      *
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 关闭输入流
      */
     public void close() throws IOException {
         byte[] buffer;
         while ( (buffer = buf) != null) {
+            // cas更新缓冲数组为null
             if (bufUpdater.compareAndSet(this, buffer, null)) {
                 InputStream input = in;
+                // 包装的输入流置为null
                 in = null;
                 if (input != null)
+                    // 关闭输入流
                     input.close();
                 return;
             }

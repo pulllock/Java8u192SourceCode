@@ -39,6 +39,8 @@ package java.io;
  * @author  Arthur van Hoff
  * @see     java.io.StringBufferInputStream
  * @since   JDK1.0
+ *
+ * 字节数组输入流
  */
 public
 class ByteArrayInputStream extends InputStream {
@@ -50,6 +52,8 @@ class ByteArrayInputStream extends InputStream {
      * only bytes that can ever be read from the
      * stream;  element <code>buf[pos]</code> is
      * the next byte to be read.
+     *
+     * 存储数据的字节数组
      */
     protected byte buf[];
 
@@ -59,6 +63,8 @@ class ByteArrayInputStream extends InputStream {
      * and not larger than the value of <code>count</code>.
      * The next byte to be read from the input stream buffer
      * will be <code>buf[pos]</code>.
+     *
+     * 读索引
      */
     protected int pos;
 
@@ -74,6 +80,8 @@ class ByteArrayInputStream extends InputStream {
      * passed to the constructor (or 0 if the offset was not supplied).
      *
      * @since   JDK1.1
+     *
+     * 标记索引
      */
     protected int mark = 0;
 
@@ -85,6 +93,8 @@ class ByteArrayInputStream extends InputStream {
      * It  is one greater than the position of
      * the last byte within <code>buf</code> that
      * can ever be read  from the input stream buffer.
+     *
+     * 读的最大索引
      */
     protected int count;
 
@@ -99,10 +109,15 @@ class ByteArrayInputStream extends InputStream {
      * <code>buf</code>.
      *
      * @param   buf   the input buffer.
+     *
+     * 使用字节数组构造字节数组输入流
      */
     public ByteArrayInputStream(byte buf[]) {
+        // 存储数据的字节数组
         this.buf = buf;
+        // 初始化读索引为0
         this.pos = 0;
+        // 读的最大索引为字节数组的长度
         this.count = buf.length;
     }
 
@@ -119,11 +134,17 @@ class ByteArrayInputStream extends InputStream {
      * @param   buf      the input buffer.
      * @param   offset   the offset in the buffer of the first byte to read.
      * @param   length   the maximum number of bytes to read from the buffer.
+     *
+     * 使用字节数组构造字节数组输入流
      */
     public ByteArrayInputStream(byte buf[], int offset, int length) {
+        // 存储数据的字节数组
         this.buf = buf;
+        // 初始化读索引为指定的offset
         this.pos = offset;
+        // 读的最大所以你
         this.count = Math.min(offset + length, buf.length);
+        // 初始化标记索引为指定offset
         this.mark = offset;
     }
 
@@ -139,6 +160,8 @@ class ByteArrayInputStream extends InputStream {
      *
      * @return  the next byte of data, or <code>-1</code> if the end of the
      *          stream has been reached.
+     *
+     * 从字节数组中读取一个字节，并将读索引加1
      */
     public synchronized int read() {
         return (pos < count) ? (buf[pos++] & 0xff) : -1;
@@ -172,6 +195,8 @@ class ByteArrayInputStream extends InputStream {
      * @exception  IndexOutOfBoundsException If <code>off</code> is negative,
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
+     *
+     * 从字节数组中读取数据到指定的字节数组中
      */
     public synchronized int read(byte b[], int off, int len) {
         if (b == null) {
@@ -207,6 +232,8 @@ class ByteArrayInputStream extends InputStream {
      *
      * @param   n   the number of bytes to be skipped.
      * @return  the actual number of bytes skipped.
+     *
+     * 跳过n个字节
      */
     public synchronized long skip(long n) {
         long k = count - pos;
@@ -214,6 +241,7 @@ class ByteArrayInputStream extends InputStream {
             k = n < 0 ? 0 : n;
         }
 
+        // 直接将读索引加上要跳过的字节数
         pos += k;
         return k;
     }
@@ -227,8 +255,11 @@ class ByteArrayInputStream extends InputStream {
      *
      * @return  the number of remaining bytes that can be read (or skipped
      *          over) from this input stream without blocking.
+     *
+     * 返回字节数组可读数量
      */
     public synchronized int available() {
+        // 读索引最大值减去读索引值
         return count - pos;
     }
 
@@ -238,6 +269,8 @@ class ByteArrayInputStream extends InputStream {
      * always returns <code>true</code>.
      *
      * @since   JDK1.1
+     *
+     * 是否支持mark/reset功能，ByteArrayInputStream支持mark/reset功能
      */
     public boolean markSupported() {
         return true;
@@ -257,6 +290,8 @@ class ByteArrayInputStream extends InputStream {
      *  has no meaning.
      *
      * @since   JDK1.1
+     *
+     * 设置标记索引
      */
     public void mark(int readAheadLimit) {
         mark = pos;
@@ -266,6 +301,8 @@ class ByteArrayInputStream extends InputStream {
      * Resets the buffer to the marked position.  The marked position
      * is 0 unless another position was marked or an offset was specified
      * in the constructor.
+     *
+     * 将读索引重置到设置的标记索引位置处
      */
     public synchronized void reset() {
         pos = mark;
@@ -275,6 +312,8 @@ class ByteArrayInputStream extends InputStream {
      * Closing a <tt>ByteArrayInputStream</tt> has no effect. The methods in
      * this class can be called after the stream has been closed without
      * generating an <tt>IOException</tt>.
+     *
+     * 关闭字节数组输入流
      */
     public void close() throws IOException {
     }

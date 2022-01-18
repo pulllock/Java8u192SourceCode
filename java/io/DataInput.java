@@ -144,6 +144,8 @@ package java.io;
  * @see     java.io.DataInputStream
  * @see     java.io.DataOutput
  * @since   JDK1.0
+ *
+ * 读取二进制流字节并重建为任何java原始数据类型
  */
 public
 interface DataInput {
@@ -186,6 +188,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取数据到指定的字节数组中，直到字节数组被填满
      */
     void readFully(byte b[]) throws IOException;
 
@@ -232,6 +236,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取数据到指定的字节数组中，直到字节数组被填满
      */
     void readFully(byte b[], int off, int len) throws IOException;
 
@@ -255,6 +261,8 @@ interface DataInput {
      * @param      n   the number of bytes to be skipped.
      * @return     the number of bytes actually skipped.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 跳过指定字节数
      */
     int skipBytes(int n) throws IOException;
 
@@ -270,6 +278,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取一个字节，如果为0则返回false，如果不为0则返回true
      */
     boolean readBoolean() throws IOException;
 
@@ -286,6 +296,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取一个字节
      */
     byte readByte() throws IOException;
 
@@ -306,6 +318,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取一个无符号的字节，返回int
      */
     int readUnsignedByte() throws IOException;
 
@@ -327,6 +341,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取两个字节，返回short类型数据
      */
     short readShort() throws IOException;
 
@@ -350,6 +366,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取两个字节，返回无符号short类型数据
      */
     int readUnsignedShort() throws IOException;
 
@@ -370,6 +388,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取两个字节，返回char类型数据
      */
     char readChar() throws IOException;
 
@@ -389,6 +409,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取4个字节，返回int类型数据
      */
     int readInt() throws IOException;
 
@@ -416,6 +438,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取8个字节，返回long类型数据
      */
     long readLong() throws IOException;
 
@@ -436,6 +460,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取4个字节，返回float数据
      */
     float readFloat() throws IOException;
 
@@ -456,6 +482,8 @@ interface DataInput {
      * @exception  EOFException  if this stream reaches the end before reading
      *               all the bytes.
      * @exception  IOException   if an I/O error occurs.
+     *
+     * 从输入流中读取8个字节，返回double数据
      */
     double readDouble() throws IOException;
 
@@ -497,6 +525,8 @@ interface DataInput {
      *         or {@code null} if the end of file is
      *         encountered before a byte can be read.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 从输入流中读取一行数据
      */
     String readLine() throws IOException;
 
@@ -584,6 +614,8 @@ interface DataInput {
      * @exception  IOException             if an I/O error occurs.
      * @exception  UTFDataFormatException  if the bytes do not represent a
      *               valid modified UTF-8 encoding of a string.
+     *
+     * 从输入流中读取UTF8格式的字节，并转成String
      */
     String readUTF() throws IOException;
 }
