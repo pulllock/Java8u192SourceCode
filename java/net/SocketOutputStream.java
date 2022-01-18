@@ -51,6 +51,10 @@ class SocketOutputStream extends FileOutputStream
      */
     private AbstractPlainSocketImpl impl = null;
     private byte temp[] = new byte[1];
+
+    /**
+     * 套接字
+     */
     private Socket socket = null;
 
     /**
@@ -99,6 +103,8 @@ class SocketOutputStream extends FileOutputStream
      * @param off the start offset in the data
      * @param len the number of bytes that are written
      * @exception IOException If an I/O error has occurred.
+     *
+     * 向套接字输出流写入指定字节数组中的字节
      */
     private void socketWrite(byte b[], int off, int len) throws IOException {
 
@@ -111,8 +117,10 @@ class SocketOutputStream extends FileOutputStream
                     + " off == " + off + " buffer length == " + b.length);
         }
 
+        // 获取文件描述符
         FileDescriptor fd = impl.acquireFD();
         try {
+            // 向套接字输出流写入指定字节数组中的字节
             socketWrite0(fd, b, off, len);
         } catch (SocketException se) {
             if (se instanceof sun.net.ConnectionResetException) {
@@ -125,6 +133,7 @@ class SocketOutputStream extends FileOutputStream
                 throw se;
             }
         } finally {
+            // 释放文件描述符
             impl.releaseFD();
         }
     }
@@ -133,6 +142,8 @@ class SocketOutputStream extends FileOutputStream
      * Writes a byte to the socket.
      * @param b the data to be written
      * @exception IOException If an I/O error has occurred.
+     *
+     * 向套接字输出流写入一个字节
      */
     public void write(int b) throws IOException {
         temp[0] = (byte)b;
@@ -143,6 +154,8 @@ class SocketOutputStream extends FileOutputStream
      * Writes the contents of the buffer <i>b</i> to the socket.
      * @param b the data to be written
      * @exception SocketException If an I/O error has occurred.
+     *
+     * 向套接字输出流写入指定字节数组中的字节
      */
     public void write(byte b[]) throws IOException {
         socketWrite(b, 0, b.length);
