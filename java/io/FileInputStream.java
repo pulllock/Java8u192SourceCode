@@ -44,22 +44,40 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.io.FileOutputStream
  * @see     java.nio.file.Files#newInputStream
  * @since   JDK1.0
+ *
+ * 文件输入流
  */
 public
 class FileInputStream extends InputStream
 {
     /* File Descriptor - handle to the open file */
+
+    /**
+     * 文件描述符
+     */
     private final FileDescriptor fd;
 
     /**
      * The path of the referenced file
      * (null if the stream is created with a file descriptor)
+     *
+     * 文件路径
      */
     private final String path;
 
+    /**
+     * 文件通道
+     */
     private FileChannel channel = null;
 
+    /**
+     * 关闭锁
+     */
     private final Object closeLock = new Object();
+
+    /**
+     * 文件输入流是否已经关闭
+     */
     private volatile boolean closed = false;
 
     /**
@@ -88,6 +106,8 @@ class FileInputStream extends InputStream
      *               <code>checkRead</code> method denies read access
      *               to the file.
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
+     *
+     * 根据指定的文件名创建文件输入流
      */
     public FileInputStream(String name) throws FileNotFoundException {
         this(name != null ? new File(name) : null);
@@ -119,6 +139,8 @@ class FileInputStream extends InputStream
      *               <code>checkRead</code> method denies read access to the file.
      * @see        java.io.File#getPath()
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
+     *
+     * 根据指定的文件创建文件输入流
      */
     public FileInputStream(File file) throws FileNotFoundException {
         String name = (file != null ? file.getPath() : null);
@@ -132,9 +154,12 @@ class FileInputStream extends InputStream
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        // 文件描述符
         fd = new FileDescriptor();
+        // 将当前文件输入流关联到文件描述符中
         fd.attach(this);
         path = name;
+        // 打开文件
         open(name);
     }
 
@@ -190,6 +215,8 @@ class FileInputStream extends InputStream
     /**
      * Opens the specified file for reading.
      * @param name the name of the file
+     *
+     * 打开文件，用来读取
      */
     private void open(String name) throws FileNotFoundException {
         open0(name);
@@ -202,6 +229,8 @@ class FileInputStream extends InputStream
      * @return     the next byte of data, or <code>-1</code> if the end of the
      *             file is reached.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 从文件输入流中读取一个字节数据
      */
     public int read() throws IOException {
         return read0();
@@ -215,6 +244,8 @@ class FileInputStream extends InputStream
      * @param off the start offset in the data
      * @param len the number of bytes that are written
      * @exception IOException If an I/O error has occurred.
+     *
+     * 从文件输入流读取数据到指定的字节数组中
      */
     private native int readBytes(byte b[], int off, int len) throws IOException;
 
@@ -228,6 +259,8 @@ class FileInputStream extends InputStream
      *             <code>-1</code> if there is no more data because the end of
      *             the file has been reached.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 从文件输入流读取数据到指定的字节数组中
      */
     public int read(byte b[]) throws IOException {
         return readBytes(b, 0, b.length);
@@ -250,6 +283,8 @@ class FileInputStream extends InputStream
      * <code>len</code> is negative, or <code>len</code> is greater than
      * <code>b.length - off</code>
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 从文件输入流读取数据到指定的字节数组中
      */
     public int read(byte b[], int off, int len) throws IOException {
         return readBytes(b, off, len);
@@ -278,6 +313,8 @@ class FileInputStream extends InputStream
      * @return     the actual number of bytes skipped.
      * @exception  IOException  if n is negative, if the stream does not
      *             support seek, or if an I/O error occurs.
+     *
+     * 跳过指定字节数
      */
     public long skip(long n) throws IOException {
         return skip0(n);
@@ -301,6 +338,8 @@ class FileInputStream extends InputStream
      *             (or skipped over) from this input stream without blocking.
      * @exception  IOException  if this file input stream has been closed by calling
      *             {@code close} or an I/O error occurs.
+     *
+     * 返回可读字节数
      */
     public int available() throws IOException {
         return available0();
@@ -370,6 +409,8 @@ class FileInputStream extends InputStream
      *
      * @since 1.4
      * @spec JSR-51
+     *
+     * 获取文件通道
      */
     public FileChannel getChannel() {
         synchronized (this) {

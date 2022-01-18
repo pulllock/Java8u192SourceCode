@@ -48,32 +48,49 @@ import sun.nio.ch.FileChannelImpl;
  * @see     java.io.FileInputStream
  * @see     java.nio.file.Files#newOutputStream
  * @since   JDK1.0
+ * 
+ * 文件输出流
  */
 public
 class FileOutputStream extends OutputStream
 {
     /**
      * The system dependent file descriptor.
+     * 
+     * 文件描述符
      */
     private final FileDescriptor fd;
 
     /**
      * True if the file is opened for append.
+     * 
+     * 是否是追加模式
      */
     private final boolean append;
 
     /**
      * The associated channel, initialized lazily.
+     * 
+     * 文件通道
      */
     private FileChannel channel;
 
     /**
      * The path of the referenced file
      * (null if the stream is created with a file descriptor)
+     * 
+     * 文件路径
      */
     private final String path;
 
+    /**
+     * 关闭锁
+     */
     private final Object closeLock = new Object();
+
+    /**
+     * 是否已经关闭
+     */
     private volatile boolean closed = false;
 
     /**
@@ -96,6 +113,8 @@ class FileOutputStream extends OutputStream
      *               <code>checkWrite</code> method denies write access
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
+     * 
+     * 根据指定的文件名字创建文件输出流
      */
     public FileOutputStream(String name) throws FileNotFoundException {
         this(name != null ? new File(name) : null, false);
@@ -126,6 +145,8 @@ class FileOutputStream extends OutputStream
      *               to the file.
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @since     JDK1.1
+     * 
+     * 创建文件输出流
      */
     public FileOutputStream(String name, boolean append)
         throws FileNotFoundException
@@ -157,6 +178,8 @@ class FileOutputStream extends OutputStream
      * @see        java.io.File#getPath()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
+     * 
+     * 创建文件输出流
      */
     public FileOutputStream(File file) throws FileNotFoundException {
         this(file, false);
@@ -189,6 +212,8 @@ class FileOutputStream extends OutputStream
      * @see        java.io.File#getPath()
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
+     * 
+     * 创建文件输出流
      * @since 1.4
      */
     public FileOutputStream(File file, boolean append)
@@ -205,11 +230,14 @@ class FileOutputStream extends OutputStream
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
         }
+        // 文件描述符
         this.fd = new FileDescriptor();
+        // 将文件输出流关联到文件描述符上
         fd.attach(this);
         this.append = append;
         this.path = name;
 
+        // 打开文件
         open(name, append);
     }
 
@@ -264,6 +292,8 @@ class FileOutputStream extends OutputStream
      * Opens a file, with the specified name, for overwriting or appending.
      * @param name name of file to be opened
      * @param append whether the file is to be opened in append mode
+     *               
+     * 打开文件，进行写
      */
     private void open(String name, boolean append)
         throws FileNotFoundException {
@@ -285,6 +315,8 @@ class FileOutputStream extends OutputStream
      *
      * @param      b   the byte to be written.
      * @exception  IOException  if an I/O error occurs.
+     * 
+     * 写一个字节到文件输出流中
      */
     public void write(int b) throws IOException {
         write(b, append);
@@ -298,6 +330,8 @@ class FileOutputStream extends OutputStream
      * @param append {@code true} to first advance the position to the
      *     end of file
      * @exception IOException If an I/O error has occurred.
+     *
+     * 写数据到文件输出流中
      */
     private native void writeBytes(byte b[], int off, int len, boolean append)
         throws IOException;
@@ -308,6 +342,8 @@ class FileOutputStream extends OutputStream
      *
      * @param      b   the data.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 写数据到文件输出流中
      */
     public void write(byte b[]) throws IOException {
         writeBytes(b, 0, b.length, append);
@@ -321,6 +357,8 @@ class FileOutputStream extends OutputStream
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 写数据到文件输出流中
      */
     public void write(byte b[], int off, int len) throws IOException {
         writeBytes(b, off, len, append);
@@ -338,6 +376,8 @@ class FileOutputStream extends OutputStream
      *
      * @revised 1.4
      * @spec JSR-51
+     *
+     * 关闭
      */
     public void close() throws IOException {
         synchronized (closeLock) {

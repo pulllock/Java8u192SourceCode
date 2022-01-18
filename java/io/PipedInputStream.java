@@ -46,19 +46,46 @@ package java.io;
  * @author  James Gosling
  * @see     java.io.PipedOutputStream
  * @since   JDK1.0
+ *
+ * 管道输入流，和管道输出流配合使用，可以实现线程间通信，使用流程：
+ * 1. 创建管道输入流和管道输出流
+ * 2. 管道输出流和管道输入流进行绑定
+ * 3. 管道输出流写入的数据就会同步写到管道输入流中
  */
 public class PipedInputStream extends InputStream {
+
+    /**
+     * 管道输出流是否关闭
+     */
     boolean closedByWriter = false;
+
+    /**
+     * 管道输入流是否关闭
+     */
     volatile boolean closedByReader = false;
+
+    /**
+     * 管道输入流和管道输出流是否已经连接
+     */
     boolean connected = false;
 
         /* REMIND: identification of the read and write sides needs to be
            more sophisticated.  Either using thread groups (but what about
            pipes within a thread?) or using finalization (but it may be a
            long time until the next GC). */
+    /**
+     * 管道输入流的线程
+     */
     Thread readSide;
+
+    /**
+     * 管道输出流的线程
+     */
     Thread writeSide;
 
+    /**
+     * 默认缓冲字节数组大小
+     */
     private static final int DEFAULT_PIPE_SIZE = 1024;
 
     /**
@@ -68,11 +95,16 @@ public class PipedInputStream extends InputStream {
     // This used to be a constant before the pipe size was allowed
     // to change. This field will continue to be maintained
     // for backward compatibility.
+    /**
+     * 管道输入流默认的字节数组大小
+     */
     protected static final int PIPE_SIZE = DEFAULT_PIPE_SIZE;
 
     /**
      * The circular buffer into which incoming data is placed.
      * @since   JDK1.1
+     *
+     * 存放接收到的数据
      */
     protected byte buffer[];
 
@@ -82,6 +114,8 @@ public class PipedInputStream extends InputStream {
      * piped output stream. <code>in&lt;0</code> implies the buffer is empty,
      * <code>in==out</code> implies the buffer is full
      * @since   JDK1.1
+     *
+     * 写索引
      */
     protected int in = -1;
 
@@ -89,6 +123,8 @@ public class PipedInputStream extends InputStream {
      * The index of the position in the circular buffer at which the next
      * byte of data will be read by this piped input stream.
      * @since   JDK1.1
+     *
+     * 读索引
      */
     protected int out = 0;
 
@@ -101,6 +137,8 @@ public class PipedInputStream extends InputStream {
      *
      * @param      src   the stream to connect to.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 创建管道输入流，指定了和管道输入流连接的管道输出流
      */
     public PipedInputStream(PipedOutputStream src) throws IOException {
         this(src, DEFAULT_PIPE_SIZE);
@@ -119,6 +157,8 @@ public class PipedInputStream extends InputStream {
      * @exception  IOException  if an I/O error occurs.
      * @exception  IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
+     *
+     * 创建管道输入流，指定了和管道输入流连接的管道输出流
      */
     public PipedInputStream(PipedOutputStream src, int pipeSize)
             throws IOException {
@@ -133,6 +173,8 @@ public class PipedInputStream extends InputStream {
      * It must be {@linkplain java.io.PipedOutputStream#connect(
      * java.io.PipedInputStream) connected} to a
      * <code>PipedOutputStream</code> before being used.
+     *
+     * 创建管道输入流
      */
     public PipedInputStream() {
         initPipe(DEFAULT_PIPE_SIZE);
@@ -149,6 +191,8 @@ public class PipedInputStream extends InputStream {
      * @param      pipeSize the size of the pipe's buffer.
      * @exception  IllegalArgumentException if {@code pipeSize <= 0}.
      * @since      1.6
+     *
+     * 创建管道输入流
      */
     public PipedInputStream(int pipeSize) {
         initPipe(pipeSize);
@@ -183,6 +227,8 @@ public class PipedInputStream extends InputStream {
      *
      * @param      src   The piped output stream to connect to.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 管道输入流和管道输出流进行连接
      */
     public void connect(PipedOutputStream src) throws IOException {
         src.connect(this);
@@ -196,16 +242,23 @@ public class PipedInputStream extends InputStream {
      *          {@link #connect(java.io.PipedOutputStream) unconnected},
      *          closed, or if an I/O error occurs.
      * @since     JDK1.1
+     *
+     * 从管道输出流接收数据，存储到管道输入流的字节数组中
      */
     protected synchronized void receive(int b) throws IOException {
         checkStateForReceive();
+        // 写线程
         writeSide = Thread.currentThread();
+        // 缓冲字节数组满了
         if (in == out)
+            // 需要等待缓冲字节数组有空闲空间可用
             awaitSpace();
+        // 缓冲字节数组为空
         if (in < 0) {
             in = 0;
             out = 0;
         }
+        // 写到字节数组中，写索引加1
         buffer[in++] = (byte)(b & 0xFF);
         if (in >= buffer.length) {
             in = 0;
@@ -221,9 +274,12 @@ public class PipedInputStream extends InputStream {
      * @exception IOException If the pipe is <a href="#BROKEN"> broken</a>,
      *           {@link #connect(java.io.PipedOutputStream) unconnected},
      *           closed,or if an I/O error occurs.
+     *
+     * 从管道输出流接收数据，存储到管道输入流的字节数组中
      */
     synchronized void receive(byte b[], int off, int len)  throws IOException {
         checkStateForReceive();
+        // 写线程
         writeSide = Thread.currentThread();
         int bytesToTransfer = len;
         while (bytesToTransfer > 0) {
@@ -299,6 +355,8 @@ public class PipedInputStream extends InputStream {
      *           {@link #connect(java.io.PipedOutputStream) unconnected},
      *           <a href="#BROKEN"> <code>broken</code></a>, closed,
      *           or if an I/O error occurs.
+     *
+     * 从管道输入流中读取一个字节数据
      */
     public synchronized int read()  throws IOException {
         if (!connected) {
@@ -310,6 +368,7 @@ public class PipedInputStream extends InputStream {
             throw new IOException("Write end dead");
         }
 
+        // 读线程
         readSide = Thread.currentThread();
         int trials = 2;
         while (in < 0) {
@@ -321,6 +380,7 @@ public class PipedInputStream extends InputStream {
                 throw new IOException("Pipe broken");
             }
             /* might be a writer waiting */
+            // 通知写线程
             notifyAll();
             try {
                 wait(1000);
@@ -328,6 +388,7 @@ public class PipedInputStream extends InputStream {
                 throw new java.io.InterruptedIOException();
             }
         }
+        // 从读索引位置出读取，读索引加1
         int ret = buffer[out++] & 0xFF;
         if (out >= buffer.length) {
             out = 0;
@@ -363,6 +424,8 @@ public class PipedInputStream extends InputStream {
      * @exception  IOException if the pipe is <a href="#BROKEN"> <code>broken</code></a>,
      *           {@link #connect(java.io.PipedOutputStream) unconnected},
      *           closed, or if an I/O error occurs.
+     *
+     * 从管道输入流中读取数据到指定的数组中
      */
     public synchronized int read(byte b[], int off, int len)  throws IOException {
         if (b == null) {

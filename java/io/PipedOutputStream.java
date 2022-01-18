@@ -42,6 +42,11 @@ import java.io.*;
  * @author  James Gosling
  * @see     java.io.PipedInputStream
  * @since   JDK1.0
+ *
+ * 管道输出流，和管道输入流配合使用，可以实现线程间通信，使用流程：
+ * 1. 创建管道输入流和管道输出流
+ * 2. 管道输出流和管道输入流进行绑定
+ * 3. 管道输出流写入的数据就会同步写到管道输入流中
  */
 public
 class PipedOutputStream extends OutputStream {
@@ -50,6 +55,9 @@ class PipedOutputStream extends OutputStream {
            more sophisticated.  Either using thread groups (but what about
            pipes within a thread?) or using finalization (but it may be a
            long time until the next GC). */
+    /**
+     * 和管道输出流连接的管道输入流
+     */
     private PipedInputStream sink;
 
     /**
@@ -59,6 +67,8 @@ class PipedOutputStream extends OutputStream {
      *
      * @param      snk   The piped input stream to connect to.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 创建管道输出流，指定和管道输出流连接的管道输入流，并连接到管道输入流
      */
     public PipedOutputStream(PipedInputStream snk)  throws IOException {
         connect(snk);
@@ -92,6 +102,8 @@ class PipedOutputStream extends OutputStream {
      *
      * @param      snk   the piped input stream to connect to.
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 将管道输出流连接到管道输入流
      */
     public synchronized void connect(PipedInputStream snk) throws IOException {
         if (snk == null) {
@@ -99,9 +111,13 @@ class PipedOutputStream extends OutputStream {
         } else if (sink != null || snk.connected) {
             throw new IOException("Already connected");
         }
+        // 管道输入流
         sink = snk;
+        // 管道输入流的写索引
         snk.in = -1;
+        // 管道输入流的读索引
         snk.out = 0;
+        // 官奥输入流的已连接状态
         snk.connected = true;
     }
 
@@ -114,11 +130,14 @@ class PipedOutputStream extends OutputStream {
      * @exception IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
      *          closed, or if an I/O error occurs.
+     *
+     * 将一个字节数组从管道输出流写到管道输入流中
      */
     public void write(int b)  throws IOException {
         if (sink == null) {
             throw new IOException("Pipe not connected");
         }
+        // 管道输入流接收字节数据
         sink.receive(b);
     }
 
@@ -134,6 +153,8 @@ class PipedOutputStream extends OutputStream {
      * @exception IOException if the pipe is <a href=#BROKEN> broken</a>,
      *          {@link #connect(java.io.PipedInputStream) unconnected},
      *          closed, or if an I/O error occurs.
+     *
+     * 将指定的字节数组中的数据从管道输出流写到管道输入流中
      */
     public void write(byte b[], int off, int len) throws IOException {
         if (sink == null) {
@@ -155,6 +176,8 @@ class PipedOutputStream extends OutputStream {
      * This will notify any readers that bytes are waiting in the pipe.
      *
      * @exception IOException if an I/O error occurs.
+     *
+     * 刷新管道输出流
      */
     public synchronized void flush() throws IOException {
         if (sink != null) {
@@ -170,6 +193,8 @@ class PipedOutputStream extends OutputStream {
      * writing bytes.
      *
      * @exception  IOException  if an I/O error occurs.
+     *
+     * 关闭管道输出流
      */
     public void close()  throws IOException {
         if (sink != null) {

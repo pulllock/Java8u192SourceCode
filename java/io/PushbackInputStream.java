@@ -47,12 +47,16 @@ package java.io;
  * @author  David Connelly
  * @author  Jonathan Payne
  * @since   JDK1.0
+ *
+ * 退回输入流，流中的数据读取之后，还可以重新将数据退回到流中
  */
 public
 class PushbackInputStream extends FilterInputStream {
     /**
      * The pushback buffer.
      * @since   JDK1.1
+     *
+     * 缓冲字节数组
      */
     protected byte[] buf;
 
@@ -63,6 +67,8 @@ class PushbackInputStream extends FilterInputStream {
      * equal to zero.
      *
      * @since   JDK1.1
+     *
+     * 回退的索引
      */
     protected int pos;
 
@@ -130,6 +136,8 @@ class PushbackInputStream extends FilterInputStream {
      *             invoking its {@link #close()} method,
      *             or an I/O error occurs.
      * @see        java.io.InputStream#read()
+     *
+     * 读取一个字节
      */
     public int read() throws IOException {
         ensureOpen();
@@ -161,6 +169,8 @@ class PushbackInputStream extends FilterInputStream {
      *             invoking its {@link #close()} method,
      *             or an I/O error occurs.
      * @see        java.io.InputStream#read(byte[], int, int)
+     *
+     * 读取数据到指定的数组中
      */
     public int read(byte[] b, int off, int len) throws IOException {
         ensureOpen();
@@ -202,6 +212,8 @@ class PushbackInputStream extends FilterInputStream {
      * @exception IOException If there is not enough room in the pushback
      *            buffer for the byte, or this input stream has been closed by
      *            invoking its {@link #close()} method.
+     *
+     * 将指定的字节存入回退到流中
      */
     public void unread(int b) throws IOException {
         ensureOpen();
