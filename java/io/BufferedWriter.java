@@ -61,13 +61,26 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 带有缓冲区的字符输出流
  */
 
 public class BufferedWriter extends Writer {
 
+    /**
+     * 被包装的字符输出流
+     */
     private Writer out;
 
+    /**
+     * 缓冲数组
+     */
     private char cb[];
+
+    /**
+     * nChars：缓冲数组容量
+     * nextChar：内部缓冲区中下一个可以写的索引
+     */
     private int nChars, nextChar;
 
     private static int defaultCharBufferSize = 8192;
@@ -75,6 +88,8 @@ public class BufferedWriter extends Writer {
     /**
      * Line separator string.  This is the value of the line.separator
      * property at the moment that the stream was created.
+     *
+     * 行分隔符
      */
     private String lineSeparator;
 
@@ -135,6 +150,8 @@ public class BufferedWriter extends Writer {
      * Writes a single character.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 写一个字符到字符输出流
      */
     public void write(int c) throws IOException {
         synchronized (lock) {
@@ -169,6 +186,8 @@ public class BufferedWriter extends Writer {
      * @param  len   Number of characters to write
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 将指定的字符数组中的数据写到字符输出流
      */
     public void write(char cbuf[], int off, int len) throws IOException {
         synchronized (lock) {
@@ -215,6 +234,8 @@ public class BufferedWriter extends Writer {
      * @param  len   Number of characters to be written
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 将字符串中的字符写到字符输出流
      */
     public void write(String s, int off, int len) throws IOException {
         synchronized (lock) {
@@ -238,6 +259,8 @@ public class BufferedWriter extends Writer {
      * newline ('\n') character.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 向字符输出流写入换行标记
      */
     public void newLine() throws IOException {
         write(lineSeparator);
@@ -247,6 +270,8 @@ public class BufferedWriter extends Writer {
      * Flushes the stream.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 将流刷到目标地址
      */
     public void flush() throws IOException {
         synchronized (lock) {
@@ -255,6 +280,10 @@ public class BufferedWriter extends Writer {
         }
     }
 
+    /**
+     * 关闭流
+     * @throws IOException
+     */
     @SuppressWarnings("try")
     public void close() throws IOException {
         synchronized (lock) {

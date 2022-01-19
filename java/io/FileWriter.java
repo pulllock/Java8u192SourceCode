@@ -47,6 +47,8 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 文件字符输出流
  */
 
 public class FileWriter extends OutputStreamWriter {

@@ -38,16 +38,22 @@ import java.util.Arrays;
  *
  * @author      Herb Jellinek
  * @since       JDK1.1
+ *
+ * 字符数组输出流
  */
 public
 class CharArrayWriter extends Writer {
     /**
      * The buffer where data is stored.
+     *
+     * 字符缓冲数组
      */
     protected char buf[];
 
     /**
      * The number of chars in the buffer.
+     *
+     * 字符缓冲数组中元素的个数
      */
     protected int count;
 
@@ -74,6 +80,8 @@ class CharArrayWriter extends Writer {
 
     /**
      * Writes a character to the buffer.
+     *
+     * 写一个字符到字符输出流
      */
     public void write(int c) {
         synchronized (lock) {
@@ -91,6 +99,8 @@ class CharArrayWriter extends Writer {
      * @param c the data to be written
      * @param off       the start offset in the data
      * @param len       the number of chars that are written
+     *
+     * 将指定的字符数组中的数据写到字符输出流
      */
     public void write(char c[], int off, int len) {
         if ((off < 0) || (off > c.length) || (len < 0) ||
@@ -114,6 +124,8 @@ class CharArrayWriter extends Writer {
      * @param  str  String to be written from
      * @param  off  Offset from which to start reading characters
      * @param  len  Number of characters to be written
+     *
+     * 将指定的字符数组中的数据写到字符输出流
      */
     public void write(String str, int off, int len) {
         synchronized (lock) {
@@ -131,6 +143,8 @@ class CharArrayWriter extends Writer {
      *
      * @param out       the output stream to write to
      * @throws IOException If an I/O error occurs.
+     *
+     * 将当前字符输出流中的数据写到指定的字符输出流中
      */
     public void writeTo(Writer out) throws IOException {
         synchronized (lock) {
@@ -161,6 +175,8 @@ class CharArrayWriter extends Writer {
      * @return  This writer
      *
      * @since  1.5
+     *
+     * 将指定的字符序列中的字符写到输出流
      */
     public CharArrayWriter append(CharSequence csq) {
         String s = (csq == null ? "null" : csq.toString());
@@ -199,6 +215,8 @@ class CharArrayWriter extends Writer {
      *          <tt>csq.length()</tt>
      *
      * @since  1.5
+     *
+     * 将指定的字符序列中的字符写到输出流
      */
     public CharArrayWriter append(CharSequence csq, int start, int end) {
         String s = (csq == null ? "null" : csq).subSequence(start, end).toString();
@@ -221,6 +239,8 @@ class CharArrayWriter extends Writer {
      * @return  This writer
      *
      * @since 1.5
+     *
+     * 将指定的字符写到输出流
      */
     public CharArrayWriter append(char c) {
         write(c);
@@ -230,6 +250,8 @@ class CharArrayWriter extends Writer {
     /**
      * Resets the buffer so that you can use it again without
      * throwing away the already allocated buffer.
+     *
+     * 重置
      */
     public void reset() {
         count = 0;
@@ -239,6 +261,8 @@ class CharArrayWriter extends Writer {
      * Returns a copy of the input data.
      *
      * @return an array of chars copied from the input data.
+     *
+     * 转换成字符数组
      */
     public char toCharArray()[] {
         synchronized (lock) {
@@ -250,6 +274,8 @@ class CharArrayWriter extends Writer {
      * Returns the current size of the buffer.
      *
      * @return an int representing the current size of the buffer.
+     *
+     * 大小
      */
     public int size() {
         return count;
@@ -258,6 +284,8 @@ class CharArrayWriter extends Writer {
     /**
      * Converts input data to a string.
      * @return the string.
+     *
+     * 转换成字符串
      */
     public String toString() {
         synchronized (lock) {
@@ -267,6 +295,8 @@ class CharArrayWriter extends Writer {
 
     /**
      * Flush the stream.
+     *
+     * 刷新字符数组输出流
      */
     public void flush() { }
 
@@ -274,6 +304,8 @@ class CharArrayWriter extends Writer {
      * Close the stream.  This method does not release the buffer, since its
      * contents might still be required. Note: Invoking this method in this class
      * will have no effect.
+     *
+     * 关闭字符数组输出流
      */
     public void close() { }
 

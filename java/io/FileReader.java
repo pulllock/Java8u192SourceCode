@@ -41,6 +41,8 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 文件字符输入流
  */
 public class FileReader extends InputStreamReader {
 

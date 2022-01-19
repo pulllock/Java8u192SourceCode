@@ -57,10 +57,15 @@ import sun.nio.cs.StreamDecoder;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 字节输入流转字符输入流
  */
 
 public class InputStreamReader extends Reader {
 
+    /**
+     * 流解码器，将字节输入流中的数据解码成字符
+     */
     private final StreamDecoder sd;
 
     /**
@@ -163,6 +168,8 @@ public class InputStreamReader extends Reader {
      *         reached
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 读取一个字符
      */
     public int read() throws IOException {
         return sd.read();
@@ -179,6 +186,8 @@ public class InputStreamReader extends Reader {
      *             stream has been reached
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 读取字符放到目标数组中
      */
     public int read(char cbuf[], int offset, int length) throws IOException {
         return sd.read(cbuf, offset, length);
@@ -190,11 +199,17 @@ public class InputStreamReader extends Reader {
      * read from the underlying byte stream.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 判断流是否已经准备好被读取
      */
     public boolean ready() throws IOException {
         return sd.ready();
     }
 
+    /**
+     * 关闭流
+     * @throws IOException
+     */
     public void close() throws IOException {
         sd.close();
     }

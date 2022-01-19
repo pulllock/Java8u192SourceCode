@@ -36,12 +36,16 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 包装字符输出流
  */
 
 public abstract class FilterWriter extends Writer {
 
     /**
      * The underlying character-output stream.
+     *
+     * 被包装的字符输出流
      */
     protected Writer out;
 

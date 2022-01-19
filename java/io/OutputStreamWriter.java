@@ -72,10 +72,15 @@ import sun.nio.cs.StreamEncoder;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 将字符输出流转字节输出流
  */
 
 public class OutputStreamWriter extends Writer {
 
+    /**
+     * 流编码器：将字符编码为字节
+     */
     private final StreamEncoder se;
 
     /**
@@ -189,6 +194,8 @@ public class OutputStreamWriter extends Writer {
      * Writes a single character.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 写一个字符到输出流
      */
     public void write(int c) throws IOException {
         se.write(c);
@@ -202,6 +209,8 @@ public class OutputStreamWriter extends Writer {
      * @param  len   Number of characters to write
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 将指定的字符数组中的数据写到输出流
      */
     public void write(char cbuf[], int off, int len) throws IOException {
         se.write(cbuf, off, len);
@@ -215,6 +224,8 @@ public class OutputStreamWriter extends Writer {
      * @param  len  Number of characters to write
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 将指定的字符数组中的数据写到输出流
      */
     public void write(String str, int off, int len) throws IOException {
         se.write(str, off, len);

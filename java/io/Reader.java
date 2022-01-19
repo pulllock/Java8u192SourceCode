@@ -46,6 +46,8 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 字符输入流
  */
 
 public abstract class Reader implements Readable, Closeable {
@@ -56,6 +58,8 @@ public abstract class Reader implements Readable, Closeable {
      * itself to protect critical sections.  A subclass should therefore use
      * the object in this field rather than <tt>this</tt> or a synchronized
      * method.
+     *
+     * 锁
      */
     protected Object lock;
 
@@ -92,6 +96,8 @@ public abstract class Reader implements Readable, Closeable {
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if target is null
      * @throws java.nio.ReadOnlyBufferException if target is a read only buffer
+     *
+     * 从字符输入流中读取字符到指定的字符缓冲中
      * @since 1.5
      */
     public int read(java.nio.CharBuffer target) throws IOException {
@@ -115,6 +121,8 @@ public abstract class Reader implements Readable, Closeable {
      *             been reached
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取一个字符
      */
     public int read() throws IOException {
         char cb[] = new char[1];
@@ -135,6 +143,8 @@ public abstract class Reader implements Readable, Closeable {
      *              has been reached
      *
      * @exception   IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取字符到指定的字符数组中
      */
     public int read(char cbuf[]) throws IOException {
         return read(cbuf, 0, cbuf.length);
@@ -153,13 +163,19 @@ public abstract class Reader implements Readable, Closeable {
      *             stream has been reached
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取字符到指定的字符数组中
      */
     abstract public int read(char cbuf[], int off, int len) throws IOException;
 
     /** Maximum skip-buffer size */
     private static final int maxSkipBufferSize = 8192;
 
-    /** Skip buffer, null until allocated */
+    /**
+     * Skip buffer, null until allocated
+     *
+     * 存储跳过的字符
+     */
     private char skipBuffer[] = null;
 
     /**
@@ -172,6 +188,8 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @exception  IllegalArgumentException  If <code>n</code> is negative.
      * @exception  IOException  If an I/O error occurs
+     *
+     * 跳过n个字符
      */
     public long skip(long n) throws IOException {
         if (n < 0L)
@@ -182,6 +200,7 @@ public abstract class Reader implements Readable, Closeable {
                 skipBuffer = new char[nn];
             long r = n;
             while (r > 0) {
+                // 将跳过的字符放到skipBuffer中
                 int nc = read(skipBuffer, 0, (int)Math.min(r, nn));
                 if (nc == -1)
                     break;
@@ -199,6 +218,8 @@ public abstract class Reader implements Readable, Closeable {
      * next read will block.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 判断当前字符输入流是否已经准备好被读取
      */
     public boolean ready() throws IOException {
         return false;
@@ -210,6 +231,8 @@ public abstract class Reader implements Readable, Closeable {
      * method.
      *
      * @return true if and only if this stream supports the mark operation.
+     *
+     * 是否支持mark操作
      */
     public boolean markSupported() {
         return false;
@@ -227,6 +250,8 @@ public abstract class Reader implements Readable, Closeable {
      *
      * @exception  IOException  If the stream does not support mark(),
      *                          or if some other I/O error occurs
+     *
+     * 设置标记
      */
     public void mark(int readAheadLimit) throws IOException {
         throw new IOException("mark() not supported");
@@ -244,6 +269,8 @@ public abstract class Reader implements Readable, Closeable {
      *                          or if the mark has been invalidated,
      *                          or if the stream does not support reset(),
      *                          or if some other I/O error occurs
+     *
+     * 重置
      */
     public void reset() throws IOException {
         throw new IOException("reset() not supported");
@@ -256,6 +283,8 @@ public abstract class Reader implements Readable, Closeable {
      * Closing a previously closed stream has no effect.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 关闭
      */
      abstract public void close() throws IOException;
 

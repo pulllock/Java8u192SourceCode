@@ -36,12 +36,16 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 包装字符输入流
  */
 
 public abstract class FilterReader extends Reader {
 
     /**
      * The underlying character-input stream.
+     *
+     * 被包装的字符输入流
      */
     protected Reader in;
 

@@ -42,6 +42,8 @@ import java.util.List;
  * @see     java.io.FileInputStream
  * @see     java.io.FileOutputStream
  * @since   JDK1.0
+ *
+ * 文件描述符
  */
 public final class FileDescriptor {
 

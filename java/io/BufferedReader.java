@@ -65,21 +65,46 @@ import java.util.stream.StreamSupport;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 带有内部缓冲的字符输入流
  */
 
 public class BufferedReader extends Reader {
 
+    /**
+     * 被包装的字符输入流
+     */
     private Reader in;
 
+    /**
+     * 字符缓冲数组
+     */
     private char cb[];
+
+    /**
+     * nChars：缓冲数组中的元素个数
+     * nextChar：下一个要读的字符数组的索引
+     */
     private int nChars, nextChar;
 
     private static final int INVALIDATED = -2;
     private static final int UNMARKED = -1;
+
+    /**
+     * 标记
+     */
     private int markedChar = UNMARKED;
+
+    /**
+     * 读上限
+     */
     private int readAheadLimit = 0; /* Valid only when markedChar > 0 */
 
-    /** If the next character is a line feed, skip it */
+    /**
+     * If the next character is a line feed, skip it
+     *
+     * 如果上一个字符是\r 需要调过下一个紧邻的\n
+     */
     private boolean skipLF = false;
 
     /** The skipLF flag when the mark was set */
@@ -124,6 +149,8 @@ public class BufferedReader extends Reader {
 
     /**
      * Fills the input buffer, taking the mark into account if it is valid.
+     *
+     * 将包装的字符输入流中的数据读到缓冲数组中
      */
     private void fill() throws IOException {
         int dst;
@@ -173,6 +200,8 @@ public class BufferedReader extends Reader {
      *         0 to 65535 (<tt>0x00-0xffff</tt>), or -1 if the
      *         end of the stream has been reached
      * @exception  IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取一个字符
      */
     public int read() throws IOException {
         synchronized (lock) {
@@ -198,6 +227,8 @@ public class BufferedReader extends Reader {
     /**
      * Reads characters into a portion of an array, reading from the underlying
      * stream if necessary.
+     *
+     * 从字符输入流中读取字符到指定的字符数组中
      */
     private int read1(char[] cbuf, int off, int len) throws IOException {
         if (nextChar >= nChars) {
@@ -272,6 +303,8 @@ public class BufferedReader extends Reader {
      *             stream has been reached
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取字符到指定的字符数组中
      */
     public int read(char cbuf[], int off, int len) throws IOException {
         synchronized (lock) {
@@ -308,6 +341,8 @@ public class BufferedReader extends Reader {
      * @see        java.io.LineNumberReader#readLine()
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 读取一行，每一行的终止标记为：\r 或 \n 或 \r\n 或 EOF
      */
     String readLine(boolean ignoreLF) throws IOException {
         StringBuffer s = null;
@@ -384,6 +419,8 @@ public class BufferedReader extends Reader {
      * @exception  IOException  If an I/O error occurs
      *
      * @see java.nio.file.Files#readAllLines
+     *
+     * 读取一行
      */
     public String readLine() throws IOException {
         return readLine(false);
@@ -398,6 +435,8 @@ public class BufferedReader extends Reader {
      *
      * @exception  IllegalArgumentException  If <code>n</code> is negative.
      * @exception  IOException  If an I/O error occurs
+     *
+     * 跳过n个字符
      */
     public long skip(long n) throws IOException {
         if (n < 0L) {
@@ -438,6 +477,8 @@ public class BufferedReader extends Reader {
      * character stream is ready.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 判断当前字符输入流是否已经准备好被读取
      */
     public boolean ready() throws IOException {
         synchronized (lock) {
@@ -466,6 +507,8 @@ public class BufferedReader extends Reader {
 
     /**
      * Tells whether this stream supports the mark() operation, which it does.
+     *
+     * 是否支持mark操作
      */
     public boolean markSupported() {
         return true;
@@ -486,6 +529,8 @@ public class BufferedReader extends Reader {
      *
      * @exception  IllegalArgumentException  If {@code readAheadLimit < 0}
      * @exception  IOException  If an I/O error occurs
+     *
+     * 标记操作
      */
     public void mark(int readAheadLimit) throws IOException {
         if (readAheadLimit < 0) {
@@ -504,6 +549,8 @@ public class BufferedReader extends Reader {
      *
      * @exception  IOException  If the stream has never been marked,
      *                          or if the mark has been invalidated
+     *
+     * 重置操作
      */
     public void reset() throws IOException {
         synchronized (lock) {
@@ -517,6 +564,10 @@ public class BufferedReader extends Reader {
         }
     }
 
+    /**
+     * 关闭
+     * @throws IOException
+     */
     public void close() throws IOException {
         synchronized (lock) {
             if (in == null)
@@ -557,6 +608,8 @@ public class BufferedReader extends Reader {
      *         described by this {@code BufferedReader}
      *
      * @since 1.8
+     *
+     * 返回行的Stream
      */
     public Stream<String> lines() {
         Iterator<String> iter = new Iterator<String>() {

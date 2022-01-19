@@ -29,6 +29,8 @@ import java.lang.annotation.Native;
 
 /**
  * Package-private abstract class for the local filesystem abstraction.
+ *
+ * 本地文件系统
  */
 
 abstract class FileSystem {
@@ -37,23 +39,31 @@ abstract class FileSystem {
 
     /**
      * Return the local filesystem's name-separator character.
+     *
+     * 路径内部分隔符，windows上是\，类unix是/
      */
     public abstract char getSeparator();
 
     /**
      * Return the local filesystem's path-separator character.
+     *
+     * 路径之间的分隔符，windows上是; 类unix是:
      */
     public abstract char getPathSeparator();
 
     /**
      * Convert the given pathname string to normal form.  If the string is
      * already in normal form then it is simply returned.
+     *
+     * 返回本地化路径，忽略最后的\
      */
     public abstract String normalize(String path);
 
     /**
      * Compute the length of this pathname string's prefix.  The pathname
      * string must be in normal form.
+     *
+     * 路径前缀长度
      */
     public abstract int prefixLength(String path);
 
@@ -61,6 +71,8 @@ abstract class FileSystem {
      * Resolve the child pathname string against the parent.
      * Both strings must be in normal form, and the result
      * will be in normal form.
+     *
+     * 将路径解析为绝对路径
      */
     public abstract String resolve(String parent, String child);
 
@@ -84,6 +96,8 @@ abstract class FileSystem {
 
     /**
      * Tell whether or not the given abstract pathname is absolute.
+     *
+     * 是否绝对路径
      */
     public abstract boolean isAbsolute(File f);
 
@@ -99,9 +113,24 @@ abstract class FileSystem {
     /* -- Attribute accessors -- */
 
     /* Constants for simple boolean attributes */
+    /**
+     * 存在
+     */
     @Native public static final int BA_EXISTS    = 0x01;
+
+    /**
+     * 常规文件
+     */
     @Native public static final int BA_REGULAR   = 0x02;
+
+    /**
+     * 目录
+     */
     @Native public static final int BA_DIRECTORY = 0x04;
+
+    /**
+     * 隐藏文件
+     */
     @Native public static final int BA_HIDDEN    = 0x08;
 
     /**
@@ -111,8 +140,19 @@ abstract class FileSystem {
      */
     public abstract int getBooleanAttributes(File f);
 
+    /**
+     * 可读
+     */
     @Native public static final int ACCESS_READ    = 0x04;
+
+    /**
+     * 可写
+     */
     @Native public static final int ACCESS_WRITE   = 0x02;
+
+    /**
+     * 可执行
+     */
     @Native public static final int ACCESS_EXECUTE = 0x01;
 
     /**
@@ -204,8 +244,19 @@ abstract class FileSystem {
     public abstract File[] listRoots();
 
     /* -- Disk usage -- */
+    /**
+     * 总容量
+     */
     @Native public static final int SPACE_TOTAL  = 0;
+
+    /**
+     * 空闲容量
+     */
     @Native public static final int SPACE_FREE   = 1;
+
+    /**
+     * 可用容量
+     */
     @Native public static final int SPACE_USABLE = 2;
 
     public abstract long getSpace(File f, int t);

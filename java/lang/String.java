@@ -838,6 +838,8 @@ public final class String
      *            <li>{@code dstBegin} is negative
      *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
      *                {@code dst.length}</ul>
+     *
+     * 将存储字符串值的字符数组中的值拷贝到指定的字符数组中
      */
     public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
         if (srcBegin < 0) {

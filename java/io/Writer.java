@@ -45,17 +45,23 @@ package java.io;
  *
  * @author      Mark Reinhold
  * @since       JDK1.1
+ *
+ * 字符输出流
  */
 
 public abstract class Writer implements Appendable, Closeable, Flushable {
 
     /**
      * Temporary buffer used to hold writes of strings and single characters
+     *
+     * 写缓冲区
      */
     private char[] writeBuffer;
 
     /**
      * Size of writeBuffer, must be >= 1
+     *
+     * 写缓冲区的大小
      */
     private static final int WRITE_BUFFER_SIZE = 1024;
 
@@ -65,6 +71,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * itself to protect critical sections.  A subclass should therefore use
      * the object in this field rather than <tt>this</tt> or a synchronized
      * method.
+     *
+     * 锁
      */
     protected Object lock;
 
@@ -103,6 +111,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 写一个字符到字符输出流
      */
     public void write(int c) throws IOException {
         synchronized (lock) {
@@ -122,6 +132,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 将指定的字符数组中的数据写到字符输出流
      */
     public void write(char cbuf[]) throws IOException {
         write(cbuf, 0, cbuf.length);
@@ -141,6 +153,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 将指定的字符数组中的数据写到字符输出流
      */
     abstract public void write(char cbuf[], int off, int len) throws IOException;
 
@@ -152,6 +166,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 将字符串中的字符写到字符输出流
      */
     public void write(String str) throws IOException {
         write(str, 0, str.length());
@@ -176,6 +192,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 将字符串中的字符写到字符输出流
      */
     public void write(String str, int off, int len) throws IOException {
         synchronized (lock) {
@@ -188,6 +206,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             } else {    // Don't permanently allocate very large buffers.
                 cbuf = new char[len];
             }
+            // 将存储字符串值的字符数组中的值拷贝到指定的字符数组中
             str.getChars(off, (off + len), cbuf, 0);
             write(cbuf, 0, len);
         }
@@ -219,6 +238,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      *
      * @since  1.5
+     *
+     * 将指定的字符序列中的字符写到输出流
      */
     public Writer append(CharSequence csq) throws IOException {
         if (csq == null)
@@ -263,6 +284,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      *
      * @since  1.5
+     *
+     * 将指定的字符序列中的字符写到输出流
      */
     public Writer append(CharSequence csq, int start, int end) throws IOException {
         CharSequence cs = (csq == null ? "null" : csq);
@@ -288,6 +311,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      *
      * @since 1.5
+     *
+     * 将指定的字符写到输出流
      */
     public Writer append(char c) throws IOException {
         write(c);
@@ -309,6 +334,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 将字符输出流缓冲的字符刷到目标地址
      */
     abstract public void flush() throws IOException;
 
@@ -319,6 +346,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 关闭输出流
      */
     abstract public void close() throws IOException;
 

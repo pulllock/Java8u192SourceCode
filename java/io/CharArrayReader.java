@@ -31,20 +31,36 @@ package java.io;
  *
  * @author      Herb Jellinek
  * @since       JDK1.1
+ *
+ * 字符数组输入流
  */
 public class CharArrayReader extends Reader {
-    /** The character buffer. */
+    /**
+     * The character buffer.
+     *
+     * 字符缓冲数组
+     */
     protected char buf[];
 
-    /** The current buffer position. */
+    /**
+     * The current buffer position.
+     *
+     * 读索引
+     */
     protected int pos;
 
-    /** The position of mark in buffer. */
+    /**
+     * The position of mark in buffer.
+     *
+     * 标记索引
+     */
     protected int markedPos = 0;
 
     /**
      *  The index of the end of this buffer.  There is not valid
      *  data at or beyond this index.
+     *
+     *  字符缓冲数组最大值
      */
     protected int count;
 
@@ -96,6 +112,8 @@ public class CharArrayReader extends Reader {
      * Reads a single character.
      *
      * @exception   IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取一个字符
      */
     public int read() throws IOException {
         synchronized (lock) {
@@ -116,6 +134,8 @@ public class CharArrayReader extends Reader {
      *          the end of the stream has been reached
      *
      * @exception   IOException  If an I/O error occurs
+     *
+     * 从字符输入流中读取字符到指定的字符数组中
      */
     public int read(char b[], int off, int len) throws IOException {
         synchronized (lock) {
@@ -155,6 +175,8 @@ public class CharArrayReader extends Reader {
      * @param n The number of characters to skip
      * @return       The number of characters actually skipped
      * @exception  IOException If the stream is closed, or an I/O error occurs
+     *
+     * 跳过n个字符
      */
     public long skip(long n) throws IOException {
         synchronized (lock) {
@@ -177,6 +199,8 @@ public class CharArrayReader extends Reader {
      * are always ready to be read.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 判断当前字符输入流是否已经准备好被读取
      */
     public boolean ready() throws IOException {
         synchronized (lock) {
@@ -187,6 +211,8 @@ public class CharArrayReader extends Reader {
 
     /**
      * Tells whether this stream supports the mark() operation, which it does.
+     *
+     * 是否支持mark操作
      */
     public boolean markSupported() {
         return true;
@@ -203,6 +229,8 @@ public class CharArrayReader extends Reader {
      *                         ignored.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 标记操作
      */
     public void mark(int readAheadLimit) throws IOException {
         synchronized (lock) {
@@ -216,6 +244,8 @@ public class CharArrayReader extends Reader {
      * never been marked.
      *
      * @exception  IOException  If an I/O error occurs
+     *
+     * 重置操作
      */
     public void reset() throws IOException {
         synchronized (lock) {
@@ -229,6 +259,8 @@ public class CharArrayReader extends Reader {
      * it.  Once the stream has been closed, further read(), ready(),
      * mark(), reset(), or skip() invocations will throw an IOException.
      * Closing a previously closed stream has no effect.
+     *
+     * 关闭字符数组输入流
      */
     public void close() {
         buf = null;

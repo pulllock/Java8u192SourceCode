@@ -144,6 +144,8 @@ import sun.security.action.GetPropertyAction;
  *
  * @author  unascribed
  * @since   JDK1.0
+ *
+ * 文件和目录
  */
 
 public class File
@@ -152,6 +154,8 @@ public class File
 
     /**
      * The FileSystem object representing the platform's local file system.
+     *
+     * 文件系统
      */
     private static final FileSystem fs = DefaultFileSystem.getFileSystem();
 
@@ -161,6 +165,8 @@ public class File
      * contain any duplicate or redundant separators.
      *
      * @serial
+     *
+     * 路径
      */
     private final String path;
 
