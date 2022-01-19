@@ -49,6 +49,8 @@ import java.io.IOException;
  * so that method invocations on the implementation class can be chained.
  *
  * @since 1.7
+ *
+ * 网络通道
  */
 
 public interface NetworkChannel
@@ -83,6 +85,8 @@ public interface NetworkChannel
      *          any required permissions.
      *
      * @see #getLocalAddress
+     *
+     * 将通道的套接字绑定到指定的本地套接字地址
      */
     NetworkChannel bind(SocketAddress local) throws IOException;
 
@@ -100,6 +104,8 @@ public interface NetworkChannel
      *          If the channel is closed
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 获取绑定到通道套接字上的套接字地址
      */
     SocketAddress getLocalAddress() throws IOException;
 
@@ -126,6 +132,8 @@ public interface NetworkChannel
      *          If an I/O error occurs
      *
      * @see java.net.StandardSocketOptions
+     *
+     * 设置套接字的参数
      */
     <T> NetworkChannel setOption(SocketOption<T> name, T value) throws IOException;
 
@@ -148,6 +156,8 @@ public interface NetworkChannel
      *          If an I/O error occurs
      *
      * @see java.net.StandardSocketOptions
+     *
+     * 获取套接字的参数
      */
     <T> T getOption(SocketOption<T> name) throws IOException;
 
@@ -158,6 +168,8 @@ public interface NetworkChannel
      * channel has been closed.
      *
      * @return  A set of the socket options supported by this channel
+     *
+     * 获取支持的套接字参数集合
      */
     Set<SocketOption<?>> supportedOptions();
 }

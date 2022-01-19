@@ -201,6 +201,8 @@ import java.util.Set;
  *
  * @see SelectableChannel
  * @see SelectionKey
+ *
+ * 通道选择器
  */
 
 public abstract class Selector implements Closeable {
@@ -222,7 +224,8 @@ public abstract class Selector implements Closeable {
      *
      * @throws  IOException
      *          If an I/O error occurs
-     * 创建一个Selector
+     *
+     * 创建一个Selector，并打开Selector
      */
     public static Selector open() throws IOException {
         return SelectorProvider.provider().openSelector();
@@ -232,6 +235,8 @@ public abstract class Selector implements Closeable {
      * Tells whether or not this selector is open.
      *
      * @return <tt>true</tt> if, and only if, this selector is open
+     *
+     * 当前Selector是否打开
      */
     public abstract boolean isOpen();
 
@@ -239,6 +244,8 @@ public abstract class Selector implements Closeable {
      * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
+     *
+     * 返回创建通道的SelectorProvider
      */
     public abstract SelectorProvider provider();
 
@@ -256,6 +263,8 @@ public abstract class Selector implements Closeable {
      *
      * @throws  ClosedSelectorException
      *          If this selector is closed
+     *
+     * 返回通道选择器的SelectionKey集合
      */
     public abstract Set<SelectionKey> keys();
 
@@ -272,6 +281,7 @@ public abstract class Selector implements Closeable {
      *
      * @throws  ClosedSelectorException
      *          If this selector is closed
+     *
      * 所有已经就绪的通道
      */
     public abstract Set<SelectionKey> selectedKeys();
@@ -295,7 +305,8 @@ public abstract class Selector implements Closeable {
      *
      * @throws  ClosedSelectorException
      *          If this selector is closed
-     * 不会阻塞，没有就绪事件，也会立即返回
+     *
+     * 选择可用的已就绪的通道，不会阻塞，没有就绪事件，也会立即返回
      */
     public abstract int selectNow() throws IOException;
 
@@ -328,7 +339,8 @@ public abstract class Selector implements Closeable {
      *
      * @throws  IllegalArgumentException
      *          If the value of the timeout argument is negative
-     * 如果没有就绪的事件会阻塞，等到超时时间过了，就会返回
+     *
+     * 选择可用的已就绪的通道，如果没有就绪的事件会阻塞，等到超时时间过了，就会返回
      */
     public abstract int select(long timeout)
         throws IOException;
@@ -350,7 +362,8 @@ public abstract class Selector implements Closeable {
      *
      * @throws  ClosedSelectorException
      *          If this selector is closed
-     * 如果没有就绪的事件会阻塞
+     *
+     * 选择可用的已就绪的通道，如果没有就绪的事件会阻塞
      */
     public abstract int select() throws IOException;
 
@@ -372,6 +385,7 @@ public abstract class Selector implements Closeable {
      * operations has the same effect as invoking it just once.  </p>
      *
      * @return  This selector
+     *
      * 让阻塞的select返回
      */
     public abstract Selector wakeup();
@@ -396,7 +410,8 @@ public abstract class Selector implements Closeable {
      *
      * @throws  IOException
      *          If an I/O error occurs
-     * 关闭Selector，注册到改Selector上的所有SelectionKey无效
+     *
+     * 关闭Selector，注册到该Selector上的所有SelectionKey无效
      */
     public abstract void close() throws IOException;
 

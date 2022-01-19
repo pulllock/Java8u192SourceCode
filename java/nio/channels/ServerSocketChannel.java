@@ -69,6 +69,8 @@ import java.nio.channels.spi.SelectorProvider;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 服务套接字通道
  */
 
 public abstract class ServerSocketChannel
@@ -106,6 +108,8 @@ public abstract class ServerSocketChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开服务套接字通道
      */
     public static ServerSocketChannel open() throws IOException {
         return SelectorProvider.provider().openServerSocketChannel();
@@ -120,6 +124,8 @@ public abstract class ServerSocketChannel
      * </p>
      *
      * @return  The valid-operation set
+     *
+     * 返回通道允许监听的事件，服务套接字通道只允许监听ACCEPT事件
      */
     public final int validOps() {
         return SelectionKey.OP_ACCEPT;
@@ -153,6 +159,8 @@ public abstract class ServerSocketChannel
      *          operation
      *
      * @since 1.7
+     *
+     * 将通道的套接字绑定到指定的本地套接字地址
      */
     public final ServerSocketChannel bind(SocketAddress local)
         throws IOException
@@ -197,6 +205,8 @@ public abstract class ServerSocketChannel
      *          operation
      *
      * @since 1.7
+     *
+     * 将通道的套接字绑定到指定的本地套接字地址
      */
     public abstract ServerSocketChannel bind(SocketAddress local, int backlog)
         throws IOException;
@@ -208,6 +218,8 @@ public abstract class ServerSocketChannel
      * @throws  IOException                             {@inheritDoc}
      *
      * @since 1.7
+     *
+     * 设置套接字的参数
      */
     public abstract <T> ServerSocketChannel setOption(SocketOption<T> name, T value)
         throws IOException;
@@ -219,6 +231,8 @@ public abstract class ServerSocketChannel
      * declared in the {@link java.net.ServerSocket} class.  </p>
      *
      * @return  A server socket associated with this channel
+     *
+     * 返回当前通道关联的服务套接字
      */
     public abstract ServerSocket socket();
 
@@ -268,6 +282,8 @@ public abstract class ServerSocketChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 接收新连接
      */
     public abstract SocketChannel accept() throws IOException;
 
@@ -288,6 +304,8 @@ public abstract class ServerSocketChannel
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
+     *
+     * 获取本地套接字地址
      */
     @Override
     public abstract SocketAddress getLocalAddress() throws IOException;

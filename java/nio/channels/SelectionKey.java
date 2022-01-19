@@ -105,6 +105,8 @@ import java.io.IOException;
  *
  * @see SelectableChannel
  * @see Selector
+ *
+ * SelectionKey是SelectableChannel在Selector中注册后的表示形式
  */
 
 public abstract class SelectionKey {
@@ -122,6 +124,8 @@ public abstract class SelectionKey {
      * continue to return the channel even after the key is cancelled.
      *
      * @return  This key's channel
+     *
+     * 返回创建此SelectionKey的通道
      */
     public abstract SelectableChannel channel();
 
@@ -130,6 +134,8 @@ public abstract class SelectionKey {
      * continue to return the selector even after the key is cancelled.
      *
      * @return  This key's selector
+     *
+     * 返回创建此SelectionKey的Selector
      */
     public abstract Selector selector();
 
@@ -140,6 +146,8 @@ public abstract class SelectionKey {
      * its channel is closed, or its selector is closed.  </p>
      *
      * @return  <tt>true</tt> if, and only if, this key is valid
+     *
+     * 判断此SelectionKey是否有效
      */
     public abstract boolean isValid();
 
@@ -156,6 +164,8 @@ public abstract class SelectionKey {
      * selector's cancelled-key set, and therefore may block briefly if invoked
      * concurrently with a cancellation or selection operation involving the
      * same selector.  </p>
+     *
+     * 取消SelectionKey
      */
     public abstract void cancel();
 
@@ -175,6 +185,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 返回此SelectionKey监听的事件
      */
     public abstract int interestOps();
 
@@ -195,6 +207,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 设置此SelectionKey监听的事件
      */
     public abstract SelectionKey interestOps(int ops);
 
@@ -208,6 +222,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 返回SelectionKey中已就绪的事件
      */
     public abstract int readyOps();
 
@@ -224,6 +240,7 @@ public abstract class SelectionKey {
      * end-of-stream, has been remotely shut down for further reading, or has
      * an error pending, then it will add <tt>OP_READ</tt> to the key's
      * ready-operation set and add the key to its selected-key&nbsp;set.  </p>
+     *
      * 读事件
      */
     public static final int OP_READ = 1 << 0;
@@ -238,6 +255,7 @@ public abstract class SelectionKey {
      * remotely shut down for further writing, or has an error pending, then it
      * will add <tt>OP_WRITE</tt> to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
+     *
      * 写事件
      */
     public static final int OP_WRITE = 1 << 2;
@@ -252,6 +270,7 @@ public abstract class SelectionKey {
      * connection sequence, or has an error pending, then it will add
      * <tt>OP_CONNECT</tt> to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
+     *
      * 连接事件
      */
     public static final int OP_CONNECT = 1 << 3;
@@ -266,6 +285,7 @@ public abstract class SelectionKey {
      * another connection, or has an error pending, then it will add
      * <tt>OP_ACCEPT</tt> to the key's ready set and add the key to its
      * selected-key&nbsp;set.  </p>
+     *
      * 接收新连接事件
      */
     public static final int OP_ACCEPT = 1 << 4;
@@ -288,6 +308,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 判断通道是否已经准备好读取数据
      */
     public final boolean isReadable() {
         return (readyOps() & OP_READ) != 0;
@@ -311,6 +333,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 判断通道是否已经准备好进行写入数据
      */
     public final boolean isWritable() {
         return (readyOps() & OP_WRITE) != 0;
@@ -335,6 +359,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 判断是否已经完成套接字的连接
      */
     public final boolean isConnectable() {
         return (readyOps() & OP_CONNECT) != 0;
@@ -359,6 +385,8 @@ public abstract class SelectionKey {
      *
      * @throws  CancelledKeyException
      *          If this key has been cancelled
+     *
+     * 判断是否已经准备好接收新的套接字连接
      */
     public final boolean isAcceptable() {
         return (readyOps() & OP_ACCEPT) != 0;
@@ -367,6 +395,9 @@ public abstract class SelectionKey {
 
     // -- Attachments --
 
+    /**
+     * 注册的附属对象
+     */
     private volatile Object attachment = null;
 
     private static final AtomicReferenceFieldUpdater<SelectionKey,Object>
@@ -387,6 +418,8 @@ public abstract class SelectionKey {
      *
      * @return  The previously-attached object, if any,
      *          otherwise <tt>null</tt>
+     *
+     * 向此SelectionKey添加附属对象
      */
     public final Object attach(Object ob) {
         return attachmentUpdater.getAndSet(this, ob);
@@ -397,6 +430,8 @@ public abstract class SelectionKey {
      *
      * @return  The object currently attached to this key,
      *          or <tt>null</tt> if there is no attachment
+     *
+     * 返回附属对象
      */
     public final Object attachment() {
         return attachment;

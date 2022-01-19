@@ -60,6 +60,8 @@ import java.io.IOException;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 可以异步关闭和中断的通道
  */
 
 public interface InterruptibleChannel
@@ -76,6 +78,8 @@ public interface InterruptibleChannel
      * Channel#close Channel} interface.  </p>
      *
      * @throws  IOException  If an I/O error occurs
+     *
+     * 关闭通道
      */
     public void close() throws IOException;
 

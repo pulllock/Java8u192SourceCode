@@ -64,11 +64,20 @@ import sun.security.action.GetPropertyAction;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 选择器工厂，可创建Selector、Channel
  */
 
 public abstract class SelectorProvider {
 
+    /**
+     * 锁
+     */
     private static final Object lock = new Object();
+
+    /**
+     * SelectorProvider对象
+     */
     private static SelectorProvider provider = null;
 
     /**
@@ -160,6 +169,8 @@ public abstract class SelectorProvider {
      * returned by the first invocation.  </p>
      *
      * @return  The system-wide default selector provider
+     *
+     * 构造并返回默认的SelectorProvider
      */
     public static SelectorProvider provider() {
         synchronized (lock) {
@@ -168,10 +179,13 @@ public abstract class SelectorProvider {
             return AccessController.doPrivileged(
                 new PrivilegedAction<SelectorProvider>() {
                     public SelectorProvider run() {
+                        // 可使用java.nio.channels.spi.SelectorProvider系统属性来指定SelectorProvider的实现
                             if (loadProviderFromProperty())
                                 return provider;
+                            // 通过SPI加载配置的SelectorProvider实现
                             if (loadProviderAsService())
                                 return provider;
+                            // 系统默认的SelectorProvider实现
                             provider = sun.nio.ch.DefaultSelectorProvider.create();
                             return provider;
                         }
@@ -186,6 +200,8 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开一个数据报通道
      */
     public abstract DatagramChannel openDatagramChannel()
         throws IOException;
@@ -204,6 +220,8 @@ public abstract class SelectorProvider {
      *          If an I/O error occurs
      *
      * @since 1.7
+     *
+     * 打开一个数据报通道
      */
     public abstract DatagramChannel openDatagramChannel(ProtocolFamily family)
         throws IOException;
@@ -215,6 +233,8 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开一个管道
      */
     public abstract Pipe openPipe()
         throws IOException;
@@ -226,6 +246,8 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开一个Selector
      */
     public abstract AbstractSelector openSelector()
         throws IOException;
@@ -237,6 +259,8 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开服务套接字通道
      */
     public abstract ServerSocketChannel openServerSocketChannel()
         throws IOException;
@@ -248,6 +272,8 @@ public abstract class SelectorProvider {
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开套接字通道
      */
     public abstract SocketChannel openSocketChannel()
         throws IOException;

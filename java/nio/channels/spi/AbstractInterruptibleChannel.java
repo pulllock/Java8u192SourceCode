@@ -82,13 +82,22 @@ import sun.nio.ch.Interruptible;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 可以异步关闭和中断的通道的抽象实现
  */
 
 public abstract class AbstractInterruptibleChannel
     implements Channel, InterruptibleChannel
 {
 
+    /**
+     * 关闭使用的锁
+     */
     private final Object closeLock = new Object();
+
+    /**
+     * 通道是否打开
+     */
     private volatile boolean open = true;
 
     /**
@@ -106,6 +115,8 @@ public abstract class AbstractInterruptibleChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 关闭通道
      */
     public final void close() throws IOException {
         synchronized (closeLock) {
@@ -131,6 +142,8 @@ public abstract class AbstractInterruptibleChannel
      *
      * @throws  IOException
      *          If an I/O error occurs while closing the channel
+     *
+     * 关闭通道的实现
      */
     protected abstract void implCloseChannel() throws IOException;
 
@@ -142,6 +155,10 @@ public abstract class AbstractInterruptibleChannel
     // -- Interruption machinery --
 
     private Interruptible interruptor;
+
+    /**
+     * 被中断的线程
+     */
     private volatile Thread interrupted;
 
     /**

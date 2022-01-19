@@ -87,6 +87,8 @@ import java.nio.channels.spi.SelectorProvider;
  *
  * @see SelectionKey
  * @see Selector
+ *
+ * 多路复用通道
  */
 
 public abstract class SelectableChannel
@@ -103,6 +105,8 @@ public abstract class SelectableChannel
      * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
+     *
+     * 返回创建此通道的SelectorProvider
      */
     public abstract SelectorProvider provider();
 
@@ -114,6 +118,8 @@ public abstract class SelectableChannel
      * concrete channel class.
      *
      * @return  The valid-operation set
+     *
+     * 返回通道允许监听的事件
      */
     public abstract int validOps();
 
@@ -133,6 +139,8 @@ public abstract class SelectableChannel
      * for some time after it is closed.  </p>
      *
      * @return <tt>true</tt> if, and only if, this channel is registered
+     *
+     * 判断当前通道是否注册到了某个Selector上
      */
     public abstract boolean isRegistered();
     //
@@ -148,6 +156,8 @@ public abstract class SelectableChannel
      * @return  The key returned when this channel was last registered with the
      *          given selector, or <tt>null</tt> if this channel is not
      *          currently registered with that selector
+     *
+     * 在指定的Selector里找当前通道对应的SelectionKey
      */
     public abstract SelectionKey keyFor(Selector sel);
     //
@@ -215,7 +225,8 @@ public abstract class SelectableChannel
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
-     * 将Channel注册到Selector上
+     *
+     * 将Channel注册到Selector上，返回SelectionKey
      */
     public abstract SelectionKey register(Selector sel, int ops, Object att)
         throws ClosedChannelException;
@@ -274,7 +285,8 @@ public abstract class SelectableChannel
      *
      * @return  A key representing the registration of this channel with
      *          the given selector
-     * 将Channel注册到Selector上
+     *
+     * 将Channel注册到Selector上，返回SelectionKey
      */
     public final SelectionKey register(Selector sel, int ops)
         throws ClosedChannelException
@@ -313,8 +325,9 @@ public abstract class SelectableChannel
      *
      * @throws IOException
      *         If an I/O error occurs
+     *
      * 设置Channel的阻塞模式，true是阻塞，false是非阻塞
-     * 如果设置了非阻塞，可以在异步调用connect()、read()、write()等方法
+     * 如果设置了非阻塞，可以异步调用connect()、read()、write()等方法
      */
     public abstract SelectableChannel configureBlocking(boolean block)
         throws IOException;
@@ -332,6 +345,8 @@ public abstract class SelectableChannel
      * not specified. </p>
      *
      * @return <tt>true</tt> if, and only if, this channel is in blocking mode
+     *
+     * 判断是否是阻塞模式
      */
     public abstract boolean isBlocking();
 
@@ -342,6 +357,8 @@ public abstract class SelectableChannel
      * specific blocking mode to be maintained for a short period of time.
      *
      * @return  The blocking-mode lock object
+     *
+     * 设置通道的阻塞模式时使用到的锁
      */
     public abstract Object blockingLock();
 

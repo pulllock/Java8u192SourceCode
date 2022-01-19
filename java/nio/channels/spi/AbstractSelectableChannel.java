@@ -45,6 +45,8 @@ import java.nio.channels.*;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * SelectableChannel的抽象实现
  */
 
 public abstract class AbstractSelectableChannel
@@ -52,22 +54,41 @@ public abstract class AbstractSelectableChannel
 {
 
     // The provider that created this channel
+    /**
+     * 创建此通道的SelectorProvider
+     */
     private final SelectorProvider provider;
 
     // Keys that have been created by registering this channel with selectors.
     // They are saved because if this channel is closed the keys must be
     // deregistered.  Protected by keyLock.
     //
+    /**
+     * 当前通道的SelectionKey集合
+     */
     private SelectionKey[] keys = null;
+
+    /**
+     * SelectionKey集合中已有SelectionKey的数量
+     */
     private int keyCount = 0;
 
     // Lock for key set and count
+    /**
+     * 已注册SelectionKey集合更新或者统计时使用的锁
+     */
     private final Object keyLock = new Object();
 
     // Lock for registration and configureBlocking operations
+    /**
+     * 设置通道的阻塞模式时使用的锁
+     */
     private final Object regLock = new Object();
 
     // Blocking mode, protected by regLock
+    /**
+     * 是否是阻塞模式
+     */
     boolean blocking = true;
 
     /**
@@ -84,6 +105,8 @@ public abstract class AbstractSelectableChannel
      * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
+     *
+     * 返回创建此通道的SelectorProvider
      */
     public final SelectorProvider provider() {
         return provider;
@@ -115,6 +138,13 @@ public abstract class AbstractSelectableChannel
         keyCount++;
     }
 
+    /**
+     *
+     * @param sel
+     * @return
+     *
+     * 判断当前通道是否注册到了某个Selector上
+     */
     private SelectionKey findKey(Selector sel) {
         synchronized (keyLock) {
             if (keys == null)
@@ -152,12 +182,27 @@ public abstract class AbstractSelectableChannel
 
     // -- Registration --
 
+    /**
+     *
+     * @return
+     *
+     * 判断当前通道是否注册到了某个Selector上
+     */
     public final boolean isRegistered() {
         synchronized (keyLock) {
             return keyCount != 0;
         }
     }
 
+    /**
+     *
+     * @param   sel
+     *          The selector
+     *
+     * @return
+     *
+     * 在指定的Selector里找当前通道对应的SelectionKey
+     */
     public final SelectionKey keyFor(Selector sel) {
         return findKey(sel);
     }
@@ -187,6 +232,8 @@ public abstract class AbstractSelectableChannel
      * @throws  CancelledKeyException {@inheritDoc}
      *
      * @throws  IllegalArgumentException {@inheritDoc}
+     *
+     * 将Channel注册到Selector上，返回SelectionKey
      */
     public final SelectionKey register(Selector sel, int ops,
                                        Object att)
@@ -199,17 +246,24 @@ public abstract class AbstractSelectableChannel
                 throw new IllegalArgumentException();
             if (blocking)
                 throw new IllegalBlockingModeException();
+            // 从当前通道中的SelectionKey集合中查找，看通道是否在Selector上注册过
             SelectionKey k = findKey(sel);
+            // 通道已经在Selector上注册过
             if (k != null) {
+                // 设置此SelectionKey监听的事件
                 k.interestOps(ops);
+                // 设置SelectionKey的附属对象
                 k.attach(att);
             }
+            // 通道还没有在此Selector上注册过
             if (k == null) {
                 // New registration
                 synchronized (keyLock) {
                     if (!isOpen())
                         throw new ClosedChannelException();
+                    // 将指定的通道注册到当前Selector上，返回生成的SelectionKey
                     k = ((AbstractSelector)sel).register(this, ops, att);
+                    // 将新的SelectionKey加入到当前通道的SelectionKey集合中
                     addKey(k);
                 }
             }
@@ -263,6 +317,12 @@ public abstract class AbstractSelectableChannel
 
     // -- Blocking --
 
+    /**
+     *
+     * @return
+     *
+     * 判断是否是阻塞模式
+     */
     public final boolean isBlocking() {
         synchronized (regLock) {
             return blocking;
@@ -280,6 +340,8 @@ public abstract class AbstractSelectableChannel
      * mode then this method invokes the {@link #implConfigureBlocking
      * implConfigureBlocking} method, while holding the appropriate locks, in
      * order to change the mode.  </p>
+     *
+     * 设置Channel的阻塞模式，true是阻塞，false是非阻塞
      */
     public final SelectableChannel configureBlocking(boolean block)
         throws IOException

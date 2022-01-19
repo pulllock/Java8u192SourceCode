@@ -64,15 +64,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * Selector的抽象实现
  */
 
 public abstract class AbstractSelector
     extends Selector
 {
 
+    /**
+     * Selector是否打开
+     */
     private AtomicBoolean selectorOpen = new AtomicBoolean(true);
 
     // The provider that created this selector
+    /**
+     * 创建此Selector的SelectorProvider
+     */
     private final SelectorProvider provider;
 
     /**
@@ -85,8 +93,15 @@ public abstract class AbstractSelector
         this.provider = provider;
     }
 
+    /**
+     * 已取消的SelectionKey集合
+     */
     private final Set<SelectionKey> cancelledKeys = new HashSet<SelectionKey>();
 
+    /**
+     * 取消一个SelectionKey
+     * @param k
+     */
     void cancel(SelectionKey k) {                       // package-private
         synchronized (cancelledKeys) {
             cancelledKeys.add(k);
@@ -103,6 +118,8 @@ public abstract class AbstractSelector
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 关闭Selector
      */
     public final void close() throws IOException {
         boolean open = selectorOpen.getAndSet(false);
@@ -126,9 +143,15 @@ public abstract class AbstractSelector
      *
      * @throws  IOException
      *          If an I/O error occurs while closing the selector
+     *
+     * 关闭Selector
      */
     protected abstract void implCloseSelector() throws IOException;
 
+    /**
+     * 当前Selector是否打开
+     * @return
+     */
     public final boolean isOpen() {
         return selectorOpen.get();
     }
@@ -137,6 +160,8 @@ public abstract class AbstractSelector
      * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
+     *
+     * 返回创建此通道的SelectorProvider
      */
     public final SelectorProvider provider() {
         return provider;
@@ -148,6 +173,8 @@ public abstract class AbstractSelector
      * <p> This set should only be used while synchronized upon it.  </p>
      *
      * @return  The cancelled-key set
+     *
+     * 返回已取消的SelectionKey集合
      */
     protected final Set<SelectionKey> cancelledKeys() {
         return cancelledKeys;
@@ -171,6 +198,8 @@ public abstract class AbstractSelector
      *
      * @return  A new key representing the registration of the given channel
      *          with this selector
+     *
+     * 将指定的通道注册到当前Selector上，返回生成的SelectionKey
      */
     protected abstract SelectionKey register(AbstractSelectableChannel ch,
                                              int ops, Object att);
@@ -183,6 +212,8 @@ public abstract class AbstractSelector
      *
      * @param  key
      *         The selection key to be removed
+     *
+     * 从通道中移除指定的SelectionKey
      */
     protected final void deregister(AbstractSelectionKey key) {
         ((AbstractSelectableChannel)key.channel()).removeKey(key);
