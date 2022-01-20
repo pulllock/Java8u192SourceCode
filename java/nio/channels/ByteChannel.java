@@ -36,6 +36,8 @@ import java.io.IOException;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 支持读写的字节通道
  */
 
 public interface ByteChannel

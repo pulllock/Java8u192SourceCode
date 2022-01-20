@@ -56,6 +56,8 @@ import sun.nio.cs.StreamEncoder;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 通道和流的工具类
  */
 
 public final class Channels {
@@ -119,6 +121,8 @@ public final class Channels {
      *         The channel from which bytes will be read
      *
      * @return  A new input stream
+     *
+     * 返回给定的可读通道的输入流
      */
     public static InputStream newInputStream(ReadableByteChannel ch) {
         checkNotNull(ch, "ch");
@@ -138,6 +142,8 @@ public final class Channels {
      *         The channel to which bytes will be written
      *
      * @return  A new output stream
+     *
+     * 返回指定的可写通道的输出流
      */
     public static OutputStream newOutputStream(final WritableByteChannel ch) {
         checkNotNull(ch, "ch");
@@ -195,6 +201,8 @@ public final class Channels {
      * @return  A new input stream
      *
      * @since 1.7
+     *
+     * 返回一个异步通道的输入流
      */
     public static InputStream newInputStream(final AsynchronousByteChannel ch) {
         checkNotNull(ch, "ch");
@@ -269,6 +277,8 @@ public final class Channels {
      * @return  A new output stream
      *
      * @since 1.7
+     *
+     * 返回一个异步通道的输出流
      */
     public static OutputStream newOutputStream(final AsynchronousByteChannel ch) {
         checkNotNull(ch, "ch");
@@ -342,6 +352,8 @@ public final class Channels {
      *         The stream from which bytes are to be read
      *
      * @return  A new readable byte channel
+     *
+     * 将指定的输入流转换为可读通道
      */
     public static ReadableByteChannel newChannel(final InputStream in) {
         checkNotNull(in, "in");
@@ -417,6 +429,8 @@ public final class Channels {
      *         The stream to which bytes are to be written
      *
      * @return  A new writable byte channel
+     *
+     * 将指定的输出流转换为可写通道
      */
     public static WritableByteChannel newChannel(final OutputStream out) {
         checkNotNull(out, "out");

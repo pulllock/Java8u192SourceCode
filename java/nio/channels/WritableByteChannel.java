@@ -43,6 +43,8 @@ import java.nio.ByteBuffer;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 可写的字节通道
  */
 
 public interface WritableByteChannel
@@ -99,6 +101,8 @@ public interface WritableByteChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 从给定的字节缓冲中将数据写到当前通道中
      */
     public int write(ByteBuffer src) throws IOException;
 

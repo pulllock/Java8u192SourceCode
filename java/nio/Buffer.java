@@ -170,6 +170,8 @@ import java.util.Spliterator;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 缓冲
  */
 
 public abstract class Buffer {
@@ -183,14 +185,12 @@ public abstract class Buffer {
 
     // Invariants: mark <= position <= limit <= capacity
     /**
-     * 标记，可以在Buffer中设置一个标记位置，后面根据实际需要可以调用
-     * reset()方法回到这个标记位置
+     * 标记，可以在Buffer中设置一个标记位置，后面根据实际需要可以调用reset()方法回到这个标记位置
      */
     private int mark = -1;
 
     /**
-     * 读或者写的当前位置，也就是当前读到了哪里或者当前写到了哪里；
-     * 或者也可以说是当前可以读的位置和当前可以写的位置。
+     * 读或者写的当前位置，也就是当前读到了哪里或者当前写到了哪里；或者也可以说是当前可以读的位置和当前可以写的位置。
      */
     private int position = 0;
 
@@ -199,8 +199,7 @@ public abstract class Buffer {
      *
      * 写模式下，一般limit和capacity相等，也就是Buffer有多大，就可以写多大。
      *
-     * 读模式下，limit表示可以读的最大索引，比如一个Buffer长10，数据有6，limit就是6，
-     * 也就是你只能读到6的位置，读到7也没啥意义，没有数据
+     * 读模式下，limit表示可以读的最大索引，比如一个Buffer长10，数据有6，limit就是6，也就是你只能读到6的位置，读到7也没啥意义，没有数据。
      */
     private int limit;
 
@@ -211,6 +210,9 @@ public abstract class Buffer {
 
     // Used only by direct buffers
     // NOTE: hoisted here for speed in JNI GetDirectBufferAddress
+    /**
+     * 缓冲的起始地址，直接缓冲区使用
+     */
     long address;
 
     // Creates a new buffer with the given mark, position, limit, and capacity,
@@ -234,6 +236,8 @@ public abstract class Buffer {
      * Returns this buffer's capacity.
      *
      * @return  The capacity of this buffer
+     *
+     * 返回缓冲的容量
      */
     public final int capacity() {
         return capacity;
@@ -243,6 +247,8 @@ public abstract class Buffer {
      * Returns this buffer's position.
      *
      * @return  The position of this buffer
+     *
+     * 返回缓冲的读或写的位置
      */
     public final int position() {
         return position;
@@ -260,6 +266,8 @@ public abstract class Buffer {
      *
      * @throws  IllegalArgumentException
      *          If the preconditions on <tt>newPosition</tt> do not hold
+     *
+     * 设置缓冲的位置
      */
     public final Buffer position(int newPosition) {
         if ((newPosition > limit) || (newPosition < 0))
@@ -273,6 +281,8 @@ public abstract class Buffer {
      * Returns this buffer's limit.
      *
      * @return  The limit of this buffer
+     *
+     * 返回缓冲的读或写的最大位置
      */
     public final int limit() {
         return limit;
@@ -291,6 +301,8 @@ public abstract class Buffer {
      *
      * @throws  IllegalArgumentException
      *          If the preconditions on <tt>newLimit</tt> do not hold
+     *
+     * 设置最大位置
      */
     public final Buffer limit(int newLimit) {
         if ((newLimit > capacity) || (newLimit < 0))
@@ -305,6 +317,8 @@ public abstract class Buffer {
      * Sets this buffer's mark at its position.
      *
      * @return  This buffer
+     *
+     * 标记
      */
     public final Buffer mark() {
         mark = position;
@@ -321,6 +335,8 @@ public abstract class Buffer {
      *
      * @throws  InvalidMarkException
      *          If the mark has not been set
+     *
+     * 重置
      */
     public final Buffer reset() {
         int m = mark;
@@ -346,6 +362,7 @@ public abstract class Buffer {
      * in which that might as well be the case. </p>
      *
      * @return  This buffer
+     *
      * 清空，逻辑意义上的清空，只是将Buffer的position和limit等重置，并没有把Buffer中的
      * 数据清除掉。
      */
@@ -379,6 +396,7 @@ public abstract class Buffer {
      * one place to another.  </p>
      *
      * @return  This buffer
+     *
      * 翻转，将Buffer从写模式切换到读模式。
      *
      * 写模式下limit和capacity相等，表示可以写的最大索引，position表示写到了哪个位置。翻转为
@@ -409,6 +427,7 @@ public abstract class Buffer {
      * buf.get(array);    // Copy data into array</pre></blockquote>
      *
      * @return  This buffer
+     *
      * 倒回，也就是从头开始再次读一边，需要把position重新设置为0
      */
     public final Buffer rewind() {
@@ -424,6 +443,8 @@ public abstract class Buffer {
      * limit.
      *
      * @return  The number of elements remaining in this buffer
+     *
+     * 缓冲中剩余的元素数量
      */
     public final int remaining() {
         return limit - position;
@@ -435,6 +456,8 @@ public abstract class Buffer {
      *
      * @return  <tt>true</tt> if, and only if, there is at least one element
      *          remaining in this buffer
+     *
+     * 缓冲中还有没有剩余的元素
      */
     public final boolean hasRemaining() {
         return position < limit;
@@ -444,6 +467,8 @@ public abstract class Buffer {
      * Tells whether or not this buffer is read-only.
      *
      * @return  <tt>true</tt> if, and only if, this buffer is read-only
+     *
+     * 缓冲是否只读
      */
     public abstract boolean isReadOnly();
 

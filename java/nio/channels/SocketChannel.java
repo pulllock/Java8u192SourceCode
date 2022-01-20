@@ -145,6 +145,7 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
      * 打开SocketChannel
      */
     public static SocketChannel open() throws IOException {
@@ -186,7 +187,8 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
-     * 打开SocketChannel
+     *
+     * 打开SocketChannel并连接到远端
      */
     public static SocketChannel open(SocketAddress remote)
         throws IOException
@@ -216,6 +218,8 @@ public abstract class SocketChannel
      * SelectionKey#OP_WRITE}<tt>)</tt>.  </p>
      *
      * @return  The valid-operation set
+     *
+     * 返回当前通道支持的操作，SocketChannel支持连接、读、写操作
      */
     public final int validOps() {
         return (SelectionKey.OP_READ
@@ -240,6 +244,8 @@ public abstract class SocketChannel
      *          the operation
      *
      * @since 1.7
+     *
+     * 将通道的套接字绑定到指定的本地套接字地址
      */
     @Override
     public abstract SocketChannel bind(SocketAddress local)
@@ -252,6 +258,8 @@ public abstract class SocketChannel
      * @throws  IOException                             {@inheritDoc}
      *
      * @since 1.7
+     *
+     * 设置套接字的参数
      */
     @Override
     public abstract <T> SocketChannel setOption(SocketOption<T> name, T value)
@@ -274,6 +282,8 @@ public abstract class SocketChannel
      *          If some other I/O error occurs
      *
      * @since 1.7
+     *
+     * 关闭连接的读功能，但是不关闭通道
      */
     public abstract SocketChannel shutdownInput() throws IOException;
 
@@ -295,6 +305,8 @@ public abstract class SocketChannel
      *          If some other I/O error occurs
      *
      * @since 1.7
+     *
+     * 不安比连接的写功能，但是不关闭通道
      */
     public abstract SocketChannel shutdownOutput() throws IOException;
 
@@ -305,6 +317,8 @@ public abstract class SocketChannel
      * declared in the {@link java.net.Socket} class.  </p>
      *
      * @return  A socket associated with this channel
+     *
+     * 获取当前通道关联的套接字
      */
     public abstract Socket socket();
 
@@ -313,6 +327,8 @@ public abstract class SocketChannel
      *
      * @return  <tt>true</tt> if, and only if, this channel's network socket
      *          is {@link #isOpen open} and connected
+     *
+     * 是否已连接
      */
     public abstract boolean isConnected();
 
@@ -323,6 +339,8 @@ public abstract class SocketChannel
      * @return  <tt>true</tt> if, and only if, a connection operation has been
      *          initiated on this channel but not yet completed by invoking the
      *          {@link #finishConnect finishConnect} method
+     *
+     * 是否正在连接
      */
     public abstract boolean isConnectionPending();
 
@@ -392,8 +410,10 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
-     *          如果SocketChannel是非阻塞模式，调用connect()方法又可能在连接建立之前
-     *          就会返回，需要调用finishConnect()方法来确认是否连接建立。
+     *
+     * 连接到远端
+     * 如果SocketChannel是非阻塞模式，调用connect()方法又可能在连接建立之前
+     * 就会返回，需要调用finishConnect()方法来确认是否连接建立。
      */
     public abstract boolean connect(SocketAddress remote) throws IOException;
 
@@ -445,6 +465,8 @@ public abstract class SocketChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 完成连接
      */
     public abstract boolean finishConnect() throws IOException;
 
@@ -464,6 +486,8 @@ public abstract class SocketChannel
      *          If an I/O error occurs
      *
      * @since 1.7
+     *
+     * 返回当前通道的套接字连接的远端的套接字地址
      */
     public abstract SocketAddress getRemoteAddress() throws IOException;
 
@@ -472,12 +496,16 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 将数据从当前通道读取到指定的字节缓冲中
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 将当前通管道中的数据读取到多个ByteBuffer中
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -485,6 +513,8 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 将当前通管道中的数据读取到多个ByteBuffer中
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -493,12 +523,16 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 从给定的字节缓冲中将数据写到当前通道中
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 将多个ByteBuffer中的数据写到当前通道中
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -506,6 +540,8 @@ public abstract class SocketChannel
     /**
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 将多个ByteBuffer中的数据写到当前通道中
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -528,6 +564,8 @@ public abstract class SocketChannel
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
+     *
+     * 获取本地套接字地址
      */
     @Override
     public abstract SocketAddress getLocalAddress() throws IOException;

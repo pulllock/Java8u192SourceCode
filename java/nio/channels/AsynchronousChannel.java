@@ -93,6 +93,8 @@ import java.util.concurrent.Future;  // javadoc
  * the channel remains open.
  *
  *  @since 1.7
+ *
+ *  异步IO通道
  */
 
 public interface AsynchronousChannel
@@ -111,6 +113,8 @@ public interface AsynchronousChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 关闭通道
      */
     @Override
     void close() throws IOException;

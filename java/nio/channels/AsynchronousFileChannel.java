@@ -109,6 +109,8 @@ import java.util.Collections;
  * and are therefore unspecified.
  *
  * @since 1.7
+ *
+ * 异步IO的文件通道
  */
 
 public abstract class AsynchronousFileChannel
@@ -237,6 +239,8 @@ public abstract class AsynchronousFileChannel
      *          read access if the file is opened for reading. The {@link
      *          SecurityManager#checkWrite(String)} method is invoked to check
      *          write access if the file is opened for writing
+     *
+     * 创建或打开一个文件，返回关联的异步文件通道
      */
     public static AsynchronousFileChannel open(Path file,
                                                Set<? extends OpenOption> options,
@@ -292,6 +296,8 @@ public abstract class AsynchronousFileChannel
      *          read access if the file is opened for reading. The {@link
      *          SecurityManager#checkWrite(String)} method is invoked to check
      *          write access if the file is opened for writing
+     *
+     * 创建或打开一个文件，返回关联的异步文件通道
      */
     public static AsynchronousFileChannel open(Path file, OpenOption... options)
         throws IOException
@@ -310,6 +316,8 @@ public abstract class AsynchronousFileChannel
      *          If this channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 返回文件大小
      */
     public abstract long size() throws IOException;
 
@@ -337,6 +345,8 @@ public abstract class AsynchronousFileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 按照给定的大小进行截断
      */
     public abstract AsynchronousFileChannel truncate(long size) throws IOException;
 
@@ -382,6 +392,8 @@ public abstract class AsynchronousFileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将对文件通道更新的数据强制刷新到文件中
      */
     public abstract void force(boolean metaData) throws IOException;
 
@@ -453,6 +465,8 @@ public abstract class AsynchronousFileChannel
      *          If {@code shared} is true but this channel was not opened for reading
      * @throws  NonWritableChannelException
      *          If {@code shared} is false but this channel was not opened for writing
+     *
+     * 对文件指定的区域进行加锁
      */
     public abstract <A> void lock(long position,
                                   long size,
@@ -487,6 +501,8 @@ public abstract class AsynchronousFileChannel
      *          is already a pending attempt to lock a region
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * 对文件进行加锁
      */
     public final <A> void lock(A attachment,
                                CompletionHandler<FileLock,? super A> handler)
@@ -528,6 +544,8 @@ public abstract class AsynchronousFileChannel
      *          If {@code shared} is true but this channel was not opened for reading
      * @throws  NonWritableChannelException
      *          If {@code shared} is false but this channel was not opened for writing
+     *
+     * 对文件指定区域进行加锁
      */
     public abstract Future<FileLock> lock(long position, long size, boolean shared);
 
@@ -552,6 +570,8 @@ public abstract class AsynchronousFileChannel
      *          is already a pending attempt to lock a region
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * 对文件进行加锁
      */
     public final Future<FileLock> lock() {
         return lock(0L, Long.MAX_VALUE, false);
@@ -602,6 +622,8 @@ public abstract class AsynchronousFileChannel
      * @see     #lock(Object,CompletionHandler)
      * @see     #lock(long,long,boolean,Object,CompletionHandler)
      * @see     #tryLock()
+     *
+     * 对文件指定区域尝试加锁
      */
     public abstract FileLock tryLock(long position, long size, boolean shared)
         throws IOException;
@@ -635,6 +657,8 @@ public abstract class AsynchronousFileChannel
      * @see     #lock(Object,CompletionHandler)
      * @see     #lock(long,long,boolean,Object,CompletionHandler)
      * @see     #tryLock(long,long,boolean)
+     *
+     * 对文件进行尝试加锁
      */
     public final FileLock tryLock() throws IOException {
         return tryLock(0L, Long.MAX_VALUE, false);
@@ -672,6 +696,8 @@ public abstract class AsynchronousFileChannel
      *          If the position is negative or the buffer is read-only
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
+     *
+     * 从当前通道中读取数据到指定的ByteBuffer中
      */
     public abstract <A> void read(ByteBuffer dst,
                                   long position,
@@ -707,6 +733,8 @@ public abstract class AsynchronousFileChannel
      *          If the position is negative or the buffer is read-only
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading
+     *
+     * 从当前通道中读取数据到指定的ByteBuffer中
      */
     public abstract Future<Integer> read(ByteBuffer dst, long position);
 
@@ -738,6 +766,8 @@ public abstract class AsynchronousFileChannel
      *          If the position is negative
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * 将指定的ByteBuffer中的数据写到当前通道中
      */
     public abstract <A> void write(ByteBuffer src,
                                    long position,
@@ -774,6 +804,8 @@ public abstract class AsynchronousFileChannel
      *          If the position is negative
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing
+     *
+     * 将指定的ByteBuffer中的数据写到当前通道中
      */
     public abstract Future<Integer> write(ByteBuffer src, long position);
 }

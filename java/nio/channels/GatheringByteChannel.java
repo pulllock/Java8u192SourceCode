@@ -44,6 +44,8 @@ import java.nio.ByteBuffer;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 聚集通道，将多个Buffer中的数据写到同一个通道
  */
 
 public interface GatheringByteChannel
@@ -126,6 +128,8 @@ public interface GatheringByteChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将多个ByteBuffer中的数据写到当前通道中
      */
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -163,6 +167,8 @@ public interface GatheringByteChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将多个ByteBuffer中的数据写到当前通道中
      */
     public long write(ByteBuffer[] srcs) throws IOException;
 

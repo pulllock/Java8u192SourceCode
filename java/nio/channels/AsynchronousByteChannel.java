@@ -48,6 +48,8 @@ import java.util.concurrent.Future;
  * @see Channels#newOutputStream(AsynchronousByteChannel)
  *
  * @since 1.7
+ *
+ * 支持异步IO的字节通道
  */
 
 public interface AsynchronousByteChannel
@@ -104,6 +106,8 @@ public interface AsynchronousByteChannel
      * @throws  ShutdownChannelGroupException
      *          If the channel is associated with a {@link AsynchronousChannelGroup
      *          group} that has terminated
+     *
+     * 从当前通道读取数据到指定的ByteBuffer中
      */
     <A> void read(ByteBuffer dst,
                   A attachment,
@@ -132,6 +136,8 @@ public interface AsynchronousByteChannel
      * @throws  ReadPendingException
      *          If the channel does not allow more than one read to be outstanding
      *          and a previous read has not completed
+     *
+     * 从当前通道读取数据到指定的ByteBuffer中
      */
     Future<Integer> read(ByteBuffer dst);
 
@@ -183,6 +189,8 @@ public interface AsynchronousByteChannel
      * @throws  ShutdownChannelGroupException
      *          If the channel is associated with a {@link AsynchronousChannelGroup
      *          group} that has terminated
+     *
+     * 将指定的ByteBuffer中的数据写到当前通道中
      */
     <A> void write(ByteBuffer src,
                    A attachment,
@@ -208,6 +216,8 @@ public interface AsynchronousByteChannel
      * @throws  WritePendingException
      *          If the channel does not allow more than one write to be outstanding
      *          and a previous write has not completed
+     *
+     * 将指定的ByteBuffer中的数据写到当前通道中
      */
     Future<Integer> write(ByteBuffer src);
 }

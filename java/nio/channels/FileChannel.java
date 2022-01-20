@@ -150,6 +150,8 @@ import java.util.Collections;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 文件通道
  */
 
 public abstract class FileChannel
@@ -281,6 +283,8 @@ public abstract class FileChannel
      *          write access if the file is opened for writing
      *
      * @since   1.7
+     *
+     * 打开或创建一个文件，返回关联的文件通道
      */
     public static FileChannel open(Path path,
                                    Set<? extends OpenOption> options,
@@ -330,6 +334,8 @@ public abstract class FileChannel
      *          write access if the file is opened for writing
      *
      * @since   1.7
+     *
+     * 打开或创建一个文件，返回关联的文件通道
      */
     public static FileChannel open(Path path, OpenOption... options)
         throws IOException
@@ -348,6 +354,8 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface. </p>
+     *
+     * 将当前通道中的数据读取到指定的ByteBuffer中
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -359,6 +367,8 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * 将当前通道中的数据读取到指定的多个ByteBuffer中
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -370,6 +380,8 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * 将当前通道中的数据读取到指定的多个ByteBuffer中
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -385,6 +397,8 @@ public abstract class FileChannel
      * with the number of bytes actually written.  Otherwise this method
      * behaves exactly as specified by the {@link WritableByteChannel}
      * interface. </p>
+     *
+     * 从给定的ByteBuffer中将数据写到当前通道中
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -399,6 +413,8 @@ public abstract class FileChannel
      * with the number of bytes actually written.  Otherwise this method
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
+     *
+     * 从给定的多个ByteBuffer中将数据写到当前通道中
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -413,6 +429,8 @@ public abstract class FileChannel
      * with the number of bytes actually written.  Otherwise this method
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
+     *
+     * 从给定的多个ByteBuffer中将数据写到当前通道中
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -433,6 +451,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 返回通道的文件位置索引
      */
     public abstract long position() throws IOException;
 
@@ -461,6 +481,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 设置新索引位置
      */
     public abstract FileChannel position(long newPosition) throws IOException;
 
@@ -475,6 +497,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 返回文件大小
      */
     public abstract long size() throws IOException;
 
@@ -504,6 +528,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 按照给定的大小截断
      */
     public abstract FileChannel truncate(long size) throws IOException;
 
@@ -554,6 +580,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将当前通道中更新的数据强制刷新到文件中
      */
     public abstract void force(boolean metaData) throws IOException;
 
@@ -619,6 +647,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将当前文件通道中的数据写到指定的可写通道中
      */
     public abstract long transferTo(long position, long count,
                                     WritableByteChannel target)
@@ -686,6 +716,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 从指定的可读的通道中读取数据到当前的通道中
      */
     public abstract long transferFrom(ReadableByteChannel src,
                                       long position, long count)
@@ -733,6 +765,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将数据从当前通道中读取到指定的ByteBuffer中
      */
     public abstract int read(ByteBuffer dst, long position) throws IOException;
 
@@ -778,6 +812,8 @@ public abstract class FileChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 从指定的ByteBuffer中将数据写入到当前通道中
      */
     public abstract int write(ByteBuffer src, long position) throws IOException;
 
@@ -790,23 +826,31 @@ public abstract class FileChannel
      * @since 1.4
      *
      * @see java.nio.channels.FileChannel#map
+     *
+     * 内存映射的模式
      */
     public static class MapMode {
 
         /**
          * Mode for a read-only mapping.
+         *
+         * 只读
          */
         public static final MapMode READ_ONLY
             = new MapMode("READ_ONLY");
 
         /**
          * Mode for a read/write mapping.
+         *
+         * 读写
          */
         public static final MapMode READ_WRITE
             = new MapMode("READ_WRITE");
 
         /**
          * Mode for a private (copy-on-write) mapping.
+         *
+         * 私有，使用在copy on write模式，对文件的修改会反映在当前的mmap映射中，但不会刷到文件中
          */
         public static final MapMode PRIVATE
             = new MapMode("PRIVATE");
@@ -915,6 +959,8 @@ public abstract class FileChannel
      *
      * @see java.nio.channels.FileChannel.MapMode
      * @see java.nio.MappedByteBuffer
+     *
+     * 对文件的一部分进行内存映射
      */
     public abstract MappedByteBuffer map(MapMode mode,
                                          long position, long size)
@@ -1011,6 +1057,8 @@ public abstract class FileChannel
      * @see     #lock()
      * @see     #tryLock()
      * @see     #tryLock(long,long,boolean)
+     *
+     * 对文件进行加锁
      */
     public abstract FileLock lock(long position, long size, boolean shared)
         throws IOException;
@@ -1052,6 +1100,8 @@ public abstract class FileChannel
      * @see     #lock(long,long,boolean)
      * @see     #tryLock()
      * @see     #tryLock(long,long,boolean)
+     *
+     * 对文件进行加锁
      */
     public final FileLock lock() throws IOException {
         return lock(0L, Long.MAX_VALUE, false);
@@ -1122,6 +1172,8 @@ public abstract class FileChannel
      * @see     #lock()
      * @see     #lock(long,long,boolean)
      * @see     #tryLock()
+     *
+     * 对文件进行尝试加锁
      */
     public abstract FileLock tryLock(long position, long size, boolean shared)
         throws IOException;
@@ -1154,6 +1206,8 @@ public abstract class FileChannel
      * @see     #lock()
      * @see     #lock(long,long,boolean)
      * @see     #tryLock(long,long,boolean)
+     *
+     * 对文件进行尝试加锁
      */
     public final FileLock tryLock() throws IOException {
         return tryLock(0L, Long.MAX_VALUE, false);

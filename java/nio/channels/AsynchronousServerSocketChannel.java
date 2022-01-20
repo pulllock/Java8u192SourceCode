@@ -89,11 +89,16 @@ import java.io.IOException;
  * </pre>
  *
  * @since 1.7
+ *
+ * 异步IO的服务套接字通道
  */
 
 public abstract class AsynchronousServerSocketChannel
     implements AsynchronousChannel, NetworkChannel
 {
+    /**
+     * 异步IO通道工厂
+     */
     private final AsynchronousChannelProvider provider;
 
     /**
@@ -136,6 +141,8 @@ public abstract class AsynchronousServerSocketChannel
      *          If the channel group is shutdown
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开异步IO的服务套接字通道
      */
     public static AsynchronousServerSocketChannel open(AsynchronousChannelGroup group)
         throws IOException
@@ -159,6 +166,8 @@ public abstract class AsynchronousServerSocketChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开异步IO的服务套接字通道
      */
     public static AsynchronousServerSocketChannel open()
         throws IOException
@@ -186,6 +195,8 @@ public abstract class AsynchronousServerSocketChannel
      * @throws  SecurityException                   {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
+     *
+     * 将当前通道的套接字绑定到指定的本地套接字地址
      */
     public final AsynchronousServerSocketChannel bind(SocketAddress local)
         throws IOException
@@ -227,6 +238,8 @@ public abstract class AsynchronousServerSocketChannel
      *          If the channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将当前通道的套接字绑定到指定的本地套接字地址
      */
     public abstract AsynchronousServerSocketChannel bind(SocketAddress local, int backlog)
         throws IOException;
@@ -235,6 +248,8 @@ public abstract class AsynchronousServerSocketChannel
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
+     *
+     * 设置套接字选项
      */
     public abstract <T> AsynchronousServerSocketChannel setOption(SocketOption<T> name, T value)
         throws IOException;
@@ -281,6 +296,8 @@ public abstract class AsynchronousServerSocketChannel
      *          If this channel's socket has not yet been bound
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 接收客户端套接字连接
      */
     public abstract <A> void accept(A attachment,
                                     CompletionHandler<AsynchronousSocketChannel,? super A> handler);
@@ -302,6 +319,8 @@ public abstract class AsynchronousServerSocketChannel
      *          If an accept operation is already in progress on this channel
      * @throws  NotYetBoundException
      *          If this channel's socket has not yet been bound
+     *
+     * 接收客户端套接字连接
      */
     public abstract Future<AsynchronousSocketChannel> accept();
 
@@ -322,6 +341,8 @@ public abstract class AsynchronousServerSocketChannel
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
+     *
+     * 获取绑定到通道套接字上的套接字地址
      */
     @Override
     public abstract SocketAddress getLocalAddress() throws IOException;

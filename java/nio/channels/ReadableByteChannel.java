@@ -43,6 +43,8 @@ import java.nio.ByteBuffer;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 可读的字节通道
  */
 
 public interface ReadableByteChannel extends Channel {
@@ -102,6 +104,8 @@ public interface ReadableByteChannel extends Channel {
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将数据从当前通道读取到指定的字节缓冲中
      */
     public int read(ByteBuffer dst) throws IOException;
 

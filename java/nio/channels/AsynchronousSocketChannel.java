@@ -114,11 +114,16 @@ import java.nio.ByteBuffer;
  * equal to zero to mean that the I/O operation does not timeout.
  *
  * @since 1.7
+ *
+ * 异步IO的套接字通道
  */
 
 public abstract class AsynchronousSocketChannel
     implements AsynchronousByteChannel, NetworkChannel
 {
+    /**
+     * 异步IO通道工厂
+     */
     private final AsynchronousChannelProvider provider;
 
     /**
@@ -160,6 +165,8 @@ public abstract class AsynchronousSocketChannel
      *          If the channel group is shutdown
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开异步IO套接字通道
      */
     public static AsynchronousSocketChannel open(AsynchronousChannelGroup group)
         throws IOException
@@ -183,6 +190,8 @@ public abstract class AsynchronousSocketChannel
      *
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 打开异步IO套接字通道
      */
     public static AsynchronousSocketChannel open()
         throws IOException
@@ -204,6 +213,8 @@ public abstract class AsynchronousSocketChannel
      *          If a security manager has been installed and its
      *          {@link SecurityManager#checkListen checkListen} method denies
      *          the operation
+     *
+     * 将通道的套接字绑定到指定的本地套接字地址
      */
     @Override
     public abstract AsynchronousSocketChannel bind(SocketAddress local)
@@ -213,6 +224,8 @@ public abstract class AsynchronousSocketChannel
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
+     *
+     * 设置套接字的参数
      */
     @Override
     public abstract <T> AsynchronousSocketChannel setOption(SocketOption<T> name, T value)
@@ -237,6 +250,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 关闭连接的读功能，但不关闭通道
      */
     public abstract AsynchronousSocketChannel shutdownInput() throws IOException;
 
@@ -257,6 +272,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 关闭连接的写功能，但不关闭通道
      */
     public abstract AsynchronousSocketChannel shutdownOutput() throws IOException;
 
@@ -276,6 +293,8 @@ public abstract class AsynchronousSocketChannel
      *          If the channel is closed
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 获取当前通道已连接的远端地址
      */
     public abstract SocketAddress getRemoteAddress() throws IOException;
 
@@ -320,6 +339,8 @@ public abstract class AsynchronousSocketChannel
      *          and it does not permit access to the given remote endpoint
      *
      * @see #getRemoteAddress
+     *
+     * 连接到远端
      */
     public abstract <A> void connect(SocketAddress remote,
                                      A attachment,
@@ -351,6 +372,8 @@ public abstract class AsynchronousSocketChannel
      * @throws  SecurityException
      *          If a security manager has been installed
      *          and it does not permit access to the given remote endpoint
+     *
+     * 连接到远端
      */
     public abstract Future<Void> connect(SocketAddress remote);
 
@@ -397,6 +420,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 从当前通道中读取数据到指定的ByteBuffer中
      */
     public abstract <A> void read(ByteBuffer dst,
                                   long timeout,
@@ -411,6 +436,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 从当前通道中读取数据到指定的ByteBuffer中
      */
     @Override
     public final <A> void read(ByteBuffer dst,
@@ -425,6 +452,8 @@ public abstract class AsynchronousSocketChannel
      * @throws  ReadPendingException            {@inheritDoc}
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 从当前通道中读取数据到指定的ByteBuffer中
      */
     @Override
     public abstract Future<Integer> read(ByteBuffer dst);
@@ -505,6 +534,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 从当前通道中读取数据到指定的多个ByteBuffer中
      */
     public abstract <A> void read(ByteBuffer[] dsts,
                                   int offset,
@@ -554,6 +585,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 从指定的ByteBuffer中将数据写入到当前通道中
      */
     public abstract <A> void write(ByteBuffer src,
                                    long timeout,
@@ -567,6 +600,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 从指定的ByteBuffer中将数据写入到当前通道中
      */
     @Override
     public final <A> void write(ByteBuffer src,
@@ -581,6 +616,8 @@ public abstract class AsynchronousSocketChannel
      * @throws  WritePendingException       {@inheritDoc}
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
+     *
+     * 从指定的ByteBuffer中将数据写入到当前通道中
      */
     @Override
     public abstract Future<Integer> write(ByteBuffer src);
@@ -656,6 +693,8 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
      *          If the channel group has terminated
+     *
+     * 从指定的多个ByteBuffer中将数据写入到当前通道中
      */
     public abstract <A> void write(ByteBuffer[] srcs,
                                    int offset,
@@ -682,6 +721,8 @@ public abstract class AsynchronousSocketChannel
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}
+     *
+     * 获取本地套接字地址
      */
     public abstract SocketAddress getLocalAddress() throws IOException;
 }

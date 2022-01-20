@@ -48,6 +48,8 @@ import java.io.IOException;
  *
  * @since 1.7
  * @see java.nio.file.Files#newByteChannel
+ *
+ * 支持随机读写的字节通道
  */
 
 public interface SeekableByteChannel
@@ -60,6 +62,8 @@ public interface SeekableByteChannel
      * then the position is updated with the number of bytes actually read.
      * Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface.
+     *
+     * 将数据从当前通道读取到指定的字节缓冲中
      */
     @Override
     int read(ByteBuffer dst) throws IOException;
@@ -75,6 +79,8 @@ public interface SeekableByteChannel
      * written bytes, and then the position is updated with the number of bytes
      * actually written. Otherwise this method behaves exactly as specified by
      * the {@link WritableByteChannel} interface.
+     *
+     * 从给定的字节缓冲中将数据写到当前通道中
      */
     @Override
     int write(ByteBuffer src) throws IOException;
@@ -90,6 +96,8 @@ public interface SeekableByteChannel
      *          If this channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 返回通道的位置索引
      */
     long position() throws IOException;
 
@@ -121,6 +129,8 @@ public interface SeekableByteChannel
      *          If the new position is negative
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 设置通道的位置索引
      */
     SeekableByteChannel position(long newPosition) throws IOException;
 
@@ -133,6 +143,8 @@ public interface SeekableByteChannel
      *          If this channel is closed
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 返回通道的字节数量
      */
     long size() throws IOException;
 
@@ -163,6 +175,8 @@ public interface SeekableByteChannel
      *          If the new size is negative
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 使用指定的大小截断通道
      */
     SeekableByteChannel truncate(long size) throws IOException;
 }

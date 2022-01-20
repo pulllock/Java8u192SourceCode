@@ -44,6 +44,8 @@ import java.nio.ByteBuffer;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 散射通道，将通道中的数据写到多个Buffer中
  */
 
 public interface ScatteringByteChannel
@@ -122,6 +124,8 @@ public interface ScatteringByteChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将当前通管道中的数据读取到多个ByteBuffer中
      */
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -159,6 +163,8 @@ public interface ScatteringByteChannel
      *
      * @throws  IOException
      *          If some other I/O error occurs
+     *
+     * 将当前通管道中的数据读取到多个ByteBuffer中
      */
     public long read(ByteBuffer[] dsts) throws IOException;
 
