@@ -54,26 +54,56 @@ import sun.nio.ch.FileChannelImpl;
  *
  * @author  unascribed
  * @since   JDK1.0
+ *
+ * 支持随机访问的文件
  */
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
+    /**
+     * 文件描述符
+     */
     private FileDescriptor fd;
+
+    /**
+     * 文件通道
+     */
     private FileChannel channel = null;
+
+    /**
+     * 是否使用读写模式
+     */
     private boolean rw;
 
     /**
      * The path of the referenced file
      * (null if the stream is created with a file descriptor)
+     *
+     * 文件路径
      */
     private final String path;
 
     private Object closeLock = new Object();
     private volatile boolean closed = false;
 
+    /**
+     * 只读
+     */
     private static final int O_RDONLY = 1;
+
+    /**
+     * 读写
+     */
     private static final int O_RDWR =   2;
+
+    /**
+     * 同步读写，文件内容和元数据的更新都同步更新到设备
+     */
     private static final int O_SYNC =   4;
+
+    /**
+     * 同步读写，文件内容更新同步到更新到设备
+     */
     private static final int O_DSYNC =  8;
 
     /**
@@ -240,6 +270,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         fd = new FileDescriptor();
         fd.attach(this);
         path = name;
+
+        // 打开文件
         open(name, imode);
     }
 
@@ -275,6 +307,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *
      * @since 1.4
      * @spec JSR-51
+     *
+     * 获取文件通道
      */
     public final FileChannel getChannel() {
         synchronized (this) {
@@ -332,6 +366,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             file has been reached.
      * @exception  IOException  if an I/O error occurs. Not thrown if
      *                          end-of-file has been reached.
+     *
+     * 从文件中读取一个字节
      */
     public int read() throws IOException {
         return read0();
