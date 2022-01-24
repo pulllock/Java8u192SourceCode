@@ -27,15 +27,6 @@
 
 package java.nio;
 
-
-
-
-
-
-
-
-
-
 /**
  * A byte buffer.
  *
@@ -83,16 +74,6 @@ package java.nio;
  *
  * content, or by {@link #wrap(byte[]) <i>wrapping</i>} an
  * existing byte array  into a buffer.
- *
-
-
-
-
-
-
-
- *
-
  *
  * <a name="direct"></a>
  * <h2> Direct <i>vs.</i> non-direct buffers </h2>
@@ -190,38 +171,12 @@ package java.nio;
  * <p> The byte order of a view buffer is fixed to be that of its byte buffer
  * at the time that the view is created.  </p>
  *
-
-*
-
-
-
-
-
-
-
-
-
-
-
-*
-
-
-
-
-
-
-
-
- *
-
  * <h2> Invocation chaining </h2>
-
  *
  * <p> Methods in this class that do not otherwise have a value to return are
  * specified to return the buffer upon which they are invoked.  This allows
  * method invocations to be chained.
  *
-
  *
  * The sequence of statements
  *
@@ -235,28 +190,11 @@ package java.nio;
  * <blockquote><pre>
  * bb.putInt(0xCAFEBABE).putShort(3).putShort(45);</pre></blockquote>
  *
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- *
- *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 字节缓冲区
  */
 
 public abstract class ByteBuffer
@@ -268,8 +206,14 @@ public abstract class ByteBuffer
     // reduce the number of virtual method invocations needed to access these
     // values, which is especially costly when coding small buffers.
     //
+    /**
+     * 存储数据的字节数组，只在堆内存缓冲的时候使用
+     */
     final byte[] hb;                  // Non-null only for heap buffers
     final int offset;
+    /**
+     * 缓冲区是否只读，只在堆内存缓冲的时候有效
+     */
     boolean isReadOnly;                 // Valid only for heap buffers
 
     // Creates a new buffer with the given mark, position, limit, capacity,
@@ -289,8 +233,6 @@ public abstract class ByteBuffer
         this(mark, pos, lim, cap, null, 0);
     }
 
-
-
     /**
      * Allocates a new direct byte buffer.
      *
@@ -306,12 +248,12 @@ public abstract class ByteBuffer
      *
      * @throws  IllegalArgumentException
      *          If the <tt>capacity</tt> is a negative integer
+     *
+     * 创建直接内存缓冲区
      */
     public static ByteBuffer allocateDirect(int capacity) {
         return new DirectByteBuffer(capacity);
     }
-
-
 
     /**
      * Allocates a new byte buffer.
@@ -328,6 +270,8 @@ public abstract class ByteBuffer
      *
      * @throws  IllegalArgumentException
      *          If the <tt>capacity</tt> is a negative integer
+     *
+     * 创建堆内存的字节缓冲区
      */
     public static ByteBuffer allocate(int capacity) {
         if (capacity < 0)
@@ -365,6 +309,8 @@ public abstract class ByteBuffer
      * @throws  IndexOutOfBoundsException
      *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
      *          parameters do not hold
+     *
+     * 将指定的字节数组包装成堆内存字节缓冲区
      */
     public static ByteBuffer wrap(byte[] array,
                                     int offset, int length)
@@ -391,103 +337,12 @@ public abstract class ByteBuffer
      *         The array that will back this buffer
      *
      * @return  The new byte buffer
+     *
+     * 将指定的字节数组包装成堆内存字节缓冲区
      */
     public static ByteBuffer wrap(byte[] array) {
         return wrap(array, 0, array.length);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * Creates a new byte buffer whose content is a shared subsequence of
@@ -505,6 +360,8 @@ public abstract class ByteBuffer
      * is read-only.  </p>
      *
      * @return  The new byte buffer
+     *
+     * 切片，创建一个新的字节缓冲区，新旧缓冲区的数据共享，修改数据会相互影响，但是新旧缓冲区的position、limit、mark相互独立
      */
     public abstract ByteBuffer slice();
 
@@ -522,6 +379,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  The new byte buffer
+     *
+     * 复制，创建一个新的字节缓冲区，新旧缓冲区的数据共享，修改数据会相互影响，但是新旧缓冲区的position、limit、mark相互独立
      */
     public abstract ByteBuffer duplicate();
 
@@ -542,6 +401,8 @@ public abstract class ByteBuffer
      * exactly the same way as the {@link #duplicate duplicate} method.  </p>
      *
      * @return  The new, read-only byte buffer
+     *
+     * 创建一个只读的新缓冲区，新旧缓冲区的数据共享，修改旧的缓冲区数据会影响到新的缓冲区，新的缓冲区不能修改，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract ByteBuffer asReadOnlyBuffer();
 
@@ -556,6 +417,8 @@ public abstract class ByteBuffer
      *
      * @throws  BufferUnderflowException
      *          If the buffer's current position is not smaller than its limit
+     *
+     * 读取position位置处的一个字节数据
      */
     public abstract byte get();
 
@@ -575,6 +438,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 在position处写一个字节的数据
      */
     public abstract ByteBuffer put(byte b);
 
@@ -590,21 +455,10 @@ public abstract class ByteBuffer
      * @throws  IndexOutOfBoundsException
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit
+     *
+     * 在指定的index位置处获取一个字节数据
      */
     public abstract byte get(int index);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * Absolute <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
@@ -626,6 +480,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 在指定的位置处写一个字节数据
      */
     public abstract ByteBuffer put(int index, byte b);
 
@@ -681,12 +537,15 @@ public abstract class ByteBuffer
      * @throws  IndexOutOfBoundsException
      *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
      *          parameters do not hold
+     *
+     * 从字节缓冲区中读取数据到指定的字节数组中
      */
     public ByteBuffer get(byte[] dst, int offset, int length) {
         checkBounds(offset, length, dst.length);
         if (length > remaining())
             throw new BufferUnderflowException();
         int end = offset + length;
+        // 挨个字节读取到指定的字节数组中
         for (int i = offset; i < end; i++)
             dst[i] = get();
         return this;
@@ -710,6 +569,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than <tt>length</tt> bytes
      *          remaining in this buffer
+     *
+     * 从字节缓冲区中读取数据到指定的字节数组中
      */
     public ByteBuffer get(byte[] dst) {
         return get(dst, 0, dst.length);
@@ -758,15 +619,19 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将指定的字节缓冲区中的数据写到当前的字节缓冲区中
      */
     public ByteBuffer put(ByteBuffer src) {
         if (src == this)
             throw new IllegalArgumentException();
         if (isReadOnly())
             throw new ReadOnlyBufferException();
+        // 源字节缓冲区中剩余的字节数
         int n = src.remaining();
         if (n > remaining())
             throw new BufferOverflowException();
+        // 挨个将源字节缓冲区中的数据写到当前的字节缓冲区中
         for (int i = 0; i < n; i++)
             put(src.get());
         return this;
@@ -822,6 +687,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将指定的字节缓冲区中的数据写到当前的字节缓冲区中
      */
     public ByteBuffer put(byte[] src, int offset, int length) {
         checkBounds(offset, length, src.length);
@@ -854,104 +721,12 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将指定的字节缓冲区中的数据写到当前的字节缓冲区中
      */
     public final ByteBuffer put(byte[] src) {
         return put(src, 0, src.length);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // -- Other stuff --
 
@@ -965,6 +740,8 @@ public abstract class ByteBuffer
      *
      * @return  <tt>true</tt> if, and only if, this buffer
      *          is backed by an array and is not read-only
+     *
+     * 字节缓冲区底层是否是由一个可访问的字节数组来实现
      */
     public final boolean hasArray() {
         return (hb != null) && !isReadOnly;
@@ -1064,8 +841,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
-     * 压缩，比如当前Buffer中还有部分未读的数据，但是此时想要继续写数据进当前Buffer，此时可以
-     * 使用compact方法，将未读的数据移到Buffer的最前面，这样就可以继续写当前Buffer。
+     *
+     * 压缩，比如当前Buffer中还有部分未读的数据，但是此时想要继续写数据进当前Buffer，此时可以使用compact方法，将未读的数据移到Buffer的最前面，这样就可以继续写当前Buffer。
      */
     public abstract ByteBuffer compact();
 
@@ -1073,10 +850,10 @@ public abstract class ByteBuffer
      * Tells whether or not this byte buffer is direct.
      *
      * @return  <tt>true</tt> if, and only if, this buffer is direct
+     *
+     * 返回缓冲区是直接内存缓冲区还是堆内存缓冲区
      */
     public abstract boolean isDirect();
-
-
 
     /**
      * Returns a string summarizing the state of this buffer.
@@ -1095,11 +872,6 @@ public abstract class ByteBuffer
         sb.append("]");
         return sb.toString();
     }
-
-
-
-
-
 
     /**
      * Returns the current hash code of this buffer.
@@ -1140,13 +912,6 @@ public abstract class ByteBuffer
      *
      *   <li><p> The two sequences of remaining elements, considered
      *   independently of their starting positions, are pointwise equal.
-
-
-
-
-
-
-
      *   </p></li>
      *
      * </ol>
@@ -1174,11 +939,7 @@ public abstract class ByteBuffer
     }
 
     private static boolean equals(byte x, byte y) {
-
-
-
         return x == y;
-
     }
 
     /**
@@ -1187,17 +948,8 @@ public abstract class ByteBuffer
      * <p> Two byte buffers are compared by comparing their sequences of
      * remaining elements lexicographically, without regard to the starting
      * position of each sequence within its corresponding buffer.
-
-
-
-
-
-
-
-
      * Pairs of {@code byte} elements are compared as if by invoking
      * {@link Byte#compare(byte,byte)}.
-
      *
      * <p> A byte buffer is not comparable to any other type of object.
      *
@@ -1216,232 +968,12 @@ public abstract class ByteBuffer
 
     private static int compare(byte x, byte y) {
 
-
-
-
-
-
         return Byte.compare(x, y);
-
     }
 
     // -- Other char stuff --
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // -- Other byte stuff: Access to binary data --
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     boolean bigEndian                                   // package-private
         = true;
     boolean nativeByteOrder                             // package-private
@@ -1496,6 +1028,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than two bytes
      *          remaining in this buffer
+     *
+     * 读取两个字节，返回char类型数据
      */
     public abstract char getChar();
 
@@ -1518,6 +1052,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将char类型数据写入到字节缓冲区中
      */
     public abstract ByteBuffer putChar(char value);
 
@@ -1536,6 +1072,8 @@ public abstract class ByteBuffer
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit,
      *          minus one
+     *
+     * 读取两个字节，返回char类型数据
      */
     public abstract char getChar(int index);
 
@@ -1561,6 +1099,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将char类型数据写入到字节缓冲区中
      */
     public abstract ByteBuffer putChar(int index, char value);
 
@@ -1579,6 +1119,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  A new char buffer
+     *
+     * 创建一个新的char类型的缓冲区，新旧缓冲区共享数据，新旧缓冲区数据修改会相互影响，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract CharBuffer asCharBuffer();
 
@@ -1595,6 +1137,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than two bytes
      *          remaining in this buffer
+     *
+     * 读取两个字节，返回short类型数据
      */
     public abstract short getShort();
 
@@ -1617,6 +1161,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将short类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putShort(short value);
 
@@ -1635,6 +1181,8 @@ public abstract class ByteBuffer
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit,
      *          minus one
+     *
+     * 读取两个字节，返回short类型数据
      */
     public abstract short getShort(int index);
 
@@ -1660,6 +1208,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将short类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putShort(int index, short value);
 
@@ -1678,6 +1228,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  A new short buffer
+     *
+     * 创建一个新的short类型的缓冲区，新旧缓冲区共享数据，新旧缓冲区数据修改会相互影响，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract ShortBuffer asShortBuffer();
 
@@ -1694,6 +1246,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than four bytes
      *          remaining in this buffer
+     *
+     * 读取四个字节，返回int类型数据
      */
     public abstract int getInt();
 
@@ -1716,6 +1270,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将int类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putInt(int value);
 
@@ -1734,6 +1290,8 @@ public abstract class ByteBuffer
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit,
      *          minus three
+     *
+     * 读取四个字节，返回int类型数据
      */
     public abstract int getInt(int index);
 
@@ -1759,6 +1317,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将int类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putInt(int index, int value);
 
@@ -1777,6 +1337,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  A new int buffer
+     *
+     * 创建一个新的int类型的缓冲区，新旧缓冲区共享数据，新旧缓冲区数据修改会相互影响，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract IntBuffer asIntBuffer();
 
@@ -1793,6 +1355,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than eight bytes
      *          remaining in this buffer
+     *
+     * 读取八个字节，返回long类型数据
      */
     public abstract long getLong();
 
@@ -1815,6 +1379,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将long类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putLong(long value);
 
@@ -1833,6 +1399,8 @@ public abstract class ByteBuffer
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit,
      *          minus seven
+     *
+     * 读取八个字节，返回long类型数据
      */
     public abstract long getLong(int index);
 
@@ -1858,6 +1426,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将long类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putLong(int index, long value);
 
@@ -1876,6 +1446,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  A new long buffer
+     *
+     * 创建一个新的long类型的缓冲区，新旧缓冲区共享数据，新旧缓冲区数据修改会相互影响，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract LongBuffer asLongBuffer();
 
@@ -1892,6 +1464,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than four bytes
      *          remaining in this buffer
+     *
+     * 读取四个字节，返回float类型数据
      */
     public abstract float getFloat();
 
@@ -1914,6 +1488,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将float类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putFloat(float value);
 
@@ -1932,6 +1508,8 @@ public abstract class ByteBuffer
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit,
      *          minus three
+     *
+     * 读取四个字节，返回float类型数据
      */
     public abstract float getFloat(int index);
 
@@ -1957,6 +1535,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将float类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putFloat(int index, float value);
 
@@ -1975,6 +1555,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  A new float buffer
+     *
+     * 创建一个新的float类型的缓冲区，新旧缓冲区共享数据，新旧缓冲区数据修改会相互影响，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract FloatBuffer asFloatBuffer();
 
@@ -1991,6 +1573,8 @@ public abstract class ByteBuffer
      * @throws  BufferUnderflowException
      *          If there are fewer than eight bytes
      *          remaining in this buffer
+     *
+     * 读取八个字节，返回double类型数据
      */
     public abstract double getDouble();
 
@@ -2013,6 +1597,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将double类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putDouble(double value);
 
@@ -2031,6 +1617,8 @@ public abstract class ByteBuffer
      *          If <tt>index</tt> is negative
      *          or not smaller than the buffer's limit,
      *          minus seven
+     *
+     * 读取八个字节，返回double类型数据
      */
     public abstract double getDouble(int index);
 
@@ -2056,6 +1644,8 @@ public abstract class ByteBuffer
      *
      * @throws  ReadOnlyBufferException
      *          If this buffer is read-only
+     *
+     * 将double类型数据写到字节缓冲区中
      */
     public abstract ByteBuffer putDouble(int index, double value);
 
@@ -2074,6 +1664,8 @@ public abstract class ByteBuffer
      * only if, this buffer is read-only.  </p>
      *
      * @return  A new double buffer
+     *
+     * 创建一个新的double类型的缓冲区，新旧缓冲区共享数据，新旧缓冲区数据修改会相互影响，新旧缓冲区的position、limit、mark相互独立
      */
     public abstract DoubleBuffer asDoubleBuffer();
 

@@ -211,7 +211,7 @@ public abstract class Buffer {
     // Used only by direct buffers
     // NOTE: hoisted here for speed in JNI GetDirectBufferAddress
     /**
-     * 缓冲的起始地址，直接缓冲区使用
+     * 内存映射地址，直接缓冲区使用
      */
     long address;
 
@@ -545,6 +545,8 @@ public abstract class Buffer {
      * @return  <tt>true</tt> if, and only if, this buffer is direct
      *
      * @since 1.6
+     *
+     * 返回缓冲区是直接内存缓冲区还是堆内存缓冲区
      */
     public abstract boolean isDirect();
 

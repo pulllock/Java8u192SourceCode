@@ -61,6 +61,8 @@ import sun.misc.Unsafe;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 直接字节缓冲区，基于内存映射
  */
 
 public abstract class MappedByteBuffer
@@ -74,6 +76,9 @@ public abstract class MappedByteBuffer
 
     // For mapped buffers, a FileDescriptor that may be used for mapping
     // operations if valid; null if the buffer is not mapped.
+    /**
+     * 文件描述符
+     */
     private final FileDescriptor fd;
 
     // This should only be invoked by the DirectByteBuffer constructors
@@ -129,6 +134,8 @@ public abstract class MappedByteBuffer
      *
      * @return  <tt>true</tt> if it is likely that this buffer's content
      *          is resident in physical memory
+     *
+     * 判断映射文件是否被加载到内存
      */
     public final boolean isLoaded() {
         checkMapped();
@@ -151,6 +158,8 @@ public abstract class MappedByteBuffer
      * occur. </p>
      *
      * @return  This buffer
+     *
+     * 将整个文件加载到内存中
      */
     public final MappedByteBuffer load() {
         checkMapped();
@@ -195,6 +204,8 @@ public abstract class MappedByteBuffer
      * method has no effect. </p>
      *
      * @return  This buffer
+     *
+     * 强制将映射缓冲区上的更改应用到磁盘上
      */
     public final MappedByteBuffer force() {
         checkMapped();
