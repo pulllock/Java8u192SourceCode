@@ -41,6 +41,8 @@ import java.io.IOException;
  * that provide a read-only or updatable view of a set of file store attributes.
  *
  * @since 1.7
+ *
+ * 文件存储的抽象，文件存储代表了：存储池、设备、分区、卷、具体文件系统、其他文件存储的实现
  */
 
 public abstract class FileStore {
@@ -60,6 +62,8 @@ public abstract class FileStore {
      * returned by the {@link Object#toString() toString} method.
      *
      * @return  the name of this file store
+     *
+     * 文件存储的名字
      */
     public abstract String name();
 
@@ -70,6 +74,8 @@ public abstract class FileStore {
      * or remote.
      *
      * @return  a string representing the type of this file store
+     *
+     * 文件存储的类型
      */
     public abstract String type();
 
@@ -80,6 +86,8 @@ public abstract class FileStore {
      * an {@code IOException} to be thrown.
      *
      * @return  {@code true} if, and only if, this file store is read-only
+     *
+     * 文件存储是否只读
      */
     public abstract boolean isReadOnly();
 
@@ -90,6 +98,8 @@ public abstract class FileStore {
      *
      * @throws  IOException
      *          if an I/O error occurs
+     *
+     * 返回文件存储的总的空间大小
      */
     public abstract long getTotalSpace() throws IOException;
 
@@ -108,6 +118,8 @@ public abstract class FileStore {
      *
      * @throws  IOException
      *          if an I/O error occurs
+     *
+     * 返回文件存储的可用空间大小
      */
     public abstract long getUsableSpace() throws IOException;
 
@@ -125,6 +137,8 @@ public abstract class FileStore {
      *
      * @throws  IOException
      *          if an I/O error occurs
+     *
+     * 返回文件存储的未使用的空间大小
      */
     public abstract long getUnallocatedSpace() throws IOException;
 
@@ -143,6 +157,8 @@ public abstract class FileStore {
      *
      * @return  {@code true} if, and only if, the file attribute view is
      *          supported
+     *
+     * 判断是否支持指定的文件属性视图
      */
     public abstract boolean supportsFileAttributeView(Class<? extends FileAttributeView> type);
 
@@ -162,6 +178,8 @@ public abstract class FileStore {
      *
      * @return  {@code true} if, and only if, the file attribute view is
      *          supported
+     *
+     * 判断是否支持指定的文件属性视图
      */
     public abstract boolean supportsFileAttributeView(String name);
 
@@ -180,6 +198,8 @@ public abstract class FileStore {
      *
      * @return  a file store attribute view of the specified type or
      *          {@code null} if the attribute view is not available
+     *
+     * 返回指定类型的文件属性视图
      */
     public abstract <V extends FileStoreAttributeView> V
         getFileStoreAttributeView(Class<V> type);
@@ -216,6 +236,8 @@ public abstract class FileStore {
      *          reading the attribute
      * @throws  IOException
      *          if an I/O error occurs
+     *
+     * 获取文件存储的属性
      */
     public abstract Object getAttribute(String attribute) throws IOException;
 }

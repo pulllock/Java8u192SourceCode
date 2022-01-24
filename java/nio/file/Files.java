@@ -85,6 +85,8 @@ import java.util.stream.StreamSupport;
  * file system provider to perform the file operations.
  *
  * @since 1.7
+ *
+ * 文件相关操作的工具类
  */
 
 public final class Files {
@@ -92,6 +94,8 @@ public final class Files {
 
     /**
      * Returns the {@code FileSystemProvider} to delegate to.
+     *
+     * 返回FileSystemProvider
      */
     private static FileSystemProvider provider(Path path) {
         return path.getFileSystem().provider();
@@ -145,6 +149,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
+     *
+     * 打开指定的path位置处的文件，并返回输入流
      */
     public static InputStream newInputStream(Path path, OpenOption... options)
         throws IOException
@@ -209,6 +215,8 @@ public final class Files {
      *          SecurityManager#checkDelete(String) checkDelete} method is
      *          invoked to check delete access if the file is opened with the
      *          {@code DELETE_ON_CLOSE} option.
+     *
+     * 打开指定的path位置处的文件，并返回输出流
      */
     public static OutputStream newOutputStream(Path path, OpenOption... options)
         throws IOException
@@ -352,6 +360,8 @@ public final class Files {
      *          {@code DELETE_ON_CLOSE} option.
      *
      * @see java.nio.channels.FileChannel#open(Path,Set,FileAttribute[])
+     *
+     * 使用指定的路径打开或者创建一个可搜索的字节文件通道
      */
     public static SeekableByteChannel newByteChannel(Path path,
                                                      Set<? extends OpenOption> options,
@@ -398,6 +408,8 @@ public final class Files {
      *          {@code DELETE_ON_CLOSE} option.
      *
      * @see java.nio.channels.FileChannel#open(Path,OpenOption[])
+     *
+     * 使用指定的路径打开或者创建一个可搜索的字节文件通道
      */
     public static SeekableByteChannel newByteChannel(Path path, OpenOption... options)
         throws IOException
@@ -450,6 +462,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the directory.
+     *
+     * 打开目录，返回目录流
      */
     public static DirectoryStream<Path> newDirectoryStream(Path dir)
         throws IOException
@@ -505,6 +519,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the directory.
+     *
+     * 打开目录，返回目录流
      */
     public static DirectoryStream<Path> newDirectoryStream(Path dir, String glob)
         throws IOException
@@ -581,6 +597,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the directory.
+     *
+     * 打开目录，返回目录流
      */
     public static DirectoryStream<Path> newDirectoryStream(Path dir,
                                                            DirectoryStream.Filter<? super Path> filter)
@@ -623,6 +641,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the new file.
+     *
+     * 创建文件，如果文件已经存在则抛出异常
      */
     public static Path createFile(Path path, FileAttribute<?>... attrs)
         throws IOException
@@ -667,6 +687,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the new directory.
+     *
+     * 创建目录，如果目录已存在，则抛出异常
      */
     public static Path createDirectory(Path dir, FileAttribute<?>... attrs)
         throws IOException
@@ -718,6 +740,8 @@ public final class Files {
      *          This may invoke the security manager's {@link
      *          SecurityManager#checkPropertyAccess(String) checkPropertyAccess}
      *          method to check access to the system property {@code user.dir}
+     *
+     * 创建多级目录，如果目录已经存在则抛出异常
      */
     public static Path createDirectories(Path dir, FileAttribute<?>... attrs)
         throws IOException
@@ -842,6 +866,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the file.
+     *
+     * 创建临时文件
      */
     public static Path createTempFile(Path dir,
                                       String prefix,
@@ -888,6 +914,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the file.
+     *
+     * 创建临时文件
      */
     public static Path createTempFile(String prefix,
                                       String suffix,
@@ -941,6 +969,8 @@ public final class Files {
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access when creating the
      *          directory.
+     *
+     * 创建临时目录
      */
     public static Path createTempDirectory(Path dir,
                                            String prefix,
@@ -983,6 +1013,8 @@ public final class Files {
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access when creating the
      *          directory.
+     *
+     * 创建临时目录
      */
     public static Path createTempDirectory(String prefix,
                                            FileAttribute<?>... attrs)
@@ -1035,6 +1067,8 @@ public final class Files {
      *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the path of the symbolic link.
+     *
+     * 创建符号连接
      */
     public static Path createSymbolicLink(Path link, Path target,
                                           FileAttribute<?>... attrs)
@@ -1081,6 +1115,8 @@ public final class Files {
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to either the link or the
      *          existing file.
+     *
+     * 创建硬连接
      */
     public static Path createLink(Path link, Path existing) throws IOException {
         provider(link).createLink(link, existing);
@@ -1121,6 +1157,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String)} method
      *          is invoked to check delete access to the file
+     *
+     * 删除文件或目录
      */
     public static void delete(Path path) throws IOException {
         provider(path).delete(path);
@@ -1160,6 +1198,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String)} method
      *          is invoked to check delete access to the file.
+     *
+     * 如果存在则删除文件或目录
      */
     public static boolean deleteIfExists(Path path) throws IOException {
         return provider(path).deleteIfExists(path);
@@ -1264,6 +1304,8 @@ public final class Files {
      *          to check write access to the target file. If a symbolic link is
      *          copied the security manager is invoked to check {@link
      *          LinkPermission}{@code ("symbolic")}.
+     *
+     * 复制文件
      */
     public static Path copy(Path source, Path target, CopyOption... options)
         throws IOException
@@ -1385,6 +1427,8 @@ public final class Files {
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to both the source and
      *          target file.
+     *
+     * 移动文件或重命名文件
      */
     public static Path move(Path source, Path target, CopyOption... options)
         throws IOException
@@ -1427,6 +1471,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager
      *          is installed, it checks that {@code FilePermission} has been
      *          granted with the "{@code readlink}" action to read the link.
+     *
+     * 返回符号连接的对应的路径
      */
     public static Path readSymbolicLink(Path link) throws IOException {
         return provider(link).readSymbolicLink(link);
@@ -1456,6 +1502,8 @@ public final class Files {
      *          method is invoked to check read access to the file, and in
      *          addition it checks {@link RuntimePermission}<tt>
      *          ("getFileStoreAttributes")</tt>
+     *
+     * 获取FileStore
      */
     public static FileStore getFileStore(Path path) throws IOException {
         return provider(path).getFileStore(path);
@@ -1499,6 +1547,8 @@ public final class Files {
      *          method is invoked to check read access to both files.
      *
      * @see java.nio.file.attribute.BasicFileAttributes#fileKey
+     *
+     * 判断两个路径指定的文件是否是同一个文件
      */
     public static boolean isSameFile(Path path, Path path2) throws IOException {
         return provider(path).isSameFile(path, path2);
@@ -1526,6 +1576,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
+     *
+     * 是否是隐藏文件
      */
     public static boolean isHidden(Path path) throws IOException {
         return provider(path).isHidden(path);
@@ -1609,6 +1661,8 @@ public final class Files {
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission required by a file type detector implementation.
+     *
+     * 返回文件的content-type
      */
     public static String probeContentType(Path path)
         throws IOException
@@ -1667,6 +1721,8 @@ public final class Files {
      *
      * @return  a file attribute view of the specified type, or {@code null} if
      *          the attribute view type is not available
+     *
+     * 获取文件属性视图
      */
     public static <V extends FileAttributeView> V getFileAttributeView(Path path,
                                                                        Class<V> type,
@@ -1728,6 +1784,8 @@ public final class Files {
      *          method is invoked to check read access to the file. If this
      *          method is invoked to read security sensitive attributes then the
      *          security manager may be invoke to check for additional permissions.
+     *
+     * 获取文件的属性
      */
     public static <A extends BasicFileAttributes> A readAttributes(Path path,
                                                                    Class<A> type,
@@ -1797,6 +1855,8 @@ public final class Files {
      *          method denies write access to the file. If this method is invoked
      *          to set security sensitive attributes then the security manager
      *          may be invoked to check for additional permissions.
+     *
+     * 设置文件的属性
      */
     public static Path setAttribute(Path path, String attribute, Object value,
                                     LinkOption... options)
@@ -1858,6 +1918,8 @@ public final class Files {
      *          method denies read access to the file. If this method is invoked
      *          to read security sensitive attributes then the security manager
      *          may be invoked to check for additional permissions.
+     *
+     * 获取文件的属性
      */
     public static Object getAttribute(Path path, String attribute,
                                       LinkOption... options)
@@ -1956,6 +2018,8 @@ public final class Files {
      *          method denies read access to the file. If this method is invoked
      *          to read security sensitive attributes then the security manager
      *          may be invoke to check for additional permissions.
+     *
+     * 获取文件的属性
      */
     public static Map<String,Object> readAttributes(Path path, String attributes,
                                                     LinkOption... options)
@@ -1996,6 +2060,8 @@ public final class Files {
      *          installed, and it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
+     *
+     * 获取文件权限
      */
     public static Set<PosixFilePermission> getPosixFilePermissions(Path path,
                                                                    LinkOption... options)
@@ -2033,6 +2099,8 @@ public final class Files {
      *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the file.
+     *
+     * 设置文件权限
      */
     public static Path setPosixFilePermissions(Path path,
                                                Set<PosixFilePermission> perms)
@@ -2070,6 +2138,8 @@ public final class Files {
      *          installed, it denies {@link RuntimePermission}<tt>("accessUserInformation")</tt>
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
+     *
+     * 获取文件所有者
      */
     public static UserPrincipal getOwner(Path path, LinkOption... options) throws IOException {
         FileOwnerAttributeView view =
@@ -2116,6 +2186,8 @@ public final class Files {
      *
      * @see FileSystem#getUserPrincipalLookupService
      * @see java.nio.file.attribute.UserPrincipalLookupService
+     *
+     * 设置文件所有者
      */
     public static Path setOwner(Path path, UserPrincipal owner)
         throws IOException
@@ -2147,6 +2219,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method denies read access to the file.
+     *
+     * 是否是符号连接
      */
     public static boolean isSymbolicLink(Path path) {
         try {
@@ -2186,6 +2260,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method denies read access to the file.
+     *
+     * 是否是目录
      */
     public static boolean isDirectory(Path path, LinkOption... options) {
         try {
@@ -2223,6 +2299,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method denies read access to the file.
+     *
+     * 是否是常规文件
      */
     public static boolean isRegularFile(Path path, LinkOption... options) {
         try {
@@ -2259,6 +2337,8 @@ public final class Files {
      *          method denies read access to the file.
      *
      * @see BasicFileAttributes#lastModifiedTime
+     *
+     * 获取文件最后修改时间
      */
     public static FileTime getLastModifiedTime(Path path, LinkOption... options)
         throws IOException
@@ -2298,6 +2378,8 @@ public final class Files {
      *          to check write access to file
      *
      * @see BasicFileAttributeView#setTimes
+     *
+     * 设置文件最后修改时间
      */
     public static Path setLastModifiedTime(Path path, FileTime time)
         throws IOException
@@ -2327,6 +2409,8 @@ public final class Files {
      *          method denies read access to the file.
      *
      * @see BasicFileAttributes#size
+     *
+     * 获取文件大小
      */
     public static long size(Path path) throws IOException {
         return readAttributes(path, BasicFileAttributes.class).size();
@@ -2378,6 +2462,8 @@ public final class Files {
      *          read access to the file.
      *
      * @see #notExists
+     *
+     * 文件是否存在
      */
     public static boolean exists(Path path, LinkOption... options) {
         try {
@@ -2427,6 +2513,8 @@ public final class Files {
      *          In the case of the default provider, the {@link
      *          SecurityManager#checkRead(String)} is invoked to check
      *          read access to the file.
+     *
+     * 指定的文件是否不存在
      */
     public static boolean notExists(Path path, LinkOption... options) {
         try {
@@ -2485,6 +2573,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          is invoked to check read access to the file.
+     *
+     * 文件是否可读
      */
     public static boolean isReadable(Path path) {
         return isAccessible(path, AccessMode.READ);
@@ -2516,6 +2606,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          is invoked to check write access to the file.
+     *
+     * 文件是否可写
      */
     public static boolean isWritable(Path path) {
         return isAccessible(path, AccessMode.WRITE);
@@ -2551,6 +2643,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkExec(String)
      *          checkExec} is invoked to check execute access to the file.
+     *
+     * 文件是否可执行
      */
     public static boolean isExecutable(Path path) {
         return isAccessible(path, AccessMode.EXECUTE);
@@ -2647,6 +2741,8 @@ public final class Files {
      *          to check read access to the directory.
      * @throws  IOException
      *          if an I/O error is thrown by a visitor method
+     *
+     * 递归遍历文件树
      */
     public static Path walkFileTree(Path start,
                                     Set<FileVisitOption> options,
@@ -2735,6 +2831,8 @@ public final class Files {
      *          to check read access to the directory.
      * @throws  IOException
      *          if an I/O error is thrown by a visitor method
+     *
+     * 递归遍历文件树
      */
     public static Path walkFileTree(Path start, FileVisitor<? super Path> visitor)
         throws IOException
@@ -2776,6 +2874,8 @@ public final class Files {
      *          method is invoked to check read access to the file.
      *
      * @see #readAllLines
+     *
+     * 打开文件，返回对应的带缓冲的字符输入流
      */
     public static BufferedReader newBufferedReader(Path path, Charset cs)
         throws IOException
@@ -2811,6 +2911,8 @@ public final class Files {
      *          method is invoked to check read access to the file.
      *
      * @since 1.8
+     *
+     * 打开文件，返回对应的带缓冲的字符输入流
      */
     public static BufferedReader newBufferedReader(Path path) throws IOException {
         return newBufferedReader(path, StandardCharsets.UTF_8);
@@ -2851,6 +2953,8 @@ public final class Files {
      *          method is invoked to check write access to the file.
      *
      * @see #write(Path,Iterable,Charset,OpenOption[])
+     *
+     * 打开或创建文件，返回对应的带缓冲的字符输出流
      */
     public static BufferedWriter newBufferedWriter(Path path, Charset cs,
                                                    OpenOption... options)
@@ -2891,6 +2995,8 @@ public final class Files {
      *          method is invoked to check write access to the file.
      *
      * @since 1.8
+     *
+     * 打开或创建文件，返回对应的带缓冲的字符输出流
      */
     public static BufferedWriter newBufferedWriter(Path path, OpenOption... options) throws IOException {
         return newBufferedWriter(path, StandardCharsets.UTF_8, options);
@@ -2976,6 +3082,8 @@ public final class Files {
      *          {@code REPLACE_EXISTING} option is specified, the security
      *          manager's {@link SecurityManager#checkDelete(String) checkDelete}
      *          method is invoked to check that an existing file can be deleted.
+     *
+     * 从指定的输入流中将数据拷贝到指定的文件中
      */
     public static long copy(InputStream in, Path target, CopyOption... options)
         throws IOException
@@ -3060,6 +3168,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
+     *
+     * 将指定文件中的内容拷贝到输出流中
      */
     public static long copy(Path source, OutputStream out) throws IOException {
         // ensure not null before opening file
@@ -3147,6 +3257,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
+     *
+     * 从文件中读取所有字节
      */
     public static byte[] readAllBytes(Path path) throws IOException {
         try (SeekableByteChannel sbc = Files.newByteChannel(path);
@@ -3197,6 +3309,8 @@ public final class Files {
      *          method is invoked to check read access to the file.
      *
      * @see #newBufferedReader
+     *
+     * 从文件中读取所有行
      */
     public static List<String> readAllLines(Path path, Charset cs) throws IOException {
         try (BufferedReader reader = newBufferedReader(path, cs)) {
@@ -3237,6 +3351,8 @@ public final class Files {
      *          method is invoked to check read access to the file.
      *
      * @since 1.8
+     *
+     * 从文件中读取所有行
      */
     public static List<String> readAllLines(Path path) throws IOException {
         return readAllLines(path, StandardCharsets.UTF_8);
@@ -3282,6 +3398,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the file.
+     *
+     * 将指定的字节数组中的数据写到文件中
      */
     public static Path write(Path path, byte[] bytes, OpenOption... options)
         throws IOException
@@ -3340,6 +3458,8 @@ public final class Files {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the file.
+     *
+     * 将指定的行数据写到文件中
      */
     public static Path write(Path path, Iterable<? extends CharSequence> lines,
                              Charset cs, OpenOption... options)
@@ -3388,6 +3508,8 @@ public final class Files {
      *          method is invoked to check write access to the file.
      *
      * @since 1.8
+     *
+     * 将指定的行数据写到文件中
      */
     public static Path write(Path path,
                              Iterable<? extends CharSequence> lines,
@@ -3446,6 +3568,8 @@ public final class Files {
      *
      * @see     #newDirectoryStream(Path)
      * @since   1.8
+     *
+     * 返回目录的流
      */
     public static Stream<Path> list(Path dir) throws IOException {
         DirectoryStream<Path> ds = Files.newDirectoryStream(dir);
@@ -3565,6 +3689,8 @@ public final class Files {
      * @throws  IOException
      *          if an I/O error is thrown when accessing the starting file.
      * @since   1.8
+     *
+     * 返回目录的流
      */
     public static Stream<Path> walk(Path start,
                                     int maxDepth,
@@ -3620,6 +3746,8 @@ public final class Files {
      *
      * @see     #walk(Path, int, FileVisitOption...)
      * @since   1.8
+     *
+     * 返回目录的流
      */
     public static Stream<Path> walk(Path start, FileVisitOption... options) throws IOException {
         return walk(start, Integer.MAX_VALUE, options);
@@ -3677,6 +3805,8 @@ public final class Files {
      *
      * @see     #walk(Path, int, FileVisitOption...)
      * @since   1.8
+     *
+     * 返回目录的流
      */
     public static Stream<Path> find(Path start,
                                     int maxDepth,
@@ -3739,6 +3869,8 @@ public final class Files {
      * @see     #newBufferedReader(Path, Charset)
      * @see     java.io.BufferedReader#lines()
      * @since   1.8
+     *
+     * 返回指定文件的行的流
      */
     public static Stream<String> lines(Path path, Charset cs) throws IOException {
         BufferedReader br = Files.newBufferedReader(path, cs);
@@ -3780,6 +3912,8 @@ public final class Files {
      *          method is invoked to check read access to the file.
      *
      * @since 1.8
+     *
+     * 返回指定文件的行的流
      */
     public static Stream<String> lines(Path path) throws IOException {
         return lines(path, StandardCharsets.UTF_8);

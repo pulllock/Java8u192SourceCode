@@ -93,6 +93,8 @@ import java.io.IOException;
  * Closeable closeable} objects associated with the file system to be closed.
  *
  * @since 1.7
+ *
+ * 文件系统
  */
 
 public abstract class FileSystem
@@ -108,6 +110,8 @@ public abstract class FileSystem
      * Returns the provider that created this file system.
      *
      * @return  The provider that created this file system.
+     *
+     * 返回创建当前文件系统的FileSystemProvider
      */
     public abstract FileSystemProvider provider();
 
@@ -129,6 +133,8 @@ public abstract class FileSystem
      *          If an I/O error occurs
      * @throws  UnsupportedOperationException
      *          Thrown in the case of the default file system
+     *
+     * 关闭文件系统
      */
     @Override
     public abstract void close() throws IOException;
@@ -139,6 +145,8 @@ public abstract class FileSystem
      * <p> File systems created by the default provider are always open.
      *
      * @return  {@code true} if, and only if, this file system is open
+     *
+     * 文件系统是否打开
      */
     public abstract boolean isOpen();
 
@@ -148,6 +156,8 @@ public abstract class FileSystem
      *
      * @return  {@code true} if, and only if, this file system provides
      *          read-only access
+     *
+     * 判断文件系统是否只读
      */
     public abstract boolean isReadOnly();
 
@@ -164,6 +174,8 @@ public abstract class FileSystem
      * separator as {@link java.io.File#separator}.
      *
      * @return  The name separator
+     *
+     * 获取文件系统使用的分隔符
      */
     public abstract String getSeparator();
 
@@ -188,6 +200,8 @@ public abstract class FileSystem
      * are done when the iterator is obtained or during iteration.
      *
      * @return  An object to iterate over the root directories
+     *
+     * 获取文件系统的根路径
      */
     public abstract Iterable<Path> getRootDirectories();
 
@@ -222,6 +236,8 @@ public abstract class FileSystem
      * </pre>
      *
      * @return  An object to iterate over the backing file stores
+     *
+     * 获取文件系统的文件存储列表
      */
     public abstract Iterable<FileStore> getFileStores();
 
@@ -239,6 +255,8 @@ public abstract class FileSystem
      *
      * @return  An unmodifiable set of the names of the supported file attribute
      *          views
+     *
+     * 返回当前文件系统支持的文件属性视图
      */
     public abstract Set<String> supportedFileAttributeViews();
 
@@ -291,6 +309,8 @@ public abstract class FileSystem
      *
      * @throws  InvalidPathException
      *          If the path string cannot be converted
+     *
+     * 返回和当前文件系统匹配的路径
      */
     public abstract Path getPath(String first, String... more);
 
@@ -427,6 +447,8 @@ public abstract class FileSystem
      *          If the pattern syntax is not known to the implementation
      *
      * @see Files#newDirectoryStream(Path,String)
+     *
+     * 返回路径匹配器
      */
     public abstract PathMatcher getPathMatcher(String syntaxAndPattern);
 
@@ -446,6 +468,8 @@ public abstract class FileSystem
      *          If this {@code FileSystem} does not does have a lookup service
      *
      * @return  The {@code UserPrincipalLookupService} for this file system
+     *
+     * 返回一个账户服务，可用来搜索用户和组信息
      */
     public abstract UserPrincipalLookupService getUserPrincipalLookupService();
 
@@ -463,6 +487,8 @@ public abstract class FileSystem
      *          by {@code FileSystems} created by the default provider.
      * @throws  IOException
      *          If an I/O error occurs
+     *
+     * 返回一个目录监视服务
      */
     public abstract WatchService newWatchService() throws IOException;
 }

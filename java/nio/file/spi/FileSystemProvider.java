@@ -72,6 +72,8 @@ import java.security.PrivilegedAction;
  * threads.
  *
  * @since 1.7
+ *
+ * 文件系统的工厂
  */
 
 public abstract class FileSystemProvider {
@@ -79,9 +81,15 @@ public abstract class FileSystemProvider {
     private static final Object lock = new Object();
 
     // installed providers
+    /**
+     * 缓存已注册的文件系统工厂
+     */
     private static volatile List<FileSystemProvider> installedProviders;
 
     // used to avoid recursive loading of instaled providers
+    /**
+     * 是否已经加载过文件系统工厂
+     */
     private static boolean loadingProviders  = false;
 
     private static Void checkPermission() {
@@ -109,6 +117,13 @@ public abstract class FileSystemProvider {
     }
 
     // loads all installed providers
+
+    /**
+     *
+     * @return
+     *
+     * 加载除了file文件系统工厂之外的其他的文件系统工厂
+     */
     private static List<FileSystemProvider> loadInstalledProviders() {
         List<FileSystemProvider> list = new ArrayList<FileSystemProvider>();
 
@@ -149,10 +164,13 @@ public abstract class FileSystemProvider {
      *
      * @throws  ServiceConfigurationError
      *          When an error occurs while loading a service provider
+     *
+     * 返回当前所有的可用的文件系统工厂
      */
     public static List<FileSystemProvider> installedProviders() {
         if (installedProviders == null) {
             // ensure default provider is initialized
+            // 默认的文件系统工厂是：file文件系统工厂
             FileSystemProvider defaultProvider = FileSystems.getDefault().provider();
 
             synchronized (lock) {
@@ -166,10 +184,12 @@ public abstract class FileSystemProvider {
                         .doPrivileged(new PrivilegedAction<List<FileSystemProvider>>() {
                             @Override
                             public List<FileSystemProvider> run() {
+                                // 加载除了file文件系统工厂之外的其他的文件系统工厂
                                 return loadInstalledProviders();
                         }});
 
                     // insert the default provider at the start of the list
+                    // 将默认的file文件系统工厂添加到列表中
                     list.add(0, defaultProvider);
 
                     installedProviders = Collections.unmodifiableList(list);
@@ -183,6 +203,8 @@ public abstract class FileSystemProvider {
      * Returns the URI scheme that identifies this provider.
      *
      * @return  The URI scheme
+     *
+     * 返回当前文件系统工厂支持的协议
      */
     public abstract String getScheme();
 
@@ -223,6 +245,8 @@ public abstract class FileSystemProvider {
      *          permission required by the file system provider implementation
      * @throws  FileSystemAlreadyExistsException
      *          If the file system has already been created
+     *
+     * 创建一个新的文件系统
      */
     public abstract FileSystem newFileSystem(URI uri, Map<String,?> env)
         throws IOException;
@@ -265,6 +289,8 @@ public abstract class FileSystemProvider {
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission.
+     *
+     * 获取文件系统
      */
     public abstract FileSystem getFileSystem(URI uri);
 
@@ -298,6 +324,8 @@ public abstract class FileSystemProvider {
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission.
+     *
+     * 从URI中解析出一个和文件系统匹配的路径
      */
     public abstract Path getPath(URI uri);
 
@@ -335,6 +363,8 @@ public abstract class FileSystemProvider {
      * @throws  SecurityException
      *          If a security manager is installed and it denies an unspecified
      *          permission.
+     *
+     * 创建新的文件系统
      */
     public FileSystem newFileSystem(Path path, Map<String,?> env)
         throws IOException
@@ -369,6 +399,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
+     *
+     * 打开文件，返回输入流
      */
     public InputStream newInputStream(Path path, OpenOption... options)
         throws IOException
@@ -414,6 +446,8 @@ public abstract class FileSystemProvider {
      *          SecurityManager#checkDelete(String) checkDelete} method is
      *          invoked to check delete access if the file is opened with the
      *          {@code DELETE_ON_CLOSE} option.
+     *
+     * 打开或创建一个文件，返回输出流
      */
     public OutputStream newOutputStream(Path path, OpenOption... options)
         throws IOException
@@ -467,6 +501,8 @@ public abstract class FileSystemProvider {
      *          read access if the file is opened for reading. The {@link
      *          SecurityManager#checkWrite(String)} method is invoked to check
      *          write access if the file is opened for writing
+     *
+     * 打开或创建一个文件，返回文件通道
      */
     public FileChannel newFileChannel(Path path,
                                       Set<? extends OpenOption> options,
@@ -515,6 +551,8 @@ public abstract class FileSystemProvider {
      *          read access if the file is opened for reading. The {@link
      *          SecurityManager#checkWrite(String)} method is invoked to check
      *          write access if the file is opened for writing
+     *
+     * 打开或创建文件，返回异步文件通道
      */
     public AsynchronousFileChannel newAsynchronousFileChannel(Path path,
                                                               Set<? extends OpenOption> options,
@@ -561,6 +599,8 @@ public abstract class FileSystemProvider {
      *          SecurityManager#checkDelete(String) checkDelete} method is
      *          invoked to check delete access if the file is opened with the
      *          {@code DELETE_ON_CLOSE} option.
+     *
+     * 打开或创建一个文件，返回可搜索的文件字节通道
      */
     public abstract SeekableByteChannel newByteChannel(Path path,
         Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException;
@@ -588,6 +628,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the directory.
+     *
+     * 返回目录流
      */
     public abstract DirectoryStream<Path> newDirectoryStream(Path dir,
          DirectoryStream.Filter<? super Path> filter) throws IOException;
@@ -614,6 +656,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to the new directory.
+     *
+     * 创建目录
      */
     public abstract void createDirectory(Path dir, FileAttribute<?>... attrs)
         throws IOException;
@@ -647,6 +691,8 @@ public abstract class FileSystemProvider {
      *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the path of the symbolic link.
+     *
+     * 创建符号连接
      */
     public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs)
         throws IOException
@@ -681,6 +727,8 @@ public abstract class FileSystemProvider {
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to either the  link or the
      *          existing file.
+     *
+     * 创建硬连接
      */
     public void createLink(Path link, Path existing) throws IOException {
         throw new UnsupportedOperationException();
@@ -705,6 +753,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String)} method
      *          is invoked to check delete access to the file
+     *
+     * 删除文件
      */
     public abstract void delete(Path path) throws IOException;
 
@@ -733,6 +783,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkDelete(String)} method
      *          is invoked to check delete access to the file
+     *
+     * 如果存在则删除
      */
     public boolean deleteIfExists(Path path) throws IOException {
         try {
@@ -766,6 +818,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager
      *          is installed, it checks that {@code FilePermission} has been
      *          granted with the "{@code readlink}" action to read the link.
+     *
+     * 返回符号连接的路径
      */
     public Path readSymbolicLink(Path link) throws IOException {
         throw new UnsupportedOperationException();
@@ -804,6 +858,8 @@ public abstract class FileSystemProvider {
      *          to check write access to the target file. If a symbolic link is
      *          copied the security manager is invoked to check {@link
      *          LinkPermission}{@code ("symbolic")}.
+     *
+     * 复制文件
      */
     public abstract void copy(Path source, Path target, CopyOption... options)
         throws IOException;
@@ -840,6 +896,8 @@ public abstract class FileSystemProvider {
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
      *          method is invoked to check write access to both the source and
      *          target file.
+     *
+     * 移动文件或者重命名文件
      */
     public abstract void move(Path source, Path target, CopyOption... options)
         throws IOException;
@@ -861,6 +919,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to both files.
+     *
+     * 是否是同一个文件
      */
     public abstract boolean isSameFile(Path path, Path path2)
         throws IOException;
@@ -883,6 +943,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
+     *
+     * 是否是隐藏文件
      */
     public abstract boolean isHidden(Path path) throws IOException;
 
@@ -904,6 +966,8 @@ public abstract class FileSystemProvider {
      *          method is invoked to check read access to the file, and in
      *          addition it checks {@link RuntimePermission}<tt>
      *          ("getFileStoreAttributes")</tt>
+     *
+     * 获取文件存储
      */
     public abstract FileStore getFileStore(Path path) throws IOException;
 
@@ -979,6 +1043,8 @@ public abstract class FileSystemProvider {
      *          checkWrite} is invoked when checking write access to the file,
      *          and {@link SecurityManager#checkExec(String) checkExec} is invoked
      *          when checking execute access.
+     *
+     * 判断是否可以对指定的path处的文件应用指定的访问模式
      */
     public abstract void checkAccess(Path path, AccessMode... modes)
         throws IOException;
@@ -999,6 +1065,8 @@ public abstract class FileSystemProvider {
      *
      * @return  a file attribute view of the specified type, or {@code null} if
      *          the attribute view type is not available
+     *
+     * 获取文件属性视图
      */
     public abstract <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options);
@@ -1028,6 +1096,8 @@ public abstract class FileSystemProvider {
      *          In the case of the default provider, a security manager is
      *          installed, its {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file
+     *
+     * 获取文件的属性
      */
     public abstract <A extends BasicFileAttributes> A
         readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException;
@@ -1060,6 +1130,8 @@ public abstract class FileSystemProvider {
      *          method denies read access to the file. If this method is invoked
      *          to read security sensitive attributes then the security manager
      *          may be invoke to check for additional permissions.
+     *
+     * 获取文件的属性
      */
     public abstract Map<String,Object> readAttributes(Path path, String attributes,
                                                       LinkOption... options)
@@ -1096,6 +1168,8 @@ public abstract class FileSystemProvider {
      *          method denies write access to the file. If this method is invoked
      *          to set security sensitive attributes then the security manager
      *          may be invoked to check for additional permissions.
+     *
+     * 设置文件的属性
      */
     public abstract void setAttribute(Path path, String attribute,
                                       Object value, LinkOption... options)
