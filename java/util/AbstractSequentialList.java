@@ -64,6 +64,8 @@ package java.util;
  * @see AbstractList
  * @see AbstractCollection
  * @since 1.2
+ *
+ * 顺序List的抽象实现
  */
 
 public abstract class AbstractSequentialList<E> extends AbstractList<E> {

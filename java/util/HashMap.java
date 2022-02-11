@@ -317,11 +317,29 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     /**
      * Basic hash bin node, used for most entries.  (See below for
      * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
+     *
+     * 使用链表存储数据的时候使用Node
      */
     static class Node<K,V> implements Map.Entry<K,V> {
+
+        /**
+         * 键的哈希值
+         */
         final int hash;
+
+        /**
+         * 键
+         */
         final K key;
+
+        /**
+         * 值
+         */
         V value;
+
+        /**
+         * 指向当前节点的后继节点
+         */
         Node<K,V> next;
 
         Node(int hash, K key, V value, Node<K,V> next) {
@@ -615,11 +633,14 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * @param hash hash for key
      * @param key the key
      * @return the node, or null if none
-     * 获取指定key对应的结点，如果是红黑树存储，返回的是TreeNode，如果是链表存储，
-     * 返回的是Node。
+     * 获取指定key对应的结点，如果是红黑树存储，返回的是TreeNode，如果是链表存储，返回的是Node。
      */
     final Node<K,V> getNode(int hash, Object key) {
-        Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
+        // 存储元素的数组
+        Node<K,V>[] tab;
+        Node<K,V> first, e;
+        int n;
+        K k;
         // 根据哈希值，计算数组下标
         if ((tab = table) != null && (n = tab.length) > 0 &&
             (first = tab[(n - 1) & hash]) != null) {
@@ -1903,6 +1924,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * Entry for Tree bins. Extends LinkedHashMap.Entry (which in turn
      * extends Node) so can be used as extension of either regular or
      * linked node.
+     *
+     * 当使用红黑树存储元素的时候使用TreeNode
      */
     static final class TreeNode<K,V> extends LinkedHashMap.Entry<K,V> {
         TreeNode<K,V> parent;  // red-black tree links

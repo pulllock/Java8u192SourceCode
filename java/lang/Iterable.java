@@ -41,12 +41,16 @@ import java.util.function.Consumer;
  *
  * @since 1.5
  * @jls 14.14.2 The enhanced for statement
+ *
+ * 可迭代的
  */
 public interface Iterable<T> {
     /**
      * Returns an iterator over elements of type {@code T}.
      *
      * @return an Iterator.
+     *
+     * 迭代器
      */
     Iterator<T> iterator();
 
@@ -68,6 +72,8 @@ public interface Iterable<T> {
      * @param action The action to be performed for each element
      * @throws NullPointerException if the specified action is null
      * @since 1.8
+     *
+     * 将所有元素都引用给定的action
      */
     default void forEach(Consumer<? super T> action) {
         Objects.requireNonNull(action);
@@ -96,6 +102,8 @@ public interface Iterable<T> {
      * @return a {@code Spliterator} over the elements described by this
      * {@code Iterable}.
      * @since 1.8
+     *
+     * 创建一个可分割迭代器
      */
     default Spliterator<T> spliterator() {
         return Spliterators.spliteratorUnknownSize(iterator(), 0);

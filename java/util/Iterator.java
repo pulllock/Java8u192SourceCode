@@ -50,6 +50,8 @@ import java.util.function.Consumer;
  * @see ListIterator
  * @see Iterable
  * @since 1.2
+ *
+ * 迭代器
  */
 public interface Iterator<E> {
     /**
@@ -58,6 +60,8 @@ public interface Iterator<E> {
      * return an element rather than throwing an exception.)
      *
      * @return {@code true} if the iteration has more elements
+     *
+     * 是否有下一个元素
      */
     boolean hasNext();
 
@@ -66,6 +70,8 @@ public interface Iterator<E> {
      *
      * @return the next element in the iteration
      * @throws NoSuchElementException if the iteration has no more elements
+     *
+     * 下一个元素
      */
     E next();
 
@@ -88,6 +94,8 @@ public interface Iterator<E> {
      *         yet been called, or the {@code remove} method has already
      *         been called after the last call to the {@code next}
      *         method
+     *
+     * 移除
      */
     default void remove() {
         throw new UnsupportedOperationException("remove");
@@ -109,6 +117,8 @@ public interface Iterator<E> {
      * @param action The action to be performed for each element
      * @throws NullPointerException if the specified action is null
      * @since 1.8
+     *
+     * 将剩余的元素应用给定的action
      */
     default void forEachRemaining(Consumer<? super E> action) {
         Objects.requireNonNull(action);

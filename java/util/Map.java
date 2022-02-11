@@ -371,6 +371,8 @@ public interface Map<K,V> {
      *
      * @see Map#entrySet()
      * @since 1.2
+     *
+     * Map的条目
      */
     interface Entry<K,V> {
         /**

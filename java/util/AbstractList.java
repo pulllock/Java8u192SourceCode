@@ -66,6 +66,8 @@ package java.util;
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @since 1.2
+ *
+ * List的抽象实现
  */
 
 public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {
@@ -103,8 +105,11 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *         list does not permit null elements
      * @throws IllegalArgumentException if some property of this element
      *         prevents it from being added to this list
+     *
+     * 添加元素
      */
     public boolean add(E e) {
+        // 在List的最后添加元素
         add(size(), e);
         return true;
     }
@@ -113,6 +118,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * {@inheritDoc}
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
+     *
+     * 获取指定位置处的元素
      */
     abstract public E get(int index);
 
@@ -127,6 +134,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      * @throws IndexOutOfBoundsException     {@inheritDoc}
+     *
+     * 设置指定位置处的元素
      */
     public E set(int index, E element) {
         throw new UnsupportedOperationException();
@@ -143,6 +152,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      * @throws IndexOutOfBoundsException     {@inheritDoc}
+     *
+     * 在指定位置后面添加元素
      */
     public void add(int index, E element) {
         throw new UnsupportedOperationException();
@@ -156,6 +167,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IndexOutOfBoundsException     {@inheritDoc}
+     *
+     * 移除指定位置处的元素
      */
     public E remove(int index) {
         throw new UnsupportedOperationException();
@@ -173,10 +186,15 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *
      * @throws ClassCastException   {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     *
+     * 返回第一个匹配元素的索引位置
      */
     public int indexOf(Object o) {
+        // 迭代器
         ListIterator<E> it = listIterator();
+        // 要找的是null
         if (o==null) {
+            // 遍历进行对比
             while (it.hasNext())
                 if (it.next()==null)
                     return it.previousIndex();
@@ -198,10 +216,14 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *
      * @throws ClassCastException   {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     *
+     * 返回最后一个匹配元素的索引位置
      */
     public int lastIndexOf(Object o) {
+        // 迭代器
         ListIterator<E> it = listIterator(size());
         if (o==null) {
+            // 迭代器从后往前查找
             while (it.hasPrevious())
                 if (it.previous()==null)
                     return it.nextIndex();
@@ -229,6 +251,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      *
      * @throws UnsupportedOperationException if the {@code clear} operation
      *         is not supported by this list
+     *
+     * 清空
      */
     public void clear() {
         removeRange(0, size());
@@ -252,6 +276,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      * @throws IndexOutOfBoundsException     {@inheritDoc}
+     *
+     * 将指定的集合中的元素添加到指定的位置后
      */
     public boolean addAll(int index, Collection<? extends E> c) {
         rangeCheckForAdd(index);
@@ -283,6 +309,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * for the (protected) {@link #modCount} field.
      *
      * @return an iterator over the elements in this list in proper sequence
+     *
+     * 迭代器
      */
     public Iterator<E> iterator() {
         return new Itr();
@@ -294,6 +322,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * <p>This implementation returns {@code listIterator(0)}.
      *
      * @see #listIterator(int)
+     *
+     * 迭代器
      */
     public ListIterator<E> listIterator() {
         return listIterator(0);
@@ -320,6 +350,8 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * the (protected) {@link #modCount} field.
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
+     *
+     * 迭代器
      */
     public ListIterator<E> listIterator(final int index) {
         rangeCheckForAdd(index);

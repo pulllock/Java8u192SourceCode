@@ -106,6 +106,7 @@ import java.util.function.UnaryOperator;
  * @see AbstractList
  * @see AbstractSequentialList
  * @since 1.2
+ *
  * List是一种带有某种顺序的集合，可以参考数据结构中的线性表，存储结构有顺序存储结构和链式存储结构。
  * 线性表是由数据类型相同的数据元素组成的有限序列，除了序列中的头和尾，其他数据元素都仅有一个前驱和后继元素。头只有后继元素，尾只有前驱元素、
  * 线性表的逻辑结构中，使用序号约定数据元素在线性表中的位置。
@@ -120,6 +121,7 @@ public interface List<E> extends Collection<E> {
      * <tt>Integer.MAX_VALUE</tt>.
      *
      * @return the number of elements in this list
+     *
      * 元素个数
      */
     int size();
@@ -128,6 +130,7 @@ public interface List<E> extends Collection<E> {
      * Returns <tt>true</tt> if this list contains no elements.
      *
      * @return <tt>true</tt> if this list contains no elements
+     *
      * 判断是否为空，为空返回true
      */
     boolean isEmpty();
@@ -146,6 +149,7 @@ public interface List<E> extends Collection<E> {
      * @throws NullPointerException if the specified element is null and this
      *         list does not permit null elements
      * (<a href="Collection.html#optional-restrictions">optional</a>)
+     *
      * 判断是否包含关键字为o的元素
      */
     boolean contains(Object o);
@@ -154,6 +158,7 @@ public interface List<E> extends Collection<E> {
      * Returns an iterator over the elements in this list in proper sequence.
      *
      * @return an iterator over the elements in this list in proper sequence
+     *
      * 返回一个迭代器
      */
     Iterator<E> iterator();
@@ -173,6 +178,7 @@ public interface List<E> extends Collection<E> {
      * @return an array containing all of the elements in this list in proper
      *         sequence
      * @see Arrays#asList(Object[])
+     *
      * 转换成数组
      */
     Object[] toArray();
@@ -215,6 +221,7 @@ public interface List<E> extends Collection<E> {
      *         is not a supertype of the runtime type of every element in
      *         this list
      * @throws NullPointerException if the specified array is null
+     *
      * 转换成数组
      */
     <T> T[] toArray(T[] a);
@@ -294,6 +301,7 @@ public interface List<E> extends Collection<E> {
      *         (<a href="Collection.html#optional-restrictions">optional</a>),
      *         or if the specified collection is null
      * @see #contains(Object)
+     *
      * 是否包含所有的元素，如果包含所有的元素则返回false
      */
     boolean containsAll(Collection<?> c);
@@ -318,6 +326,7 @@ public interface List<E> extends Collection<E> {
      * @throws IllegalArgumentException if some property of an element of the
      *         specified collection prevents it from being added to this list
      * @see #add(Object)
+     *
      * 将c中的所有元素添加到List中，在List尾部添加
      */
     boolean addAll(Collection<? extends E> c);
@@ -370,6 +379,7 @@ public interface List<E> extends Collection<E> {
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
+     *
      * 移除所有c中的元素
      */
     boolean removeAll(Collection<?> c);
@@ -393,6 +403,7 @@ public interface List<E> extends Collection<E> {
      *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
+     *
      * 只保留c中的元素
      */
     boolean retainAll(Collection<?> c);
@@ -425,6 +436,7 @@ public interface List<E> extends Collection<E> {
      *         not permit null elements
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
+     *
      * 将List中的所有元素按照某个规则处理后，再替换掉原来的所有元素
      */
     default void replaceAll(UnaryOperator<E> operator) {
@@ -492,6 +504,7 @@ public interface List<E> extends Collection<E> {
      *         if the comparator is found to violate the {@link Comparator}
      *         contract
      * @since 1.8
+     *
      * 根据指定的Comparator来排序
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -511,6 +524,7 @@ public interface List<E> extends Collection<E> {
      *
      * @throws UnsupportedOperationException if the <tt>clear</tt> operation
      *         is not supported by this list
+     *
      * 删除所有元素
      */
     void clear();
@@ -686,6 +700,7 @@ public interface List<E> extends Collection<E> {
      *
      * @return a list iterator over the elements in this list (in proper
      *         sequence)
+     *
      * 获取ListIterator
      */
     ListIterator<E> listIterator();
@@ -704,6 +719,7 @@ public interface List<E> extends Collection<E> {
      *         sequence), starting at the specified position in the list
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index > size()})
+     *
      * 从指定位置处开始返回一个ListIterator
      */
     ListIterator<E> listIterator(int index);
@@ -770,6 +786,7 @@ public interface List<E> extends Collection<E> {
      *
      * @return a {@code Spliterator} over the elements in this list
      * @since 1.8
+     *
      * 创建一个可拆分迭代器，可用来并行遍历List
      */
     @Override

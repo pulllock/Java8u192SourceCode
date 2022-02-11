@@ -56,6 +56,8 @@ package java.util;
  * @author  Neal Gafter
  * @see Collection
  * @since 1.2
+ *
+ * 集合的抽象实现
  */
 
 public abstract class AbstractCollection<E> implements Collection<E> {
@@ -72,15 +74,25 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * Returns an iterator over the elements contained in this collection.
      *
      * @return an iterator over the elements contained in this collection
+     *
+     * 迭代器
      */
     public abstract Iterator<E> iterator();
 
+    /**
+     *
+     * @return
+     *
+     * 元素个数
+     */
     public abstract int size();
 
     /**
      * {@inheritDoc}
      *
      * <p>This implementation returns <tt>size() == 0</tt>.
+     *
+     * 是否为空
      */
     public boolean isEmpty() {
         return size() == 0;
@@ -94,14 +106,22 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      *
      * @throws ClassCastException   {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     *
+     * 是否包含指定元素
      */
     public boolean contains(Object o) {
+        // 迭代器
         Iterator<E> it = iterator();
+        // 查找的是null
         if (o==null) {
+            // 遍历元素，找到第一个为null的
             while (it.hasNext())
                 if (it.next()==null)
                     return true;
-        } else {
+        }
+        // 查找的是非null
+        else {
+            // 遍历元素，找到第一个符合的
             while (it.hasNext())
                 if (o.equals(it.next()))
                     return true;
@@ -130,11 +150,16 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      *     list.add(e);
      * return list.toArray();
      * }</pre>
+     *
+     * 转数组
      */
     public Object[] toArray() {
         // Estimate size of array; be prepared to see more or fewer elements
+        // 根据集合大小创建一个新的数组
         Object[] r = new Object[size()];
+        // 迭代器
         Iterator<E> it = iterator();
+        // 循环将集合中的每个元素都添加到数组中
         for (int i = 0; i < r.length; i++) {
             if (! it.hasNext()) // fewer elements than expected
                 return Arrays.copyOf(r, i);
@@ -257,6 +282,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @throws NullPointerException          {@inheritDoc}
      * @throws IllegalArgumentException      {@inheritDoc}
      * @throws IllegalStateException         {@inheritDoc}
+     *
+     * 添加元素
      */
     public boolean add(E e) {
         throw new UnsupportedOperationException();
@@ -277,6 +304,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws ClassCastException            {@inheritDoc}
      * @throws NullPointerException          {@inheritDoc}
+     *
+     * 移除元素
      */
     public boolean remove(Object o) {
         Iterator<E> it = iterator();
@@ -312,6 +341,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @throws ClassCastException            {@inheritDoc}
      * @throws NullPointerException          {@inheritDoc}
      * @see #contains(Object)
+     *
+     * 是否包含指定集合中的所有元素
      */
     public boolean containsAll(Collection<?> c) {
         for (Object e : c)
@@ -337,6 +368,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @throws IllegalStateException         {@inheritDoc}
      *
      * @see #add(Object)
+     *
+     * 添加所有元素
      */
     public boolean addAll(Collection<? extends E> c) {
         boolean modified = false;
@@ -428,6 +461,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * <tt>remove</tt> method and this collection is non-empty.
      *
      * @throws UnsupportedOperationException {@inheritDoc}
+     *
+     * 清空集合
      */
     public void clear() {
         Iterator<E> it = iterator();

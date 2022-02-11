@@ -173,12 +173,14 @@ public class CopyOnWriteArrayList<E>
 
     /**
      * The lock protecting all mutators
+     *
      * 可重入锁，写操作的时候用来加锁
      */
     final transient ReentrantLock lock = new ReentrantLock();
 
     /**
      * The array, accessed only via getArray/setArray.
+     *
      * 存储数据的数组
      */
     private transient volatile Object[] array;
