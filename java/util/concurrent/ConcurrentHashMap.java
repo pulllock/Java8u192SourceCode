@@ -1399,19 +1399,30 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * non-null.  If resulting value is null, delete.
      */
     final V replaceNode(Object key, V value, Object cv) {
+        // 要查找的key的哈希值
         int hash = spread(key.hashCode());
+        // tab是存储数据的数组
         for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh;
+            // f是要查找的key在数组中指定索引位置的第一个元素
+            Node<K,V> f;
+            // n是数组长度，i是数组索引，fh是数组中指定索引位置元素的哈希值
+            int n, i, fh;
+            // 数组为空，或者key所在位置为空
             if (tab == null || (n = tab.length) == 0 ||
                 (f = tabAt(tab, i = (n - 1) & hash)) == null)
                 break;
+            // 要找的key所在位置处是ForwardingNode节点，表示当前位置处的元素正在进行扩容转移
             else if ((fh = f.hash) == MOVED)
+                // 协助转移
                 tab = helpTransfer(tab, f);
+            // 要找的key所在位置是正常的节点：Node或者TreeBin
             else {
                 V oldVal = null;
                 boolean validated = false;
+                // 锁住key所在数组位置处的第一个节点
                 synchronized (f) {
                     if (tabAt(tab, i) == f) {
+                        // fh大于等于0，说明是Node链表
                         if (fh >= 0) {
                             validated = true;
                             for (Node<K,V> e = f, pred = null;;) {
@@ -1437,6 +1448,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                     break;
                             }
                         }
+                        // f是TreeBin类型的节点，说明这个位置处是红黑树结构
                         else if (f instanceof TreeBin) {
                             validated = true;
                             TreeBin<K,V> t = (TreeBin<K,V>)f;
@@ -3085,16 +3097,25 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Replaces all linked nodes in bin at given index unless table is
      * too small, in which case resizes instead.
+     *
+     * 将链表变成树结构
      */
     private final void treeifyBin(Node<K,V>[] tab, int index) {
-        Node<K,V> b; int n, sc;
+        // 数组在index位置处的节点（链表的头节点）
+        Node<K,V> b;
+        // n是数组长度
+        int n, sc;
         if (tab != null) {
+            // 数组长度小于64，会优先扩容，而不是直接转换成树结构
             if ((n = tab.length) < MIN_TREEIFY_CAPACITY)
                 tryPresize(n << 1);
             else if ((b = tabAt(tab, index)) != null && b.hash >= 0) {
+                // 对链表头节点进行加锁
                 synchronized (b) {
                     if (tabAt(tab, index) == b) {
+                        // hd指向新的TreeNode链表的头节点，tl指向新的TreeNode链表的尾节点
                         TreeNode<K,V> hd = null, tl = null;
+                        // 将原来链表中的Node节点的数据变成一个新的TreeNode链表，原来的Node链表不变
                         for (Node<K,V> e = b; e != null; e = e.next) {
                             TreeNode<K,V> p =
                                 new TreeNode<K,V>(e.hash, e.key, e.val,
@@ -3105,6 +3126,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 tl.next = p;
                             tl = p;
                         }
+                        // 将新的TreeNode链表转换成树（TreeBin），并且保留链表的顺序，并将TreeBin放到数组中
                         setTabAt(tab, index, new TreeBin<K,V>(hd));
                     }
                 }
@@ -3267,6 +3289,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         /**
          * Creates bin with initial set of nodes headed by b.
+         *
+         * 参数中的TreeNode是一个TreeNode链表的头结点，在TreeBin的构造方法中会将TreeNode链表转成红黑树，并且保留原来链表顺序
          */
         TreeBin(TreeNode<K,V> b) {
             super(TREEBIN, null, null, null);
