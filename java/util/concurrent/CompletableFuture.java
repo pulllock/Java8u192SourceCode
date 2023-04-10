@@ -1886,7 +1886,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @param <U> the function's return type
      * @return the new CompletableFuture
      *
-     * 创建一个异步操作，使用默认的线程池执行，返回CompletableFuture
+     * 创建一个异步操作，使用默认的线程池执行，返回CompletableFuture，可以获取到返回值
      */
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         return asyncSupplyStage(asyncPool, supplier);
@@ -1903,7 +1903,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @param <U> the function's return type
      * @return the new CompletableFuture
      *
-     * 创建一个异步操作，使用指定的线程池执行，返回CompletableFuture
+     * 创建一个异步操作，使用指定的线程池执行，返回CompletableFuture，可以获取到返回值
      */
     public static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier,
                                                        Executor executor) {
@@ -1919,7 +1919,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * returned CompletableFuture
      * @return the new CompletableFuture
      *
-     * 创建一个异步操作，使用默认的线程池执行，返回CompletableFuture的反泛型参数为Void
+     * 创建一个异步操作，使用默认的线程池执行，返回CompletableFuture的反泛型参数为Void，无法获取到返回值
      */
     public static CompletableFuture<Void> runAsync(Runnable runnable) {
         return asyncRunStage(asyncPool, runnable);
@@ -1935,7 +1935,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletableFuture
      *
-     * 创建一个异步操作，使用指定的线程池执行，返回CompletableFuture的泛型参数为Void
+     * 创建一个异步操作，使用指定的线程池执行，返回CompletableFuture的泛型参数为Void，无法获取到返回值
      */
     public static CompletableFuture<Void> runAsync(Runnable runnable,
                                                    Executor executor) {

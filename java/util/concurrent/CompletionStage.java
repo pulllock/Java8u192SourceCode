@@ -140,7 +140,8 @@ public interface CompletionStage<T> {
      * @param <U> the function's return type
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后的结果作为指定的Function的入参继续同步执行，返回一个新的CompletionStage
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续同步执行，返回一个新的CompletionStage，
+     * 第二个任务可以的拿到第一个任务的结果，并且可以获取到第二个任务的结果
      */
     public <U> CompletionStage<U> thenApply(Function<? super T,? extends U> fn);
 
@@ -158,7 +159,8 @@ public interface CompletionStage<T> {
      * @param <U> the function's return type
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，返回一个新的CompletionStage
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，返回一个新的CompletionStage，
+     * 第二个任务可以的拿到第一个任务的结果，并且可以获取到第二个任务的结果
      */
     public <U> CompletionStage<U> thenApplyAsync
         (Function<? super T,? extends U> fn);
@@ -177,7 +179,8 @@ public interface CompletionStage<T> {
      * @param <U> the function's return type
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，并使用指定的线程池运行，返回一个新的CompletionStage
+     * 当前阶段正常完成后的结果作为指定的Function的入参继续异步执行，并使用指定的线程池运行，返回一个新的CompletionStage，
+     * 第二个任务可以的拿到第一个任务的结果，并且可以获取到第二个任务的结果
      */
     public <U> CompletionStage<U> thenApplyAsync
         (Function<? super T,? extends U> fn,
@@ -195,7 +198,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续同步执行，返回一个新的CompletionStage，但是泛型参数为Void
+     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续同步执行，返回一个新的CompletionStage，但是泛型参数为Void，
+     * 第二个任务可以拿到第一个任务的执行结果，第二个任务完成后没有返回值
      */
     public CompletionStage<Void> thenAccept(Consumer<? super T> action);
 
@@ -212,7 +216,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续异步执行，返回一个新的CompletionStage，但是泛型参数为Void
+     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续异步执行，返回一个新的CompletionStage，但是泛型参数为Void，
+     * 第二个任务可以拿到第一个任务的执行结果，第二个任务完成后没有返回值
      */
     public CompletionStage<Void> thenAcceptAsync(Consumer<? super T> action);
 
@@ -229,7 +234,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续同步执行，并使用指定的线程池执行，返回一个新的CompletionStage，但是泛型参数为Void
+     * 当前阶段正常完成后的结果作为指定的Consumer的入参继续同步执行，并使用指定的线程池执行，返回一个新的CompletionStage，但是泛型参数为Void，
+     * 第二个任务可以拿到第一个任务的执行结果，第二个任务完成后没有返回值
      */
     public CompletionStage<Void> thenAcceptAsync(Consumer<? super T> action,
                                                  Executor executor);
@@ -244,7 +250,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后同步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
+     * 当前阶段正常完成后同步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void，
+     * 第二个任务拿不到第一个任务的执行结果，并且第二个任务结束后也没有返回值
      */
     public CompletionStage<Void> thenRun(Runnable action);
 
@@ -260,7 +267,8 @@ public interface CompletionStage<T> {
      * returned CompletionStage
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后异步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
+     * 当前阶段正常完成后异步执行指定的Runnable任务，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void，
+     * 第二个任务拿不到第一个任务的执行结果，并且第二个任务结束后也没有返回值
      */
     public CompletionStage<Void> thenRunAsync(Runnable action);
 
@@ -276,7 +284,8 @@ public interface CompletionStage<T> {
      * @param executor the executor to use for asynchronous execution
      * @return the new CompletionStage
      *
-     * 当前阶段正常完成后异步执行指定的Runnable任务，使用指定的线程池执行，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void
+     * 当前阶段正常完成后异步执行指定的Runnable任务，使用指定的线程池执行，不依赖当前阶段的执行结果，返回一个新的CompletionStage，但是泛型参数为Void，
+     * 第二个任务拿不到第一个任务的执行结果，并且第二个任务结束后也没有返回值
      */
     public CompletionStage<Void> thenRunAsync(Runnable action,
                                               Executor executor);
