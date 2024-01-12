@@ -1046,7 +1046,8 @@ public abstract class AbstractQueuedSynchronizer
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
      *
-     * 尾结点，每个新来的结点都插入到最后，形成一个链
+     * 尾结点，每个新来的结点都插入到最后，形成一个链。
+     * 尾结点是一个共享的变量，会产生竞争
      */
     private transient volatile Node tail;
 
@@ -1172,10 +1173,8 @@ public abstract class AbstractQueuedSynchronizer
         // 当前同步队列的尾节点
         Node pred = tail;
 
-        /*
-            tail != null表示同步队列不为空
-            tail == head的时候表示同步队列是空的
-         */
+        // 当前同步队列的尾节点不为null，说明队列不为空，这里会直接尝试快速的进行一次入队操作，如果成功就入队了，如果不成功的话，
+        // 说明有多个线程竞争入队列，如果有竞争，则会走到最后的enq(node)方法中使用CAS+循环进行入队列操作
         if (pred != null) {
             // 设置新node的前驱为当前的队尾结点
             node.prev = pred;
@@ -1185,6 +1184,7 @@ public abstract class AbstractQueuedSynchronizer
                 pred.next = node;
                 return node;
             }
+            // 如果这里快速入队不成功，则会继续走到下面的enq(node)方法中使用CAS+循环进行入队列操作
         }
 
         /*
@@ -2168,10 +2168,14 @@ public abstract class AbstractQueuedSynchronizer
             addWaiter将结点包装成Node，入同步队列。
             acquireQueued方法挂起当前线程，阻塞到这里。
          */
+        // AQS是基于CLH队列的公平的自旋锁：如果发生了竞争，获取不到锁，则获取锁的线程进入队列，并且进行自旋来获取锁
+        // 1. 尝试获取锁，如果获取到了则直接返回
         if (!tryAcquire(arg) &&
             // acquireQueued方法挂起当前线程，阻塞到这里
+            // 3. 进行自旋来获取锁
             acquireQueued(
                     // 将结点包装成Node，入同步队列，Node是独占模式
+                    // 2. 获取不到锁，将当前线程加入到队列中
                     addWaiter(Node.EXCLUSIVE),
                     arg
             ))
