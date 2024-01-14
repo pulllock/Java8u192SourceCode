@@ -47,23 +47,32 @@ import java.util.function.Consumer;
 
 /**
  * An unbounded thread-safe {@linkplain Queue queue} based on linked nodes.
+ * 一个基于链接节点的无界的线程安全的队列。
  * This queue orders elements FIFO (first-in-first-out).
+ * 此队列按照FIFO（先进先出）的顺序进行排序。
  * The <em>head</em> of the queue is that element that has been on the
  * queue the longest time.
+ * 队列的head元素是在队列中时间最长的元素。
  * The <em>tail</em> of the queue is that element that has been on the
  * queue the shortest time. New elements
  * are inserted at the tail of the queue, and the queue retrieval
  * operations obtain elements at the head of the queue.
+ * 队列的tail元素是在队列中时间最短的元素。新元素插入到队列的尾部，获取元素的操作在队列的头部进行。
  * A {@code ConcurrentLinkedQueue} is an appropriate choice when
  * many threads will share access to a common collection.
+ * 当多个线程访问一个共享的集合时使用ConcurrentLinkedQueue是一个适当的选择。
  * Like most other concurrent collection implementations, this class
  * does not permit the use of {@code null} elements.
+ * 和其他的并发集合实现一样，此队列不允许存储null元素。
  *
  * <p>This implementation employs an efficient <em>non-blocking</em>
  * algorithm based on one described in <a
  * href="http://www.cs.rochester.edu/u/michael/PODC96.html"> Simple,
  * Fast, and Practical Non-Blocking and Blocking Concurrent Queue
  * Algorithms</a> by Maged M. Michael and Michael L. Scott.
+ * 此实现使用了一个高效的非阻塞算法，该算法基于Maged M. Michael和Michael L. Scott合著的
+ * 《Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms》这篇论文
+ * 中锁描述的算法。
  *
  * <p>Iterators are <i>weakly consistent</i>, returning elements
  * reflecting the state of the queue at some point at or since the
@@ -71,6 +80,9 @@ import java.util.function.Consumer;
  * java.util.ConcurrentModificationException}, and may proceed concurrently
  * with other operations.  Elements contained in the queue since the creation
  * of the iterator will be returned exactly once.
+ * 该队列的迭代器是弱一致的，迭代器返回的元素是在某个时刻队列的状态或者说是从迭代器创建之后的的状态。
+ * 它们不会抛出ConcurrentModificationException异常，并且可能与其他的操作并发的进行。迭代器
+ * 创建后队列中的元素只会被返回一次。
  *
  * <p>Beware that, unlike in most collections, the {@code size} method
  * is <em>NOT</em> a constant-time operation. Because of the
@@ -83,9 +95,15 @@ import java.util.function.Consumer;
  * to be performed atomically. For example, an iterator operating
  * concurrently with an {@code addAll} operation might view only some
  * of the added elements.
+ * 需要注意的是，该队列和其他的大多数集合不一样，该队列的size方法不是一个常量时间的操作。因为
+ * 该队列的异步特性决定了获取当前队列元素数量的时候需要进行一个遍历操作，所以如果队列在进行遍历
+ * 操作的时候有其他的修改操作也在进行，size方法返回的数据可能是不准确的。
+ * 另外，批量操作：addAll、removeAll、retainAll、containsAll、equals、toArray都不能保证原子的进行操作。
+ * 列入，如果一个遍历操作和一个addAll操作同步时进行，迭代操作可能只能看到addAll添加的一部分元素。
  *
  * <p>This class and its iterator implement all of the <em>optional</em>
  * methods of the {@link Queue} and {@link Iterator} interfaces.
+ * 该类和它的迭代器实现了Queue接口和Iterator接口的所有的可选方法。
  *
  * <p>Memory consistency effects: As with other concurrent
  * collections, actions in a thread prior to placing an object into a
@@ -93,10 +111,13 @@ import java.util.function.Consumer;
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * actions subsequent to the access or removal of that element from
  * the {@code ConcurrentLinkedQueue} in another thread.
+ * 内存一致性效果：和其他的并发集合一样，一个线程将对象写到ConcurrentLinkedQueue中的操作happen-before于
+ * 后续其他的线程访问或移除该元素的操作。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
+ * 此类是Java集合框架的一员。
  *
  * @since 1.5
  * @author Doug Lea
@@ -132,6 +153,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * adapted for a garbage-collected environment, with support for
      * interior node deletion (to support remove(Object)).  For
      * explanation, read the paper.
+     * 该实现是对Michael & Scott算法的改进，以适应具有垃圾回收机制的语言环境，
+     * 并且支持内部节点的删除操作（为了支持remove(Object)）。
+     * 更多的解释可以参考Michael & Scott的论文。
      *
      * Note that like most non-blocking algorithms in this package,
      * this implementation relies on the fact that in garbage
@@ -139,13 +163,21 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * to recycled nodes, so there is no need to use "counted
      * pointers" or related techniques seen in versions used in
      * non-GC'ed settings.
+     * 和concurrent包中其他的非阻塞算法一样，该实现基于一个这样的事实：在有垃圾回收机制的情况下，
+     * 即使出现了被回收的节点被重新使用的情况，也不会出现ABA问题，所以在实现上不需要使用计数指针或
+     * 者其他的相关技术来防止ABA问题。
      *
      * The fundamental invariants are:
+     * 基本的不变式如下：
      * - There is exactly one (last) Node with a null next reference,
      *   which is CASed when enqueueing.  This last Node can be
      *   reached in O(1) time from tail, but tail is merely an
      *   optimization - it can always be reached in O(N) time from
      *   head as well.
+     * - 队列中始终只有一个next引用为null的节点，该节点是队列尾部节点（最后一个节点），
+     *   当新节点入队时，队尾节点的next会使用CAS操作指向新节点。从tail访问队尾节点只需
+     *   要O(1)复杂度的时间，不过tail仅仅只是一个优化，因为总是可以使用O(N)复杂度的时间
+     *   从head开始来找到队尾。
      * - The elements contained in the queue are the non-null items in
      *   Nodes that are reachable from head.  CASing the item
      *   reference of a Node to null atomically removes it from the
@@ -154,6 +186,10 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      *   head to advance.  A dequeued Node may remain in use
      *   indefinitely due to creation of an Iterator or simply a
      *   poll() that has lost its time slice.
+     * - 队列中的元素都是一些节点，这些节点中保存的值不能为null，这些元素的节点一定可以从head
+     *   开始被访问到。将节点中的值通过cas操作设置为null，就相当于将这个节点从队列中删除。
+     *   即便是由于并发的修改导致了head节点变化，也能保证从head开始能遍历到所有的元素。一个
+     *   已经出队列的节点可能会被迭代器继续无限期的持有，或者是被一个失去CPU时间片的poll()操作无限期持有。
      *
      * The above might appear to imply that all Nodes are GC-reachable
      * from a predecessor dequeued Node.  That would cause two problems:
@@ -166,6 +202,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * be of the kind understood by the GC.  We use the trick of
      * linking a Node that has just been dequeued to itself.  Such a
      * self-link implicitly means to advance to head.
+     * 上面的设计：已经出队列的节点仍然可以访问到（GC可达的）队列中所有的节点，这种情况会导致两个问题：
+     * - 一个恶意的迭代器可能会导致一个节点即使已经出队列了，也无法被GC回收掉
+     * - 会导致跨代连接问题，老年代的节点对新生代的节点的引用，会导致很难回收已经出队列的还在新生代的节点
+     * 但是，我们只需要保证从已经出队列的节点能访问到没有被删除的节点（没有被删除的节点的值是不为null的，
+     * 被删除的节点的值是为null的），并且这种可达性不需要同垃圾回收的可达性一样，我们将出队列的节点的next
+     * 指针指向自己（self-link），当遍历过程中遇到这样的节点后，也就意味着遍历要重新从head节点开始。
      *
      * Both head and tail are permitted to lag.  In fact, failing to
      * update them every time one could is a significant optimization
@@ -173,9 +215,13 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * documentation for that class), we use a slack threshold of two;
      * that is, we update head/tail when the current pointer appears
      * to be two or more steps away from the first/last node.
+     * head和tail被设计为可滞后的。实际上，对它们的更新失败正是优化的关键（有更少的cas操作）。
+     * 和LinkedTransferQueue一样，将滞后系数设置为2；也就是当head距离队列头的距离大于2或者tail距离队列尾
+     * 的距离大于2时，才会尝试将head和tail更新到队列头或者队列尾。
      *
      * Since head and tail are updated concurrently and independently,
      * it is possible for tail to lag behind head (why not)?
+     * 因为head和tail是相互独立的更新的，因此可能出现head跑到tail后面的情况
      *
      * CASing a Node's item reference to null atomically removes the
      * element from the queue.  Iterators skip over Nodes with null
@@ -184,11 +230,17 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * to be successfully removed by two concurrent operations.  The
      * method remove(Object) also lazily unlinks deleted Nodes, but
      * this is merely an optimization.
+     * 使用cas将节点的值设置为null也表示当前节点从队列中移除掉了。迭代器会跳过这些
+     * 节点的值为null的节点。在之前的实现中，poll()方法和remove(Object)方法会有竞争，
+     * 会出现两个并发操作都会成功的删除同一个节点。remove(Object)方法同样也不是直接删除
+     * 掉节点，而是lazily unlink被删除的节点，这也仅仅是一个优化。
      *
      * When constructing a Node (before enqueuing it) we avoid paying
      * for a volatile write to item by using Unsafe.putObject instead
      * of a normal write.  This allows the cost of enqueue to be
      * "one-and-a-half" CASes.
+     * 当在入队之前新建一个节点时，我们通过使用Unsafe.putObject方法来进行普通的变量写操作，避免直接进行volatile写操作。
+     * 这样入队操作的代价就变成了一个半的cas操作。
      *
      * Both head and tail may or may not point to a Node with a
      * non-null item.  If the queue is empty, all items must of course
@@ -196,6 +248,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * Node with null item.  Both head and tail are only updated using
      * CAS, so they never regress, although again this is merely an
      * optimization.
+     * head和tail可能会指向值为null的元素。如果队列是空的，所有的元素都必须是null。
+     * 在初始化队列时，head和tail都指向一个值为null的哨兵节点。head和tail只能使用cas进行更新，
+     * 所以他们不会发生回退，尽管head和tail不过是一个优化而已
      */
 
     /**
@@ -291,14 +346,23 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     /**
      * A node from which the first live (non-deleted) node (if any)
      * can be reached in O(1) time.
+     * 如果head节点未删除，可以使用O(1)复杂度的时间访问到
      * Invariants:
+     * head节点的不变式：
      * - all live nodes are reachable from head via succ()
+     * - 可以通过head的succ()方法访问所有的存活节点
      * - head != null
+     * - head节点不会为null
      * - (tmp = head).next != tmp || tmp != head
+     * - head的next不能指向自身
      * Non-invariants:
+     * head的可变式：
      * - head.item may or may not be null.
+     * - head节点的元素可以为null也可以不为null
      * - it is permitted for tail to lag behind head, that is, for tail
      *   to not be reachable from head!
+     * - 允许head在tail的后面，也就是从head开始不能找到tail
+     *
      *   头结点
      *   头结点并不总是队列中的第一个结点，不是每次出队列都更新head结点，减少cas操作
      */
@@ -307,14 +371,23 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     /**
      * A node from which the last node on list (that is, the unique
      * node with node.next == null) can be reached in O(1) time.
+     * 尾节点（也是队列中唯一一个next指向null的节点），可以使用O(1)复杂度时间访问到
      * Invariants:
+     * tail的不变式：
      * - the last node is always reachable from tail via succ()
+     * - 最后一个节点总是可以通过tail的succ()方法访问到
      * - tail != null
+     * - tail不为null
      * Non-invariants:
+     * tail的可变式：
      * - tail.item may or may not be null.
+     * - tail节点的值可为null也可不为null
      * - it is permitted for tail to lag behind head, that is, for tail
      *   to not be reachable from head!
+     * - tail可以在head的前面，也就是从head开始不能找到tail
      * - tail.next may or may not be self-pointing to tail.
+     * - tail的next可能会指向自己
+     *
      * 尾节点
      * 尾节点并不一定是链表的最后一个节点
      *
@@ -404,6 +477,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     /**
      * Inserts the specified element at the tail of this queue.
      * As the queue is unbounded, this method will never return {@code false}.
+     * 将指定的元素插入到队列的尾部。
+     * 由于队列是无界的，该方法永远不会返回false.
      *
      * @return {@code true} (as specified by {@link Queue#offer})
      * @throws NullPointerException if the specified element is null
@@ -411,73 +486,59 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      */
     public boolean offer(E e) {
         checkNotNull(e);
-        // 新建一个入队列结点，使用UNSAFE.putObject设置结点元素，使用非volatile方式设置元素
+        // 新建一个入队列结点，此时创建节点以及设置节点的元素并不会产生竞争，
+        // 所以使用UNSAFE.putObject设置结点元素，没有使用volatile方式设置元素
         final Node<E> newNode = new Node<E>(e);
 
-        /**
-         * 循环，如果入队不成功，反复入队
-         * t指向tail节点的引用，tail并不总是指向最后一个结点
-         * p用来表示队列的尾结点，默认情况下等于tail节点
-         */
+        // 循环进行cas入队，直到成功
+        // t指向tail节点的引用，tail并不总是指向最后一个结点
+        // p用来表示队列的尾结点，尾节点可能是tail指向的节点也可能不是tail指向的节点
         for (Node<E> t = tail, p = t;;) {
             // 获取p的下一个节点
             Node<E> q = p.next;
-            // q为null，说明p是最后一个结点，tail指向最后一个结点
+            // q为null，说明p是最后一个结点
             if (q == null) {
                 // p is last node
-                // p是最后一个结点，可以尝试使用cas将新节点入队列，设置p.next=newNode
+                // p是最后一个结点，可以尝试使用cas将新节点入队列，设置p.next=newNode，如果不成功说明有其他的线程更新过最后一个节点
                 if (p.casNext(null, newNode)) {
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
                     // and for newNode to become "live".
-                    /*
-                        如果p==t，说明tail指向t，也就是tail指向最后一个结点，
-                        新节点入队列成功后，此时队列如下：head,.....,tail,newNode
-                        这里就不会进if，不会更新tail指向newNode。
 
-                        如果p!=t，说明tail不是指向最后一个结点，新节点入队后，此时队列如下：
-                        head,......,tail,q,newNode，此时需要将tail指向newNode，也就是
-                        tail指向最后一个结点。
-
-                        使用cas设置tail指向newNode，失败也没事，后续入队还会继续更新tail
-                     */
+                    // 新节点入队列成功
+                    // 接下来需要看下是不是需要将tail指向队列中最后一个节点：
+                    // 如果p==t，说明newNode入队列前tail指向的是最后一个节点，新节点入队成功后此时队列如下：head,.....,tail,newNode，
+                    // 此时是不需要将tail指向到newNode上的，保留原来的tail指向的节点不动。
+                    // 如果p!=t，说明入队时tail不是指向的最后一个节点，新节点入队成功后此时队列如下：head,......,tail,q,newNode，
+                    // 也就是tail指向的节点后面至少有两个节点，此时需要将tail指向newNode，
                     if (p != t) // hop two nodes at a time
+                        // 设置tail节点为刚才新入队的节点，失败了也没事，失败了说明有其他的线程已经更改了tail
                         casTail(t, newNode);  // Failure is OK.
                     return true;
                 }
                 // Lost CAS race to another thread; re-read next
                 // 如果cas失败，说明有其他线程入队了新结点，继续执行下次循环入队列
             }
-            /*
-                q!=null，q=p.next，
-                如果p==q，说明p.next指向自己，这种情况在poll方法中会发生，
-                也就是说有别的线程使用了poll方法出队列元素，导致了p.next指向了p自己
-             */
+
+            // 如果q != null，也就是p.next不是null，此时有两种情况（分别对应下面的else if分支和else分支）：
+            // 1. 如果p == q，说明p.next指向自己，这种情况会在poll的时候发生，poll出队列的时候会将head的next设置为自己，
+            //    此时说明p节点都已经被出队列了，也就是tail指向的节点也一定已经出队列了，此时head指向的节点可能是已经出队列了，
+            //    也可能是指向了队列中的有效节点，所以此时需要将tail指向队列中的有效节点，并且再继续进行循环将新节点入队列
+            // 2. 如果p != q，说明p指向的也不是最后一个节点了，此时需要继续往后找最后一个节点，并且再继续进行循环将新节点入队列
             else if (p == q)
                 // We have fallen off list.  If tail is unchanged, it
                 // will also be off-list, in which case we need to
                 // jump to head, from which all live nodes are always
                 // reachable.  Else the new tail is a better bet.
-            /*
-               p == q
-               多线程操作，可能会有别的线程使用poll方法移除元素，
-               head的next就会变成head，也就是说head已经是老的head了，并且head已经不
-               在队列中了，需要找到新的tail
-
-             */
+                // tail指向的节点已经不是有效节点了，需要将tail指向队列中的有效节点
+                // t == tail说明此没有其他线程更新tail，直接将head指向的节点赋值给p，并继续进行循环将新节点入队列
+                // t != tail说明此时有其他线程更新了tail，则直接使用新的tail指向的节点赋值给p,并继续循环将新节点入队列
                 p = (t != (t = tail)) ? t : head;
-            /*
-                p!=null, p!=q，说明tail不是指向最后一个结点，此时队列可能是：
-                head,......,tail,q
-             */
             else
                 // Check for tail updates after two hops.
-                /*
-                    p==t，说明tail结点没有被其他线程修改，此时的tail不是指向最后一个结点，
-                    所以将q赋值给p，也就是找到最后一个结点，然后继续循环，将新结点入队
-
-                    p!=t说明有并发，tail被其他线程修改，重新将p指向tail，然后继续循环
-                 */
+                // 如果 p == t，说明tail结点没有被其他线程修改，p节点后面有了新的其他的节点，此时将q（也就是p的下一个节点）节点赋值给p，
+                // 并继续循环将新节点入队列。
+                // 如果p != t，说明有其他线程变更了tail指向的节点，此时需要将p直接指向tail指向的新的节点，并继续循环将新节点入队列
                 p = (p != t && t != (t = tail)) ? t : q;
         }
     }
