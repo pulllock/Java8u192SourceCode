@@ -546,50 +546,40 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
     public E poll() {
         restartFromHead:
         for (;;) {
+            // h指向head节点的引用，head指向的节点并不一定会在队列中
+            // p指向队列中的第一个节点
+            // q是p.next
             for (Node<E> h = head, p = h, q;;) {
+                // p指向队列中的第一个节点，item是队列中第一个节点中存储的值
                 E item = p.item;
 
-                /*
-                    head指向的结点不一定是有效的第一个结点
-                    head指向的节点的item不为null，说明指向的是第一个结点，
-                    直接cas修改head指向的第一个结点的item为null
-                 */
+                // 队列中有效节点的值一定不为null，item不为null说明p指向的是队列中第一个有效节点，
+                // 此时直接尝试使用cas将队列中第一个有效节点的值设置为null，表示出队列。
+                // 如果cas成功了，表示出队列成功，出队列成功之后会尝试将head节点往后移动到队列中第一个有效节点上
+                // 如果cas失败了，说明有其他的线程将第一个节点出队列了，当前线程会进入到下一次循环继续进行出队列操作
                 if (item != null && p.casItem(item, null)) {
                     // Successful CAS is the linearization point
                     // for item to be removed from this queue.
-                    /*
-                        如果p==h，说明head指向第一个结点，这里无需updateHead
-
-                        如果p!=h，说明head指向第一个结点是无效结点，第二个结点
-                        才是带有元素的真实的第一个结点，出队列也是将第二个结点的
-                        元素出队列，也就是此时p指向的节点，这里调用updateHead方法
-                        将head使用cas指向p的next结点。
-
-                        同时还会将旧的head的next指向自己，这个会在offer方法中有用到
-                     */
+                    // 在当前线程看来此时p是队列中第一个有效节点，因此需要看看head指向的节点是不是p指向的节点
+                    // 如果p == h则说明head和p指向的都是同一个节点，此时不需要将head进行移动，需要等到下一个节点出队列的时候再将head移动，
+                    // 这样可以减少一次cas操作。
+                    // 如果p != h则说明head指向的节点比p指向的节点还要老，需要将head指向到p指向的节点的后面的节点，此时p已经出队列了，所以
+                    // p后面的节点才可能是队列中有效的节点。同时还会将原来的head指向的节点的next指向自己，这个指向自己会在offer方法中用到。
                     if (p != h) // hop two nodes at a time
                         updateHead(h, ((q = p.next) != null) ? q : p);
                     return item;
                 }
-                /*
-                    item为null，也就是head指向的节点item为null
-                    并且p的next也为null，此时是个空队列，
-                    cas更新head，并返回null
-                 */
+                // 如果item为null，说明p指向的节点已经被出队列了，此时会有三种情况（分别对应下面的三个else分支）：
+                // 1. 如果p.next为null，说明队列已经是空的了，将head指向p指向的节点；
+                // 2. 如果p.next不为null，并且p == q（也就是p = p.next），说明p已经被移出队列了，需要跳出循环从头来；
+                // 3. 如果p.next不为null，并且p != q（也就是p != p.next），说明p的下一个节点是可用节点，直接将p的next节点赋值给p,继续
+                //    下一次循环出队列。
                 else if ((q = p.next) == null) {
                     updateHead(h, p);
                     return null;
                 }
-                /*
-                    p.item == null q=p.next && p=p.next，说明p已经被移除出队列，跳出循环从头来
-                 */
                 else if (p == q)
                     continue restartFromHead;
-                /*
-                p的item为null
-                p.next不为null
-                将p指向p.next，也就是指向可出队列的那个结点
-                 */
                 else
                     p = q;
             }
